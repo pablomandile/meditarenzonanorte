@@ -19,11 +19,13 @@ export type FieldDef = {
 
 defineProps<{
     fields: FieldDef[];
-    content: Record<string, any>;
-    files: Record<string, any>;
     errors: Record<string, string>;
     faqPool?: { id: number; question: string; visible: boolean }[];
 }>();
+
+// content y files son contenedores reactivos que llenan los campos hijos (two-way).
+const content = defineModel<Record<string, any>>('content', { required: true });
+const files = defineModel<Record<string, any>>('files', { required: true });
 </script>
 
 <template>

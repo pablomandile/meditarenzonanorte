@@ -62,8 +62,8 @@ function submit() {
                     <CardContent class="pt-6">
                         <SectionForm
                             :fields="fields"
-                            :content="form.content"
-                            :files="form.files"
+                            v-model:content="form.content"
+                            v-model:files="form.files"
                             :errors="form.errors as Record<string, string>"
                             :faq-pool="faqPool"
                         />
