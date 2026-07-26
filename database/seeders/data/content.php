@@ -1,0 +1,599 @@
+<?php
+
+/**
+ * Content cloned from https://meditarenrosario.org/ (2026-07-23).
+ * Image paths are relative to the images/ directory of the clone.
+ * Body fields are plain text, paragraphs separated by "\n\n".
+ */
+return [
+
+    'home' => [
+        'title' => 'Meditación y Budismo Moderno',
+        'menu_label' => null,
+        'menu_order' => 0,
+        'meta_description' => 'Actividades semanales Clase semanal online Meditaciones guiadas gratuitas Meditación Kadampa Rosario Meditación Kadampa Rosario forma parte de la Nueva',
+        'sections' => [
+            [
+                'type' => 'hero',
+                'key' => 'hero',
+                'content' => [
+                    'image' => 'home/Meditacion-y-Budismo-Moderno.jpg',
+                    'heading' => null,
+                    'subheading' => null,
+                ],
+            ],
+            [
+                'type' => 'card_grid',
+                'key' => 'actividades-semanales',
+                'content' => [
+                    'heading' => 'Actividades semanales',
+                    'cards' => [
+                        [
+                            'image' => 'home/62.jpg',
+                            'title' => 'Clase semanal online',
+                            'text' => null,
+                            'url' => '/clases-semanales',
+                        ],
+                        [
+                            'image' => 'home/63-1.jpg',
+                            'title' => 'Meditaciones guiadas gratuitas',
+                            'text' => null,
+                            'url' => '/gratis',
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'text_block',
+                'key' => 'intro',
+                'content' => [
+                    'heading' => 'Meditación Kadampa Rosario',
+                    'body' => 'Meditación Kadampa Rosario forma parte de la Nueva Tradición Kadampa, una comunidad espiritual internacional dedicada al logro de la paz mundial siguiendo el camino budista kadampa. Está ubicado en Barrio Martin, a metros del Parque Urquiza, en el Pasaje Cajaraville 173 y es un anexo del centro principal ubicado en Buenos Aires (Palermo, Serrano 1316).',
+                    'image' => 'home/Imagen_home_CMKA.webp',
+                    'image_side' => 'right',
+                    'links' => [
+                        ['label' => 'Nueva Tradición Kadampa', 'url' => 'https://kadampa.org/es'],
+                        ['label' => 'Barrio Martin, a metros del Parque Urquiza, en el Pasaje Cajaraville 173', 'url' => 'https://maps.app.goo.gl/dj2DJQ1Cow79uk359'],
+                        ['label' => 'Visita de Kelsang Panchen', 'url' => '/eventos-especiales'],
+                        ['label' => 'Actividades gratis', 'url' => '/gratis'],
+                        ['label' => 'Clases semanales', 'url' => '/clases-semanales'],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'text_image',
+                'key' => 'fundador',
+                'content' => [
+                    'heading' => 'El fundador',
+                    'body' => 'El Fundador del Budismo Kadampa Moderno, el venerable Gueshe Kelsang Gyatso Rimpoché, maestro de meditación y Maestro de renombre mundial, inspiró a miles de personas de todo el mundo a aplicar las enseñanzas puras de Buda a sus vidas modernas para resolver sus problemas personales y descubrir una paz interior y una felicidad profundas y duraderas.',
+                    'image' => 'home/18.jpg',
+                    'image_side' => 'right',
+                    'link_label' => 'Más información',
+                    'link_url' => 'https://kadampa.org/es/venerable-gueshe-kelsang-gyatso',
+                ],
+            ],
+            [
+                'type' => 'quote',
+                'key' => 'testimonio',
+                'content' => [
+                    'quote' => 'Me encantó participar en la meditación , muy cálidos y amables todos por ser la primera vez que asistía, salí mas liviana mas ligera y queriendo volver.',
+                    'author' => 'Mariel Aguirre',
+                ],
+            ],
+            [
+                'type' => 'event_strip',
+                'key' => 'proximamente',
+                'content' => [
+                    'heading' => 'Eventos especiales en Rosario',
+                ],
+            ],
+            [
+                'type' => 'card_grid',
+                'key' => 'festivales',
+                'content' => [
+                    'heading' => 'Eventos Nacionales e Internacionales',
+                    'cards' => [
+                        [
+                            'image' => 'shared/Festival-internacional-de-Verano-UK.jpg',
+                            'title' => null,
+                            'text' => null,
+                            'url' => 'https://kadampafestivals.org/es/verano',
+                        ],
+                        [
+                            'image' => 'shared/Festival-internacional-de-otono.jpg',
+                            'title' => null,
+                            'text' => null,
+                            'url' => 'https://kadampafestivals.org/es/otono',
+                        ],
+                        [
+                            'image' => 'shared/Festival-del-Dharma-buenos-aires-2026.jpg',
+                            'title' => null,
+                            'text' => null,
+                            'url' => 'https://meditarenargentina.org/eventos-nacionales/',
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'map',
+                'key' => 'donde-estamos',
+                'content' => [
+                    'heading' => '¿Dónde estamos?',
+                    'query' => 'Meditar en Rosario Cajaraville 173, S2000 Rosario, Santa Fe',
+                ],
+            ],
+            [
+                'type' => 'card_grid',
+                'key' => 'recursos',
+                'content' => [
+                    'heading' => null,
+                    'cards' => [
+                        [
+                            'image' => 'shared/Spanish-KBW-2026.jpeg.webp',
+                            'title' => 'EL BUDISMO KADAMPA',
+                            'text' => 'Programa internacional de enseñanzas',
+                            'url' => 'https://kadampa.org/es/kadampa-buddhism-worldwide-brochure',
+                        ],
+                        [
+                            'image' => 'shared/CTTV-Pack-3D-2017-web.png',
+                            'title' => 'CÓMO TRANSFORMAR TU VIDA',
+                            'text' => 'descargalo gratis aquí',
+                            'url' => 'https://comotransformartuvida.com',
+                        ],
+                        [
+                            'image' => 'shared/bm2-2.png',
+                            'title' => 'BUDISMO MODERNO',
+                            'text' => 'descargalo gratis aquí',
+                            'url' => 'https://budismomoderno.com',
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ],
+
+    'clases-semanales' => [
+        'title' => 'Clases semanales',
+        'menu_label' => 'Clases semanales',
+        'menu_order' => 1,
+        'meta_description' => 'ACTIVIDADES SEMANALES Clases semanalesLibertad emocional con Kelsang Panchen Todos los miércoles, nos encontramos a mirar juntos en video las clases que',
+        'sections' => [
+            [
+                'type' => 'page_header',
+                'key' => 'titulo',
+                'content' => [
+                    'heading' => 'ACTIVIDADES SEMANALES',
+                    'intro' => null,
+                    'style' => 'orange',
+                ],
+            ],
+            [
+                'type' => 'class_info',
+                'key' => 'clase-principal',
+                'content' => [
+                    'heading' => "Clases semanales\nLibertad emocional con Kelsang Panchen",
+                    'body' => "Todos los miércoles, nos encontramos a mirar juntos en video las clases que Kelsang Panchen dicta en el Centro de Meditación Kadampa de Buenos Aires. En junio y julio veremos claves para vínculos más sanos.\n\n*No es necesario experiencia ni inscripción previa.\n\n¡TODO EL MUNDO ES BIENVENIDO!",
+                    'schedule' => 'Miércoles de 19 a 20.15 hs',
+                    'location' => 'Psj. Cajaraville 173, Barrio Martin, Rosario',
+                    'price' => '$5.000 (Bono 4 clases $15.000)',
+                    'cta_label' => 'INSCRIPCIÓN TARJETAS KADAMPA',
+                    'cta_url' => 'https://meditarenargentina.org/tarjeta-kadampa/',
+                    'image' => 'clases-semanales/5.jpg',
+                ],
+            ],
+            [
+                'type' => 'text_image',
+                'key' => 'maestro',
+                'content' => [
+                    'heading' => 'Kelsang Panchen',
+                    'body' => "Maestro Principal de Rosario\n\nEs el segundo maestro residente del Centro de Meditación Kadampa Argentina. Encontró las enseñanzas de Buda a los 23 años y al poco tiempo se ordenó como monje kadampa. Realizó su formación como maestro en el ITTP (International Intensive Training Program) en el Templo de Manyushri (Inglaterra) y en el Centro de Meditación Kadampa Barcelona. Sus enseñanzas son cercanas a la gente y de gran calidez. Es reconocido por su serenidad y claridad al transmitir las enseñanzas de Buda. Kelsang Panchen, es un ejemplo muy inspirador.",
+                    'image' => 'shared/K_Panchen.webp',
+                    'image_side' => 'right',
+                    'link_label' => null,
+                    'link_url' => null,
+                ],
+            ],
+            [
+                'type' => 'bullet_list',
+                'key' => 'detalles-clase',
+                'content' => [
+                    'heading' => 'Detalles de las clases',
+                    'intro' => '¿Qué temas se tratan en las sesiones?',
+                    'items' => [
+                        'Técnicas para el aprendizaje de la meditación y profundización en tu experiencia.',
+                        'Meditaciones guiadas en todas las sesiones.',
+                        'Enseñanzas prácticas sobre cómo aplicar la antigua sabiduría de Buda en nuestra ajetreada vida moderna.',
+                        'Aunque el aprendizaje es progresivo, podés sumarte en cualquier momento.',
+                    ],
+                ],
+            ],
+            [
+                'type' => 'text_block',
+                'key' => 'estructura-clase',
+                'content' => [
+                    'heading' => 'Estructura de una sesión',
+                    'body' => "¿Qué esperar de una clase?\n\nMeditación guiada\n\nCada sesión comienza con una meditación en la respiración, para calmar la mente, eliminar las distracciones y cultivar paz interior.\n\nEnseñanza\n\nA continuación, una explicación de los métodos prácticos que provienen de las enseñanzas de Buda para ser felices en nuestro día a día, solucionar nuestros problemas internos y cultivar estados mentales apacibles.\n\nMeditación final\n\nLas sesiones terminan con una segunda meditación basada en las ideas aprendidas y consejos para integrarlos en nuestra vida cotidiana.",
+                    'links' => [],
+                ],
+            ],
+            [
+                'type' => 'class_info',
+                'key' => 'meditaciones-gratuitas',
+                'content' => [
+                    'heading' => "Meditaciones guiadas\nen 30 minutos",
+                    'body' => null,
+                    'schedule' => "Martes y jueves\n18 a 18.30hs",
+                    'location' => 'Psj. Cajaraville 173, Barrio Martin, Rosario',
+                    'price' => 'GRATUITAS',
+                    'cta_label' => 'MÁS INFORMACIÓN',
+                    'cta_url' => '/gratis',
+                    'image' => 'clases-semanales/web-rosario-2.jpg',
+                ],
+            ],
+            [
+                'type' => 'faq',
+                'key' => 'faq',
+                'content' => [
+                    'heading' => 'Preguntas frecuententes',
+                    'faq_refs' => [0, 1, 2, 3, 4, 5],
+                ],
+            ],
+        ],
+    ],
+
+    'eventos-especiales' => [
+        'title' => 'Eventos especiales',
+        'menu_label' => 'Eventos especiales',
+        'menu_order' => 2,
+        'meta_description' => 'EVENTOS ESPECIALES CINE Y MEDITACIÓN Película: La vida de Buda Una obra especial, inspirada por el venerable Gueshe Kelsang Gyatso y sus enseñanzas, que recoge',
+        'sections' => [
+            [
+                'type' => 'page_header',
+                'key' => 'titulo',
+                'content' => [
+                    'heading' => 'EVENTOS ESPECIALES',
+                    'intro' => null,
+                    'style' => 'sky',
+                ],
+            ],
+            [
+                'type' => 'hero',
+                'key' => 'banner',
+                'content' => [
+                    'image' => 'eventos-especiales/vista-julio-rosario-kelsang-panchen7.jpg',
+                    'heading' => null,
+                    'subheading' => null,
+                ],
+            ],
+            [
+                'type' => 'event_list',
+                'key' => 'eventos',
+                'content' => [
+                    'heading' => null,
+                    'empty_text' => 'próximamente',
+                ],
+            ],
+            [
+                'type' => 'text_block',
+                'key' => 'bienvenida',
+                'content' => [
+                    'heading' => '¡Todo el mundo es bienvenido!',
+                    'body' => null,
+                    'links' => [],
+                ],
+            ],
+            [
+                'type' => 'text_image',
+                'key' => 'maestro',
+                'content' => [
+                    'heading' => 'Kelsang Panchen',
+                    'body' => "Maestro Principal de Rosario\n\nEs el segundo maestro residente del Centro de Meditación Kadampa Argentina. Encontró las enseñanzas de Buda a los 23 años y al poco tiempo se ordenó como monje kadampa. Realizó su formación como maestro en el ITTP (International Intensive Training Program) en el Templo de Manyushri (Inglaterra) y en el Centro de Meditación Kadampa Barcelona. Sus enseñanzas son cercanas a la gente y de gran calidez. Es reconocido por su serenidad y claridad al transmitir las enseñanzas de Buda. Kelsang Panchen, es un ejemplo muy inspirador.",
+                    'image' => 'shared/K_Panchen.webp',
+                    'image_side' => 'right',
+                    'link_label' => null,
+                    'link_url' => null,
+                ],
+            ],
+            [
+                'type' => 'card_grid',
+                'key' => 'festivales',
+                'content' => [
+                    'heading' => 'NACIONALES E INTERNACIONALES',
+                    'cards' => [
+                        [
+                            'image' => 'shared/Festival-internacional-de-Verano-UK.jpg',
+                            'title' => null,
+                            'text' => null,
+                            'url' => 'https://kadampafestivals.org/es/verano',
+                        ],
+                        [
+                            'image' => 'shared/Festival-internacional-de-otono.jpg',
+                            'title' => null,
+                            'text' => null,
+                            'url' => 'https://kadampafestivals.org/es/otono',
+                        ],
+                        [
+                            'image' => 'shared/Festival-del-Dharma-buenos-aires-2026.jpg',
+                            'title' => null,
+                            'text' => null,
+                            'url' => 'https://meditarenargentina.org/eventos-nacionales/',
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'map',
+                'key' => 'donde-estamos',
+                'content' => [
+                    'heading' => '¿Dónde estamos?',
+                    'query' => 'Meditar en Rosario Cajaraville 173, S2000 Rosario, Santa Fe',
+                ],
+            ],
+            [
+                'type' => 'bullet_list',
+                'key' => 'detalles-clase',
+                'content' => [
+                    'heading' => 'Detalles de las clases',
+                    'intro' => '¿Qué temas se tratan en las sesiones?',
+                    'items' => [
+                        'Técnicas para el aprendizaje de la meditación y profundización en tu experiencia.',
+                        'Meditaciones guiadas en todas las sesiones.',
+                        'Enseñanzas prácticas sobre cómo aplicar la antigua sabiduría de Buda en nuestra ajetreada vida moderna.',
+                        'Aunque el aprendizaje es progresivo, podés sumarte en cualquier momento.',
+                    ],
+                ],
+            ],
+            [
+                'type' => 'text_block',
+                'key' => 'estructura-clase',
+                'content' => [
+                    'heading' => 'Estructura de una sesión',
+                    'body' => "¿Qué esperar de una clase?\n\nMeditación guiada\n\nCada sesión comienza con una meditación en la respiración, para calmar la mente, eliminar las distracciones y cultivar paz interior.\n\nEnseñanza\n\nA continuación, una explicación de los métodos prácticos que provienen de las enseñanzas de Buda para ser felices en nuestro día a día, solucionar nuestros problemas internos y cultivar estados mentales apacibles.\n\nMeditación final\n\nLas sesiones terminan con una segunda meditación basada en las ideas aprendidas y consejos para integrarlos en nuestra vida cotidiana.",
+                    'links' => [],
+                ],
+            ],
+            [
+                'type' => 'faq',
+                'key' => 'faq',
+                'content' => [
+                    'heading' => 'Preguntas frecuententes',
+                    'faq_refs' => [0, 1, 2, 3, 4, 5],
+                ],
+            ],
+        ],
+    ],
+
+    'gratis' => [
+        'title' => 'Gratis',
+        'menu_label' => 'Gratis',
+        'menu_order' => 3,
+        'meta_description' => 'ACTIVIDADES GRATUITAS Meditaciones guiadasen 30 minutos Meditaciones guiadasen 30 minutos Muchas veces, en el ritmo acelerado del día a día, sentimos que no',
+        'sections' => [
+            [
+                'type' => 'page_header',
+                'key' => 'titulo',
+                'content' => [
+                    'heading' => 'ACTIVIDADES GRATUITAS',
+                    'intro' => null,
+                    'style' => 'sky',
+                ],
+            ],
+            [
+                'type' => 'class_info',
+                'key' => 'oferta-miercoles-jueves',
+                'content' => [
+                    'heading' => "Meditaciones guiadas\nen 30 minutos",
+                    'body' => null,
+                    'schedule' => "Miércoles y jueves\n18 a 18.30hs",
+                    'location' => 'Psj. Cajaraville 173, Barrio Martin, Rosario',
+                    'price' => 'GRATUITAS',
+                    'cta_label' => null,
+                    'cta_url' => null,
+                    'image' => 'gratis/MEDITACIONES-GUIDAS-EN-30-MINUTOS-GRATIS-ROSARIO.jpg',
+                ],
+            ],
+            [
+                'type' => 'class_info',
+                'key' => 'oferta-martes-jueves',
+                'content' => [
+                    'heading' => "Meditaciones guiadas\nen 30 minutos",
+                    'body' => null,
+                    'schedule' => "Martes y jueves\n18 a 18.30hs",
+                    'location' => 'Psj. Cajaraville 173, Barrio Martin, Rosario',
+                    'price' => 'GRATUITAS',
+                    'cta_label' => null,
+                    'cta_url' => null,
+                    'image' => 'gratis/64.jpg',
+                ],
+            ],
+            [
+                'type' => 'text_image',
+                'key' => 'invitacion',
+                'content' => [
+                    'heading' => null,
+                    'body' => "Muchas veces, en el ritmo acelerado del día a día, sentimos que no tenemos tiempo para nada, y mucho menos para meditar. Sin embargo, dedicar apenas 30 minutos a la meditación puede marcar una gran diferencia. Incorporarla, nos ayuda a soltar tensiones y a reducir preocupaciones.\n\nSumate a nuestras meditaciones guiadas paso a paso por practicantes budistas y comenzá a disfrutar de los beneficios de la meditación. ¡Es fácil y accesible para todos!",
+                    'image' => 'gratis/MEDITACIONES-GUIDAS-EN-30-MINUTOS-GRATIS-ROSARIO2.jpg',
+                    'image_side' => 'left',
+                    'link_label' => null,
+                    'link_url' => null,
+                ],
+            ],
+            [
+                'type' => 'bullet_list',
+                'key' => 'beneficios',
+                'content' => [
+                    'heading' => 'Beneficios de la meditación:',
+                    'intro' => null,
+                    'items' => [
+                        'Experimentá profunda relajación',
+                        'Mejorá tu salud física y mental',
+                        'Reducí el estrés y la ansiedad',
+                        'Solta y viví más liger@',
+                    ],
+                ],
+            ],
+            [
+                'type' => 'text_block',
+                'key' => 'bienvenida',
+                'content' => [
+                    'heading' => '¡Todo el mundo es bienvenido!',
+                    'body' => null,
+                    'links' => [],
+                ],
+            ],
+            [
+                'type' => 'faq',
+                'key' => 'faq',
+                'content' => [
+                    'heading' => 'Preguntas frecuententes',
+                    'faq_refs' => [0, 1, 2, 3, 4, 5],
+                ],
+            ],
+        ],
+    ],
+
+    'quienes-somos' => [
+        'title' => '¿Quienes somos?',
+        'menu_label' => '¿Quienes somos?',
+        'menu_order' => 4,
+        'meta_description' => '¿Quienes somos? El budismo kadampa es una tradición de budismo mahayana fundada por el gran maestro indio Atisha (982-1054). Ka se refiere a todas las',
+        'sections' => [
+            [
+                'type' => 'hero',
+                'key' => 'banner',
+                'content' => [
+                    'image' => 'quienes-somos/Header-homepage-new-kadampa-tradition.jpg',
+                    'heading' => null,
+                    'subheading' => null,
+                ],
+            ],
+            [
+                'type' => 'text_block',
+                'key' => 'kadampa',
+                'content' => [
+                    'heading' => '¿Quienes somos?',
+                    'body' => "El budismo kadampa es una tradición de budismo mahayana fundada por el gran maestro indio Atisha (982-1054).\n\nKa se refiere a todas las enseñanzas de Buda, y dam, a las instrucciones especiales del Lamrim, las etapas del camino hacia la iluminación, que Atisha enseñó. Por lo tanto, los practicantes de budismo kadampa integran en el Lamrim todas las enseñanzas de Buda que han aprendido tomándolas como un consejo personal y poniéndolas en práctica.\n\nLos budistas kadampas integran su conocimiento de todas las enseñanzas de Buda en su práctica del Lamrim, y ésta en su vida diaria. De este modo, transforman todas sus actividades en el camino hacia la iluminación.\n\nEl fundador del budismo kadampa moderno es el venerable Gueshela Kelsang Gyatso Rimpoché, conocido cariñosamente como venerable Gueshela, maestro de meditación y maestro de renombre mundial. Inspiró a miles de personas de todo el mundo a aplicar las enseñanzas puras de Buda a sus vidas modernas para resolver sus problemas personales y descubrir una paz interior y una felicidad profundas y duraderas. En la actualidad, el legado de su obra llega a personas de todas las nacionalidades y culturas.",
+                    'links' => [
+                        ['label' => 'Atisha', 'url' => 'https://kadampa.org/es/buddhism/atisha4'],
+                        ['label' => 'enseñanzas de Buda', 'url' => 'https://kadampa.org/es/reference/las-ensenanzas-de-buda'],
+                        ['label' => 'Lamrim', 'url' => 'https://kadampa.org/es/buddhism/etapas-del-camino'],
+                        ['label' => 'Seguir leyendo', 'url' => 'https://kadampa.org/es'],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'text_image',
+                'key' => 'maestro',
+                'content' => [
+                    'heading' => 'Kelsang Panchen',
+                    'body' => "Maestro Principal de Rosario\n\nEs el segundo maestro residente del Centro de Meditación Kadampa Argentina. Encontró las enseñanzas de Buda a los 23 años y al poco tiempo se ordenó como monje kadampa. Realizó su formación como maestro en el ITTP (International Intensive Training Program) en el Templo de Manyushri (Inglaterra) y en el Centro de Meditación Kadampa Barcelona. Sus enseñanzas son cercanas a la gente y de gran calidez. Es reconocido por su serenidad y claridad al transmitir las enseñanzas de Buda. Kelsang Panchen, es un ejemplo muy inspirador.",
+                    'image' => 'shared/K_Panchen.webp',
+                    'image_side' => 'left',
+                    'link_label' => null,
+                    'link_url' => null,
+                ],
+            ],
+            [
+                'type' => 'faq',
+                'key' => 'faq',
+                'content' => [
+                    'heading' => 'Preguntas frecuententes',
+                    'faq_refs' => [0, 1, 2, 3, 4, 5],
+                ],
+            ],
+        ],
+    ],
+
+    'voluntariado' => [
+        'title' => 'Voluntariado',
+        'menu_label' => 'Voluntariado',
+        'menu_order' => 5,
+        'meta_description' => 'Voluntariado Forma parte de la comunidad de Meditar en Rosario a través del programa de voluntariado Este espacio de paz y meditación depende completamente de',
+        'sections' => [
+            [
+                'type' => 'text_block',
+                'key' => 'intro',
+                'content' => [
+                    'heading' => 'Voluntariado',
+                    'body' => "Forma parte de la comunidad de Meditar en Rosario a través del programa de voluntariado\n\nEste espacio de paz y meditación depende completamente de voluntarios, desde aquellos que visitan el centro para ayudar de vez en cuando a nuestros managers y maestros dedicados.",
+                    'links' => [],
+                ],
+            ],
+            [
+                'type' => 'gallery',
+                'key' => 'galeria',
+                'content' => [
+                    'heading' => null,
+                    'images' => [
+                        'voluntariado/45.jpg',
+                        'voluntariado/42.jpg',
+                        'voluntariado/44.jpg',
+                        'voluntariado/43.jpg',
+                    ],
+                ],
+            ],
+            [
+                'type' => 'text_block',
+                'key' => 'que-esperar',
+                'content' => [
+                    'heading' => '¿Qué esperar?',
+                    'body' => "Las actividades con las que podes colaborar son muy variadas, desde recepción, preparación de la sala de meditación, limpieza y cambios de ofrendas a fotografía, video y difusión en redes sociales.\n\nSi tenés el deseo ayudar de alguna manera, ¡avisanos! No necesitas tener ninguna habilidad en especial ni comprometerse regularmente. ¡Cualquier ayuda es bienvenida!",
+                    'links' => [],
+                ],
+            ],
+            [
+                'type' => 'text_block',
+                'key' => 'que-ofrece',
+                'content' => [
+                    'heading' => '¿Qué te ofrece el voluntariado?',
+                    'body' => "El voluntariado ofrece una experiencia única y enriquecedora, tanto a nivel personal como espiritual.\n\nEs una gran oportunidad de conocer de cerca una comunidad budista y de acumular buena energia ayudando a difundir el Dharma (las enseñanzas de Buda) y la meditación en un ambiente cálido y divertido.\n\nCompartirás tiempo con personas de todos los ámbitos, cada una con perspectivas y habilidades diferentes que pueden ayudarte a crecer de maneras inesperadas y significativas.",
+                    'links' => [],
+                ],
+            ],
+            [
+                'type' => 'text_image',
+                'key' => 'invitacion',
+                'content' => [
+                    'heading' => null,
+                    'body' => "Muchas veces, entre el ritmo acelerado del día a día, sentimos que no tenemos tiempo para nada, y mucho menos para meditar. Sin embargo, dedicar apenas 30 minutos a la meditación puede marcar una gran diferencia. Incorporarla, nos ayuda a soltar tensiones y a reducir preocupaciones.\n\nSumate a nuestras meditaciones guiadas paso a paso por practicantes budistas y comenzá a disfrutar de los beneficios de la meditación. ¡Es fácil y accesible para todos!",
+                    'image' => 'gratis/MEDITACIONES-GUIDAS-EN-30-MINUTOS-GRATIS-ROSARIO2.jpg',
+                    'image_side' => 'left',
+                    'link_label' => null,
+                    'link_url' => null,
+                ],
+            ],
+            [
+                'type' => 'bullet_list',
+                'key' => 'beneficios-meditacion',
+                'content' => [
+                    'heading' => 'Beneficios de la meditación:',
+                    'intro' => null,
+                    'items' => [
+                        'Experimenta profunda relajación',
+                        'Mejora tu salud física y mental',
+                        'Reduce el estrés y la ansiedad',
+                        'Suelta y vive más liger@',
+                    ],
+                ],
+            ],
+            [
+                'type' => 'text_block',
+                'key' => 'bienvenida',
+                'content' => [
+                    'heading' => '¡Todo el mundo es bienvenido!',
+                    'body' => null,
+                    'links' => [],
+                ],
+            ],
+            [
+                'type' => 'faq',
+                'key' => 'faq',
+                'content' => [
+                    'heading' => 'Preguntas frecuententes',
+                    'faq_refs' => [0, 1, 2, 3, 4, 5],
+                ],
+            ],
+        ],
+    ],
+
+];
