@@ -708,4 +708,59 @@ return [
         ],
     ],
 
+    'programa-fundamental' => [
+        'title' => 'Programa Fundamental',
+        'menu_label' => 'Programa Fundamental',
+        'menu_order' => 7,
+        'meta_description' => 'Programa Fundamental (PF): estudio en profundidad del budismo mahayana, sus beneficios y el libro que estamos estudiando, Compasión Universal.',
+        'sections' => [
+            [
+                'type' => 'page_header',
+                'key' => 'titulo',
+                'content' => [
+                    'heading' => 'PROGRAMA FUNDAMENTAL',
+                    'intro' => 'El objetivo del Programa Fundamental (PF) es ofrecer una presentación sistemática de temas específicos del budismo mahayana para que los practicantes profundicen en su conocimiento y experiencia del budismo. El programa incluye 5 textos.',
+                    'style' => 'orange',
+                ],
+            ],
+            [
+                'type' => 'bullet_list',
+                'key' => 'beneficios',
+                'content' => [
+                    'heading' => 'Beneficios del Programa Fundamental',
+                    'intro' => 'El estudio de estas obras nos aporta numerosos beneficios, que resumimos a continuación:',
+                    'items' => [
+                        'Profundizás tu conocimiento y experiencia del budismo mahayana.',
+                        'Seguís un método estructurado que combina lectura, contemplación, meditación y debate.',
+                        'Desarrollás una comprensión más profunda de las enseñanzas de Buda.',
+                        'Aplicás las enseñanzas de manera práctica en tu vida cotidiana.',
+                    ],
+                ],
+            ],
+            [
+                'type' => 'text_block',
+                'key' => 'libro-titulo',
+                'content' => [
+                    'heading' => 'Libro que estamos estudiando',
+                    'body' => null,
+                    'image' => null,
+                    'image_side' => 'right',
+                    'links' => [],
+                ],
+            ],
+            [
+                'type' => 'text_image',
+                'key' => 'libro',
+                'content' => [
+                    'heading' => 'Compasión universal',
+                    'body' => "Inspiración para tiempos difíciles — del venerable Gueshe Kelsang Gyatso Rimpoché.\n\nEste texto profundo y accesible nos guía paso a paso en el desarrollo de la compasión y la sabiduría que necesitamos para enfrentar los desafíos de la vida con una mente más flexible y amorosa.",
+                    'image' => 'programa-fundamental/compasion-universal.png',
+                    'image_side' => 'left',
+                    'link_label' => 'Inscribite al Programa Fundamental',
+                    'link_url' => 'https://wa.me/5491166633921',
+                ],
+            ],
+        ],
+    ],
+
 ];
