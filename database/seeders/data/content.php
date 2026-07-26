@@ -596,4 +596,68 @@ return [
         ],
     ],
 
+    'abonos' => [
+        'title' => 'Abonos',
+        'menu_label' => 'Abonos',
+        'menu_order' => 6,
+        'meta_description' => 'Abono mensual: acceso a todas las clases del mes y descuentos. Tres tarjetas: Clases, Corazón y Benefactor.',
+        'sections' => [
+            [
+                'type' => 'hero',
+                'key' => 'banner',
+                'content' => [
+                    'image' => 'abonos/banner-zona-norte.jpg',
+                    'heading' => null,
+                    'subheading' => null,
+                ],
+            ],
+            [
+                'type' => 'pricing',
+                'key' => 'abono-mensual',
+                'content' => [
+                    'heading' => 'Abono Mensual',
+                    'intro' => "Acceso a todas las clases del mes y descuentos.\n\nHay tres tarjetas con diferentes opciones de descuentos:",
+                    'plans' => [
+                        [
+                            'name' => 'Tarjeta Clases',
+                            'price' => '$45.000',
+                            'period' => '/mes',
+                            'features' => "Pase libre a todas las clases semanales de lunes y miércoles\nDescuentos en los cursos de sábados",
+                            'note' => 'Sin permanencia mínima',
+                            'highlighted' => false,
+                        ],
+                        [
+                            'name' => 'Tarjeta Corazón',
+                            'price' => '$55.000',
+                            'period' => '/mes',
+                            'features' => "Pase libre a todas las clases semanales\nCursos de sábados de manera gratuita\nDescuentos en retiros y eventos especiales",
+                            'note' => 'Permanencia mínima 3 meses',
+                            'highlighted' => true,
+                        ],
+                        [
+                            'name' => 'Tarjeta Benefactor',
+                            'price' => '$70.000',
+                            'period' => '/mes',
+                            'features' => "Pase libre a todas las clases semanales\nCursos de sábados de manera gratuita\nMayores descuentos en retiros y eventos especiales",
+                            'note' => 'Permanencia mínima 3 meses',
+                            'highlighted' => false,
+                        ],
+                    ],
+                    'footnote' => 'Con cualquiera de estas tarjetas estás contribuyendo al desarrollo del Centro de Budismo Kadampa Nagaryhuna. ¡Todos son bienvenidos!',
+                    'cta_label' => 'Inscribite al Abono Mensual',
+                    'cta_url' => 'https://wa.me/5491166633921',
+                ],
+            ],
+            [
+                'type' => 'figure',
+                'key' => 'que-incluye',
+                'content' => [
+                    'heading' => '¿Qué incluye?',
+                    'image' => 'abonos/que-incluye.jpg',
+                    'caption' => null,
+                ],
+            ],
+        ],
+    ],
+
 ];

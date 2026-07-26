@@ -88,6 +88,13 @@ class SectionController extends Controller
                     ));
                     break;
 
+                case 'plans':
+                    $content[$key] = array_values(array_filter(
+                        $content[$key] ?? [],
+                        fn ($plan) => trim((string) ($plan['name'] ?? '')) !== '' || trim((string) ($plan['price'] ?? '')) !== '',
+                    ));
+                    break;
+
                 case 'faq_picker':
                     $content[$key] = array_values(array_map('intval', $content[$key] ?? []));
                     break;

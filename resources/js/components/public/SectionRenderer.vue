@@ -5,10 +5,12 @@ import ClassInfoSection from '@/components/public/sections/ClassInfoSection.vue'
 import EventListSection from '@/components/public/sections/EventListSection.vue';
 import EventStripSection from '@/components/public/sections/EventStripSection.vue';
 import FaqSection from '@/components/public/sections/FaqSection.vue';
+import FigureSection from '@/components/public/sections/FigureSection.vue';
 import GallerySection from '@/components/public/sections/GallerySection.vue';
 import HeroSection from '@/components/public/sections/HeroSection.vue';
 import MapSection from '@/components/public/sections/MapSection.vue';
 import PageHeaderSection from '@/components/public/sections/PageHeaderSection.vue';
+import PricingSection from '@/components/public/sections/PricingSection.vue';
 import QuoteSection from '@/components/public/sections/QuoteSection.vue';
 import TextBlockSection from '@/components/public/sections/TextBlockSection.vue';
 import TextImageSection from '@/components/public/sections/TextImageSection.vue';
@@ -32,6 +34,8 @@ const components: Record<string, Component> = {
     bullet_list: BulletListSection,
     gallery: GallerySection,
     class_info: ClassInfoSection,
+    pricing: PricingSection,
+    figure: FigureSection,
     event_strip: EventStripSection,
     event_list: EventListSection,
     map: MapSection,

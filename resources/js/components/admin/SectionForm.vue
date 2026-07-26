@@ -5,6 +5,7 @@ import ImageField from '@/components/admin/fields/ImageField.vue';
 import ImagesField from '@/components/admin/fields/ImagesField.vue';
 import ItemsField from '@/components/admin/fields/ItemsField.vue';
 import LinksField from '@/components/admin/fields/LinksField.vue';
+import PlansField from '@/components/admin/fields/PlansField.vue';
 import SelectField from '@/components/admin/fields/SelectField.vue';
 import TextareaField from '@/components/admin/fields/TextareaField.vue';
 import TextField from '@/components/admin/fields/TextField.vue';
@@ -67,6 +68,13 @@ defineProps<{
 
             <ItemsField
                 v-else-if="field.type === 'items'"
+                v-model="content[field.key]"
+                :label="field.label"
+                :error="errors[`content.${field.key}`]"
+            />
+
+            <PlansField
+                v-else-if="field.type === 'plans'"
                 v-model="content[field.key]"
                 :label="field.label"
                 :error="errors[`content.${field.key}`]"

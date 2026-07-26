@@ -96,39 +96,67 @@ class ContentSeeder extends Seeder
     private function seedPages(array $faqIds): void
     {
         foreach (require database_path('seeders/data/content.php') as $slug => $pageData) {
-            $page = Page::updateOrCreate(
-                ['slug' => $slug],
+            $this->upsertPage($slug, $pageData, $faqIds);
+        }
+    }
+
+    /**
+     * Seed (or refresh) a single page by slug without touching the others.
+     * Used by targeted seeders (e.g. AbonosSeeder) so a production deploy can
+     * add one page without overwriting the owner's edits on the rest.
+     */
+    public function seedSinglePage(string $slug): void
+    {
+        $this->copyImages();
+
+        $pages = require database_path('seeders/data/content.php');
+
+        if (! isset($pages[$slug])) {
+            return;
+        }
+
+        $faqIds = Faq::orderBy('position')->pluck('id')->values()->all();
+
+        $this->upsertPage($slug, $pages[$slug], $faqIds);
+    }
+
+    /**
+     * @param  array<int, int>  $faqIds
+     */
+    private function upsertPage(string $slug, array $pageData, array $faqIds): void
+    {
+        $page = Page::updateOrCreate(
+            ['slug' => $slug],
+            [
+                'title' => $pageData['title'],
+                'menu_label' => $pageData['menu_label'],
+                'menu_order' => $pageData['menu_order'],
+                'meta_description' => $pageData['meta_description'] ?? null,
+                'visible' => true,
+            ],
+        );
+
+        $position = 0;
+
+        foreach ($pageData['sections'] as $sectionData) {
+            // The resources block lives in the global footer, not as a home section.
+            if ($slug === 'home' && $sectionData['key'] === 'recursos') {
+                $this->seedFooterResources($sectionData['content']['cards'] ?? []);
+
+                continue;
+            }
+
+            $content = $this->prepareContent($sectionData['type'], $sectionData['content'], $faqIds);
+
+            Section::updateOrCreate(
+                ['page_id' => $page->id, 'key' => $sectionData['key']],
                 [
-                    'title' => $pageData['title'],
-                    'menu_label' => $pageData['menu_label'],
-                    'menu_order' => $pageData['menu_order'],
-                    'meta_description' => $pageData['meta_description'] ?? null,
+                    'type' => $sectionData['type'],
+                    'position' => ++$position,
                     'visible' => true,
+                    'content' => $content,
                 ],
             );
-
-            $position = 0;
-
-            foreach ($pageData['sections'] as $sectionData) {
-                // The resources block lives in the global footer, not as a home section.
-                if ($slug === 'home' && $sectionData['key'] === 'recursos') {
-                    $this->seedFooterResources($sectionData['content']['cards'] ?? []);
-
-                    continue;
-                }
-
-                $content = $this->prepareContent($sectionData['type'], $sectionData['content'], $faqIds);
-
-                Section::updateOrCreate(
-                    ['page_id' => $page->id, 'key' => $sectionData['key']],
-                    [
-                        'type' => $sectionData['type'],
-                        'position' => ++$position,
-                        'visible' => true,
-                        'content' => $content,
-                    ],
-                );
-            }
         }
     }
 

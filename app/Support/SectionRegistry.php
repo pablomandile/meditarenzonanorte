@@ -97,6 +97,25 @@ class SectionRegistry
                 ['key' => 'image', 'type' => 'image', 'label' => 'Imagen'],
             ],
         ],
+        'figure' => [
+            'label' => 'Imagen destacada',
+            'fields' => [
+                ['key' => 'heading', 'type' => 'text', 'label' => 'Título'],
+                ['key' => 'image', 'type' => 'image', 'label' => 'Imagen'],
+                ['key' => 'caption', 'type' => 'textarea', 'label' => 'Texto al pie (opcional)'],
+            ],
+        ],
+        'pricing' => [
+            'label' => 'Planes / Abonos',
+            'fields' => [
+                ['key' => 'heading', 'type' => 'text', 'label' => 'Título'],
+                ['key' => 'intro', 'type' => 'textarea', 'label' => 'Introducción'],
+                ['key' => 'plans', 'type' => 'plans', 'label' => 'Planes / tarjetas'],
+                ['key' => 'footnote', 'type' => 'textarea', 'label' => 'Nota al pie'],
+                ['key' => 'cta_label', 'type' => 'text', 'label' => 'Texto del botón'],
+                ['key' => 'cta_url', 'type' => 'url', 'label' => 'URL del botón'],
+            ],
+        ],
         'event_strip' => [
             'label' => 'Eventos destacados (home)',
             'fields' => [
@@ -181,6 +200,15 @@ class SectionRegistry
                 'items' => [
                     $rules["content.$key"] = ['nullable', 'array', 'max:24'],
                     $rules["content.$key.*"] = ['nullable', 'string', 'max:500'],
+                ],
+                'plans' => [
+                    $rules["content.$key"] = ['nullable', 'array', 'max:6'],
+                    $rules["content.$key.*.name"] = ['nullable', 'string', 'max:120'],
+                    $rules["content.$key.*.price"] = ['nullable', 'string', 'max:60'],
+                    $rules["content.$key.*.period"] = ['nullable', 'string', 'max:60'],
+                    $rules["content.$key.*.features"] = ['nullable', 'string', 'max:2000'],
+                    $rules["content.$key.*.note"] = ['nullable', 'string', 'max:255'],
+                    $rules["content.$key.*.highlighted"] = ['nullable', 'boolean'],
                 ],
                 'images' => [
                     $rules["content.$key"] = ['nullable', 'array', 'max:24'],
