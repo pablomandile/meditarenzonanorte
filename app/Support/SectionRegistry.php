@@ -97,6 +97,17 @@ class SectionRegistry
                 ['key' => 'image', 'type' => 'image', 'label' => 'Imagen'],
             ],
         ],
+        'person' => [
+            'label' => 'Maestro / persona',
+            'fields' => [
+                ['key' => 'role', 'type' => 'text', 'label' => 'Rol (ej. Fundador, Directora)'],
+                ['key' => 'name', 'type' => 'text', 'label' => 'Nombre'],
+                ['key' => 'subtitle', 'type' => 'text', 'label' => 'Cargo / subtítulo'],
+                ['key' => 'body', 'type' => 'textarea', 'label' => 'Biografía'],
+                ['key' => 'image', 'type' => 'image', 'label' => 'Foto'],
+                ['key' => 'image_side', 'type' => 'select', 'label' => 'Lado de la foto', 'options' => ['left' => 'Izquierda', 'right' => 'Derecha']],
+            ],
+        ],
         'figure' => [
             'label' => 'Imagen destacada',
             'fields' => [

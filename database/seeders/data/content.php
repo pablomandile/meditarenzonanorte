@@ -482,6 +482,54 @@ return [
                 ],
             ],
             [
+                'type' => 'person',
+                'key' => 'fundador',
+                'content' => [
+                    'role' => 'Fundador',
+                    'name' => 'Venerable Gueshe Kelsang Gyatso Rimpoché',
+                    'subtitle' => 'Maestro de meditación reconocido mundialmente',
+                    'body' => "El fundador del Budismo Kadampa Moderno es el venerable Gueshe Kelsang Gyatso, maestro de meditación mundialmente reconocido y que sostiene la esencia de las enseñanzas de Buda en su corazón.\n\nEl venerable Gueshela transmite esta sabiduría profunda y compasión a la gente del mundo moderno en modos muy prácticos a través de los métodos altamente accesibles del budismo kadampa moderno que él mismo presentó.",
+                    'image' => 'maestros/fundador-gueshe-kelsang-gyatso.jpg',
+                    'image_side' => 'left',
+                ],
+            ],
+            [
+                'type' => 'person',
+                'key' => 'directora',
+                'content' => [
+                    'role' => 'Directora',
+                    'name' => 'Guenla Dekyong',
+                    'subtitle' => 'Directora espiritual general',
+                    'body' => "Ha sido estudiante del venerable Gueshela durante más de treinta años, entrenándose bajo su guía en todos los aspectos del Dharma Kadam.\n\nGuenla Dekyong enseña en festivales kadampa por todo el mundo y es maestra residente del Centro de Meditación Kadampa Manjushri en Reino Unido.",
+                    'image' => 'maestros/directora-guenla-dekyong.jpg',
+                    'image_side' => 'right',
+                ],
+            ],
+            [
+                'type' => 'person',
+                'key' => 'subdirector',
+                'content' => [
+                    'role' => 'Subdirector',
+                    'name' => 'Guenla Jampa',
+                    'subtitle' => 'Subdirector espiritual general',
+                    'body' => "Es muy admirado por su afectuosa personalidad y sus claras e inspiradoras enseñanzas.\n\nGuenla Jampa enseña en festivales kadampa por todo el mundo y es maestro residente del Centro Internacional de Retiros de Gran Cañón, en Arizona, EEUU.",
+                    'image' => 'maestros/subdirector-guenla-jampa.jpg',
+                    'image_side' => 'left',
+                ],
+            ],
+            [
+                'type' => 'person',
+                'key' => 'directora-argentina',
+                'content' => [
+                    'role' => 'Directora en Argentina',
+                    'name' => 'Guen Kelsang Rinchung',
+                    'subtitle' => 'Directora espiritual nacional en Argentina y Uruguay · Maestra residente del CMK Argentina',
+                    'body' => "Desde el 2004 ha estudiado bajo la guía del venerable Gueshe Kelsang Gyatso Rimpoché.\n\nGuen Rinchung presenta las enseñanzas de Buda con un estilo amoroso y alegre, transmitiéndolas de manera práctica y muy sencilla. Con su ejemplo de amor y sabiduría, inspira a sus estudiantes a practicar el Dharma en sus vidas cotidianas, mostrándonos el camino que nos conduce hacia la felicidad verdadera.",
+                    'image' => 'maestros/directora-argentina-guen-rinchung.jpg',
+                    'image_side' => 'right',
+                ],
+            ],
+            [
                 'type' => 'text_image',
                 'key' => 'maestro',
                 'content' => [

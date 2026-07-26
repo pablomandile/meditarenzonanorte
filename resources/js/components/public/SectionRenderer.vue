@@ -10,6 +10,7 @@ import GallerySection from '@/components/public/sections/GallerySection.vue';
 import HeroSection from '@/components/public/sections/HeroSection.vue';
 import MapSection from '@/components/public/sections/MapSection.vue';
 import PageHeaderSection from '@/components/public/sections/PageHeaderSection.vue';
+import PersonSection from '@/components/public/sections/PersonSection.vue';
 import PricingSection from '@/components/public/sections/PricingSection.vue';
 import QuoteSection from '@/components/public/sections/QuoteSection.vue';
 import TextBlockSection from '@/components/public/sections/TextBlockSection.vue';
@@ -36,6 +37,7 @@ const components: Record<string, Component> = {
     class_info: ClassInfoSection,
     pricing: PricingSection,
     figure: FigureSection,
+    person: PersonSection,
     event_strip: EventStripSection,
     event_list: EventListSection,
     map: MapSection,
