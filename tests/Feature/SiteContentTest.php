@@ -33,7 +33,9 @@ class SiteContentTest extends TestCase
 
     public function test_all_public_pages_render_with_their_sections(): void
     {
-        $this->get('/')->assertOk()->assertSee('Meditación Kadampa Rosario');
+        // Fragmento sin acentos y propio del contenido de la home: Inertia escapa
+        // los acentos en el JSON y el <title> depende de APP_NAME (distinto en CI).
+        $this->get('/')->assertOk()->assertSee('Actividades semanales');
 
         foreach (['clases-semanales', 'eventos-especiales', 'gratis', 'quienes-somos', 'voluntariado'] as $slug) {
             $this->get("/$slug")->assertOk();
