@@ -36,7 +36,14 @@ function submit() {
     }).post(route('admin.settings.update'), {
         forceFormData: true,
         preserveScroll: true,
-        onSuccess: () => (form.files = {}),
+        onSuccess: () => {
+            // Re-sync with the values the server just persisted so the logo and
+            // footer images refresh in the panel without needing a page reload.
+            form.files = {};
+            form.logo_path = props.settings.logo_path ?? null;
+            form.footer_resources = JSON.parse(JSON.stringify(props.settings.footer_resources ?? []));
+            form.defaults();
+        },
     });
 }
 

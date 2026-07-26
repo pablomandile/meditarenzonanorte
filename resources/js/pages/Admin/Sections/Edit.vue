@@ -36,7 +36,13 @@ function submit() {
     form.post(route('admin.sections.update', props.section.id), {
         forceFormData: true,
         preserveScroll: true,
-        onSuccess: () => (form.files = {}),
+        onSuccess: () => {
+            // Re-sync the form with the values the server just persisted so
+            // image previews (and any normalized content) refresh without a reload.
+            form.files = {};
+            form.content = JSON.parse(JSON.stringify(props.section.content ?? {}));
+            form.defaults();
+        },
     });
 }
 </script>
