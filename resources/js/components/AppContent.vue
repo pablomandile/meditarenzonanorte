@@ -12,7 +12,9 @@ const className = computed(() => props.class);
 </script>
 
 <template>
-    <SidebarInset v-if="props.variant === 'sidebar'" :class="className">
+    <!-- min-w-0 evita que el área de contenido (flex-1) crezca con su contenido
+         más ancho y genere scroll horizontal en mobile. -->
+    <SidebarInset v-if="props.variant === 'sidebar'" :class="['min-w-0', className]">
         <slot />
     </SidebarInset>
     <main v-else class="mx-auto flex h-full w-full max-w-7xl flex-1 flex-col gap-4 rounded-xl" :class="className">

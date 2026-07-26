@@ -52,49 +52,53 @@ function destroy(event: EventData) {
                         <div
                             v-for="event in events"
                             :key="event.id"
-                            class="flex items-center gap-4 px-4 py-3"
+                            class="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:gap-4"
                             :class="{ 'opacity-50': !event.visible }"
                         >
-                            <img
-                                v-if="event.image_path"
-                                :src="img(event.image_path)"
-                                alt=""
-                                class="h-14 w-14 rounded-md border object-cover"
-                            />
-                            <div v-else class="h-14 w-14 rounded-md border border-dashed"></div>
+                            <div class="flex min-w-0 flex-1 items-center gap-3">
+                                <img
+                                    v-if="event.image_path"
+                                    :src="img(event.image_path)"
+                                    alt=""
+                                    class="h-14 w-14 shrink-0 rounded-md border object-cover"
+                                />
+                                <div v-else class="h-14 w-14 shrink-0 rounded-md border border-dashed"></div>
 
-                            <div class="min-w-0 flex-1">
-                                <p class="truncate font-medium">{{ event.title }}</p>
-                                <p class="text-sm text-muted-foreground">{{ event.date_text }}</p>
+                                <div class="min-w-0">
+                                    <p class="truncate font-medium">{{ event.title }}</p>
+                                    <p class="truncate text-sm text-muted-foreground">{{ event.date_text }}</p>
+                                </div>
                             </div>
 
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                :class="{ 'text-brand-sky': event.show_on_home }"
-                                :title="event.show_on_home ? 'Quitar del inicio' : 'Destacar en el inicio'"
-                                @click="toggleHome(event.id)"
-                            >
-                                <Home class="h-4 w-4" :class="event.show_on_home ? 'fill-current' : ''" />
-                            </Button>
+                            <div class="flex shrink-0 items-center justify-end gap-1">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    :class="{ 'text-brand-sky': event.show_on_home }"
+                                    :title="event.show_on_home ? 'Quitar del inicio' : 'Destacar en el inicio'"
+                                    @click="toggleHome(event.id)"
+                                >
+                                    <Home class="h-4 w-4" :class="event.show_on_home ? 'fill-current' : ''" />
+                                </Button>
 
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                :title="event.visible ? 'Ocultar' : 'Mostrar'"
-                                @click="toggle(event.id)"
-                            >
-                                <Eye v-if="event.visible" class="h-4 w-4" />
-                                <EyeOff v-else class="h-4 w-4 text-red-500" />
-                            </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    :title="event.visible ? 'Ocultar' : 'Mostrar'"
+                                    @click="toggle(event.id)"
+                                >
+                                    <Eye v-if="event.visible" class="h-4 w-4" />
+                                    <EyeOff v-else class="h-4 w-4 text-red-500" />
+                                </Button>
 
-                            <Button as-child size="sm" variant="outline">
-                                <Link :href="`/admin/events/${event.id}/edit`"><Pencil class="h-4 w-4" /></Link>
-                            </Button>
+                                <Button as-child size="sm" variant="outline">
+                                    <Link :href="`/admin/events/${event.id}/edit`"><Pencil class="h-4 w-4" /></Link>
+                                </Button>
 
-                            <Button variant="ghost" size="sm" class="text-red-600" title="Eliminar" @click="destroy(event)">
-                                <Trash2 class="h-4 w-4" />
-                            </Button>
+                                <Button variant="ghost" size="sm" class="text-red-600" title="Eliminar" @click="destroy(event)">
+                                    <Trash2 class="h-4 w-4" />
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </CardContent>
