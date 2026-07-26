@@ -715,6 +715,15 @@ return [
         'meta_description' => 'Programa Fundamental (PF): estudio en profundidad del budismo mahayana, sus beneficios y el libro que estamos estudiando, Compasión Universal.',
         'sections' => [
             [
+                'type' => 'hero',
+                'key' => 'banner',
+                'content' => [
+                    'image' => 'programa-fundamental/encabezado.jpg',
+                    'heading' => null,
+                    'subheading' => null,
+                ],
+            ],
+            [
                 'type' => 'page_header',
                 'key' => 'titulo',
                 'content' => [
