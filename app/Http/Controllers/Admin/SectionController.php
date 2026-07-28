@@ -10,6 +10,7 @@ use App\Support\ImageStorage;
 use App\Support\SectionRegistry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -104,6 +105,82 @@ class SectionController extends Controller
         $section->update(['content' => $content]);
 
         return back()->with('success', 'Sección guardada.');
+    }
+
+    /**
+     * Clones a section right below the original, hidden so the public page does
+     * not show it twice until the copy is edited and made visible.
+     */
+    public function duplicate(Section $section): RedirectResponse
+    {
+        DB::transaction(function () use ($section) {
+            Section::where('page_id', $section->page_id)
+                ->where('position', '>', $section->position)
+                ->increment('position');
+
+            Section::create([
+                'page_id' => $section->page_id,
+                'type' => $section->type,
+                'key' => self::copyKey($section),
+                'position' => $section->position + 1,
+                'visible' => false,
+                'content' => self::duplicateImages($section->type, $section->content ?? []),
+            ]);
+        });
+
+        return back()->with('success', 'Sección clonada. La copia quedó oculta, justo debajo del original.');
+    }
+
+    /**
+     * "hero" → "hero-copia" → "hero-copia-2". Cloning a copy numbers it from the
+     * original key instead of piling up suffixes.
+     */
+    private static function copyKey(Section $section): string
+    {
+        $base = preg_replace('/-copia(-\d+)?$/', '', $section->key).'-copia';
+        $key = $base;
+        $n = 1;
+
+        while (Section::where('page_id', $section->page_id)->where('key', $key)->exists()) {
+            $key = $base.'-'.++$n;
+        }
+
+        return $key;
+    }
+
+    /**
+     * @param  array<string, mixed>  $content
+     * @return array<string, mixed>
+     */
+    private static function duplicateImages(string $type, array $content): array
+    {
+        foreach (SectionRegistry::fields($type) as $field) {
+            $key = $field['key'];
+
+            switch ($field['type']) {
+                case 'image':
+                    if (isset($content[$key])) {
+                        $content[$key] = ImageStorage::duplicate($content[$key]);
+                    }
+                    break;
+
+                case 'images':
+                    foreach ($content[$key] ?? [] as $i => $path) {
+                        $content[$key][$i] = ImageStorage::duplicate($path);
+                    }
+                    break;
+
+                case 'cards':
+                    foreach ($content[$key] ?? [] as $i => $card) {
+                        if (isset($card['image'])) {
+                            $content[$key][$i]['image'] = ImageStorage::duplicate($card['image']);
+                        }
+                    }
+                    break;
+            }
+        }
+
+        return $content;
     }
 
     public function toggle(Section $section): RedirectResponse

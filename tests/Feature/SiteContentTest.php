@@ -109,6 +109,61 @@ class SiteContentTest extends TestCase
         Storage::disk('public')->assertExists($fresh->content['image']);
     }
 
+    public function test_admin_can_clone_a_section_below_the_original(): void
+    {
+        $admin = $this->admin();
+        $home = Page::where('slug', 'home')->firstOrFail();
+        $section = $home->sections()->where('key', 'fundador')->firstOrFail();
+
+        // Imagen subida desde el panel: la copia debe quedarse con su propio archivo.
+        $this->actingAs($admin)
+            ->put("/admin/sections/{$section->id}", [
+                'content' => $section->content,
+                'files' => ['image' => UploadedFile::fake()->image('original.jpg')],
+            ])
+            ->assertRedirect();
+
+        $original = $section->fresh();
+        $next = $home->sections()->where('position', '>', $original->position)->orderBy('position')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->post("/admin/sections/{$original->id}/duplicate")
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $copy = Section::where('page_id', $home->id)->where('key', 'fundador-copia')->firstOrFail();
+
+        $this->assertFalse($copy->visible);
+        $this->assertEquals($original->type, $copy->type);
+        $this->assertEquals($original->content['heading'], $copy->content['heading']);
+        $this->assertEquals($original->position + 1, $copy->position);
+        $this->assertEquals($next->position + 1, $next->fresh()->position);
+
+        // Oculta no cambia la home; al mostrarla el bloque aparece dos veces.
+        $before = substr_count($this->get('/')->getContent(), 'El fundador');
+        $this->assertGreaterThan(0, $before);
+
+        $copy->update(['visible' => true]);
+        $this->assertEquals($before * 2, substr_count($this->get('/')->getContent(), 'El fundador'));
+
+        // El archivo se duplicó: reemplazarlo en la copia no rompe la original.
+        $this->assertNotEquals($original->content['image'], $copy->content['image']);
+        Storage::disk('public')->assertExists($copy->content['image']);
+
+        $this->actingAs($admin)
+            ->put("/admin/sections/{$copy->id}", [
+                'content' => $copy->content,
+                'files' => ['image' => UploadedFile::fake()->image('reemplazo.jpg')],
+            ])
+            ->assertRedirect();
+
+        Storage::disk('public')->assertExists($original->fresh()->content['image']);
+
+        // Clonar una copia numera desde la key original en vez de encadenar sufijos.
+        $this->actingAs($admin)->post("/admin/sections/{$copy->id}/duplicate")->assertRedirect();
+        $this->assertDatabaseHas('sections', ['page_id' => $home->id, 'key' => 'fundador-copia-2']);
+    }
+
     public function test_section_update_rejects_oversized_image(): void
     {
         $admin = $this->admin();

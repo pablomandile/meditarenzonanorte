@@ -16,6 +16,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::get('sections/{section}/edit', [SectionController::class, 'edit'])->name('sections.edit');
     Route::put('sections/{section}', [SectionController::class, 'update'])->name('sections.update');
+    Route::post('sections/{section}/duplicate', [SectionController::class, 'duplicate'])->name('sections.duplicate');
     Route::patch('sections/{section}/toggle', [SectionController::class, 'toggle'])->name('sections.toggle');
     Route::patch('sections/{section}/move', [SectionController::class, 'move'])->name('sections.move');
 

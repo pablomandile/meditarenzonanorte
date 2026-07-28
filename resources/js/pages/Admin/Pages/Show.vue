@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ArrowDown, ArrowUp, Eye, EyeOff, Pencil } from 'lucide-vue-next';
+import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, Pencil } from 'lucide-vue-next';
 
 const props = defineProps<{
     page: { id: number; slug: string; title: string };
@@ -29,6 +29,14 @@ function toggle(id: number) {
 
 function move(id: number, direction: 'up' | 'down') {
     router.patch(route('admin.sections.move', id), { direction }, { preserveScroll: true });
+}
+
+function duplicate(section: { id: number; title: string | null; type_label: string }) {
+    const name = section.title || section.type_label;
+
+    if (confirm(`¿Clonar "${name}"? La copia se agrega justo debajo y queda oculta hasta que la muestres.`)) {
+        router.post(route('admin.sections.duplicate', section.id), {}, { preserveScroll: true });
+    }
 }
 </script>
 
@@ -93,6 +101,11 @@ function move(id: number, direction: 'up' | 'down') {
                                 <Eye v-if="section.visible" class="h-4 w-4" />
                                 <EyeOff v-else class="h-4 w-4 text-red-500" />
                                 <span class="ml-1.5 hidden sm:inline">{{ section.visible ? 'Visible' : 'Oculta' }}</span>
+                            </Button>
+
+                            <Button variant="ghost" size="sm" title="Clonar sección" @click="duplicate(section)">
+                                <Copy class="h-4 w-4" />
+                                <span class="ml-1.5 hidden sm:inline">Clonar</span>
                             </Button>
 
                             <Button as-child size="sm" variant="outline">

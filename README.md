@@ -39,12 +39,13 @@ Con Laragon el sitio queda disponible en `http://meditazn.test`. Alternativa: `p
 - Usuario sembrado: `admin@meditarenrosario.org` / `password` — **cambiá la contraseña** desde el menú del usuario → Configuración → Contraseña. (En producción ya se cambió.)
 - El registro público está deshabilitado: cualquier usuario autenticado es administrador. El panel y las páginas de auth están **en español**.
 - Al guardar una sección o los ajustes, la **vista previa de las imágenes se refresca automáticamente** (sin recargar la página).
+- **Clonar una sección** copia su contenido a una sección nueva del mismo tipo, ubicada justo debajo del original y **oculta** (para que la página pública no muestre el bloque duplicado hasta terminar de editarla). La key de la copia es `<key>-copia`, `<key>-copia-2`… y las imágenes subidas desde el panel se duplican en disco, así reemplazar la foto de la copia no afecta al original. Las imágenes sembradas (`seed/…`) se comparten, como ya hace el resto del sitio.
 
 Qué se puede administrar:
 
 | Sección del panel | Permite |
 |---|---|
-| **Páginas** | Ver las 8 páginas → editar cada sección (textos, imágenes, enlaces, planes, personas…), ocultar/mostrar secciones y reordenarlas con flechas. |
+| **Páginas** | Ver las 8 páginas → editar cada sección (textos, imágenes, enlaces, planes, personas…), ocultar/mostrar secciones, reordenarlas con flechas y **clonarlas**. |
 | **Eventos** | CRUD de eventos especiales, con afiche, fecha, precio y enlace de inscripción. Toggle "destacar en inicio" (strip *próximamente* de la home) y visible/oculto. Si hay un solo evento destacado se muestra grande y centrado. |
 | **Preguntas frecuentes** | Pool global de FAQs compartido entre páginas: editar una vez, se actualiza en todas. Cada sección FAQ elige qué preguntas muestra. |
 | **Ajustes del sitio** | Logo, teléfono, WhatsApp, email, Instagram, dirección y los recursos (libros) del pie de página. |
