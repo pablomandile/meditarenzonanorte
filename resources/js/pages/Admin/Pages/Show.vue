@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useConfirm } from '@/composables/useConfirm';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, Pencil } from 'lucide-vue-next';
@@ -23,6 +24,8 @@ const breadcrumbs = [
     { title: props.page.title, href: `/admin/pages/${props.page.id}` },
 ];
 
+const { confirm } = useConfirm();
+
 function toggle(id: number) {
     router.patch(route('admin.sections.toggle', id), {}, { preserveScroll: true });
 }
@@ -31,10 +34,16 @@ function move(id: number, direction: 'up' | 'down') {
     router.patch(route('admin.sections.move', id), { direction }, { preserveScroll: true });
 }
 
-function duplicate(section: { id: number; title: string | null; type_label: string }) {
+async function duplicate(section: { id: number; title: string | null; type_label: string }) {
     const name = section.title || section.type_label;
 
-    if (confirm(`¿Clonar "${name}"? La copia se agrega justo debajo y queda oculta hasta que la muestres.`)) {
+    const accepted = await confirm({
+        title: 'Clonar sección',
+        description: `Se agrega una copia de “${name}” justo debajo, oculta hasta que la muestres.`,
+        confirmLabel: 'Clonar',
+    });
+
+    if (accepted) {
         router.post(route('admin.sections.duplicate', section.id), {}, { preserveScroll: true });
     }
 }
@@ -48,9 +57,7 @@ function duplicate(section: { id: number; title: string | null; type_label: stri
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <div>
                     <h1 class="text-xl font-semibold">{{ page.title }}</h1>
-                    <p class="text-sm text-muted-foreground">
-                        Ordená, ocultá o editá las secciones. Los cambios se ven al instante en el sitio.
-                    </p>
+                    <p class="text-sm text-muted-foreground">Ordená, ocultá o editá las secciones. Los cambios se ven al instante en el sitio.</p>
                 </div>
                 <Button as-child variant="outline">
                     <a :href="page.slug === 'home' ? '/' : `/${page.slug}`" target="_blank">Ver página</a>
@@ -109,9 +116,7 @@ function duplicate(section: { id: number; title: string | null; type_label: stri
                             </Button>
 
                             <Button as-child size="sm" variant="outline">
-                                <Link :href="`/admin/sections/${section.id}/edit`">
-                                    <Pencil class="mr-1 h-4 w-4" /> Editar
-                                </Link>
+                                <Link :href="`/admin/sections/${section.id}/edit`"> <Pencil class="mr-1 h-4 w-4" /> Editar </Link>
                             </Button>
                         </div>
                     </div>

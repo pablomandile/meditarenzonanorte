@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useConfirm } from '@/composables/useConfirm';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { ArrowDown, ArrowUp, ChevronDown, LoaderCircle, Plus, Trash2 } from 'lucide-vue-next';
@@ -13,6 +14,8 @@ type Faq = { id: number; question: string; answer: string; position: number; vis
 const props = defineProps<{ faqs: Faq[] }>();
 
 const breadcrumbs = [{ title: 'Preguntas frecuentes', href: '/admin/faqs' }];
+
+const { confirm } = useConfirm();
 
 const open = reactive<Record<number, boolean>>({});
 const drafts = reactive<Record<number, { question: string; answer: string; visible: boolean; saving: boolean }>>({});
@@ -38,8 +41,15 @@ function move(id: number, direction: 'up' | 'down') {
     router.patch(route('admin.faqs.move', id), { direction }, { preserveScroll: true });
 }
 
-function destroy(faq: Faq) {
-    if (confirm(`¿Eliminar la pregunta "${faq.question}"? Se quitará de todas las páginas que la muestran.`)) {
+async function destroy(faq: Faq) {
+    const accepted = await confirm({
+        title: 'Eliminar pregunta',
+        description: `“${faq.question}” se quita de todas las páginas que la muestran. No se puede deshacer.`,
+        confirmLabel: 'Eliminar',
+        destructive: true,
+    });
+
+    if (accepted) {
         router.delete(route('admin.faqs.destroy', faq.id), { preserveScroll: true });
     }
 }
@@ -146,9 +156,7 @@ function store() {
                         ></textarea>
                         <p v-if="createForm.errors.answer" class="text-sm text-red-600">{{ createForm.errors.answer }}</p>
                     </div>
-                    <Button class="w-fit" :disabled="createForm.processing" @click="store">
-                        <Plus class="mr-1 h-4 w-4" /> Agregar
-                    </Button>
+                    <Button class="w-fit" :disabled="createForm.processing" @click="store"> <Plus class="mr-1 h-4 w-4" /> Agregar </Button>
                 </CardContent>
             </Card>
         </div>

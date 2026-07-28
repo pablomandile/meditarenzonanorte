@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useConfirm } from '@/composables/useConfirm';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { img, type EventData } from '@/lib/site';
 import { Head, Link, router } from '@inertiajs/vue3';
@@ -10,6 +11,8 @@ defineProps<{ events: EventData[] }>();
 
 const breadcrumbs = [{ title: 'Eventos', href: '/admin/events' }];
 
+const { confirm } = useConfirm();
+
 function toggle(id: number) {
     router.patch(route('admin.events.toggle', id), {}, { preserveScroll: true });
 }
@@ -18,8 +21,15 @@ function toggleHome(id: number) {
     router.patch(route('admin.events.toggle-home', id), {}, { preserveScroll: true });
 }
 
-function destroy(event: EventData) {
-    if (confirm(`¿Eliminar el evento "${event.title}"? Esta acción no se puede deshacer.`)) {
+async function destroy(event: EventData) {
+    const accepted = await confirm({
+        title: 'Eliminar evento',
+        description: `“${event.title}” se borra del sitio y esta acción no se puede deshacer.`,
+        confirmLabel: 'Eliminar',
+        destructive: true,
+    });
+
+    if (accepted) {
         router.delete(route('admin.events.destroy', event.id), { preserveScroll: true });
     }
 }
@@ -33,9 +43,7 @@ function destroy(event: EventData) {
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <div>
                     <h1 class="text-xl font-semibold">Eventos especiales</h1>
-                    <p class="text-sm text-muted-foreground">
-                        Se muestran en la página Eventos especiales y, si los destacás, en el inicio.
-                    </p>
+                    <p class="text-sm text-muted-foreground">Se muestran en la página Eventos especiales y, si los destacás, en el inicio.</p>
                 </div>
                 <Button as-child>
                     <Link href="/admin/events/create"><Plus class="mr-1 h-4 w-4" /> Nuevo evento</Link>
@@ -81,12 +89,7 @@ function destroy(event: EventData) {
                                     <Home class="h-4 w-4" :class="event.show_on_home ? 'fill-current' : ''" />
                                 </Button>
 
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    :title="event.visible ? 'Ocultar' : 'Mostrar'"
-                                    @click="toggle(event.id)"
-                                >
+                                <Button variant="ghost" size="sm" :title="event.visible ? 'Ocultar' : 'Mostrar'" @click="toggle(event.id)">
                                     <Eye v-if="event.visible" class="h-4 w-4" />
                                     <EyeOff v-else class="h-4 w-4 text-red-500" />
                                 </Button>

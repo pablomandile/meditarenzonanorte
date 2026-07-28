@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import type { BreadcrumbItemType } from '@/types';
 import { usePage } from '@inertiajs/vue3';
@@ -30,6 +31,8 @@ watch(
 <template>
     <AppLayout :breadcrumbs="props.breadcrumbs">
         <slot />
+
+        <ConfirmDialog />
 
         <Transition
             enter-active-class="transition duration-200"
