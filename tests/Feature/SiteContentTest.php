@@ -12,6 +12,7 @@ use Database\Seeders\ContentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 class SiteContentTest extends TestCase
@@ -49,9 +50,91 @@ class SiteContentTest extends TestCase
     public function test_hidden_page_returns_404_and_leaves_the_menu(): void
     {
         $page = Page::where('slug', 'voluntariado')->firstOrFail();
+
+        $this->assertContains('voluntariado', $this->navSlugs());
+
         $page->update(['visible' => false]);
 
         $this->get('/voluntariado')->assertNotFound();
+        $this->assertNotContains('voluntariado', $this->navSlugs());
+    }
+
+    /**
+     * Slugs of the nav shared with every page, in menu order.
+     *
+     * @return array<int, string>
+     */
+    private function navSlugs(): array
+    {
+        $nav = [];
+
+        $this->get('/')->assertInertia(function (AssertableInertia $page) use (&$nav) {
+            $nav = collect($page->toArray()['props']['nav'])->pluck('slug')->all();
+        });
+
+        return $nav;
+    }
+
+    public function test_admin_can_hide_a_page_from_the_admin_list(): void
+    {
+        $admin = $this->admin();
+        $page = Page::where('slug', 'abonos')->firstOrFail();
+
+        $this->actingAs($admin)->patch("/admin/pages/{$page->id}/toggle")
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertFalse($page->fresh()->visible);
+        $this->assertNotContains('abonos', $this->navSlugs());
+        $this->get('/abonos')->assertNotFound();
+
+        $this->actingAs($admin)->patch("/admin/pages/{$page->id}/toggle");
+
+        $this->assertTrue($page->fresh()->visible);
+        $this->assertContains('abonos', $this->navSlugs());
+    }
+
+    public function test_admin_can_reorder_pages_and_the_nav_follows(): void
+    {
+        $admin = $this->admin();
+        $clases = Page::where('slug', 'clases-semanales')->firstOrFail();
+        $eventos = Page::where('slug', 'eventos-especiales')->firstOrFail();
+
+        $this->assertSame(['clases-semanales', 'eventos-especiales'], array_slice($this->navSlugs(), 0, 2));
+
+        $this->actingAs($admin)->patch("/admin/pages/{$eventos->id}/move", ['direction' => 'up'])
+            ->assertRedirect();
+
+        $this->assertEquals($clases->menu_order, $eventos->fresh()->menu_order);
+        $this->assertEquals($eventos->menu_order, $clases->fresh()->menu_order);
+        $this->assertSame(['eventos-especiales', 'clases-semanales'], array_slice($this->navSlugs(), 0, 2));
+
+        // The first page in the menu cannot climb any further.
+        $this->actingAs($admin)->patch("/admin/pages/{$eventos->id}/move", ['direction' => 'up']);
+
+        $this->assertSame(['eventos-especiales', 'clases-semanales'], array_slice($this->navSlugs(), 0, 2));
+    }
+
+    public function test_home_page_cannot_be_hidden_or_moved(): void
+    {
+        $admin = $this->admin();
+        $home = Page::where('slug', 'home')->firstOrFail();
+
+        $this->actingAs($admin)->patch("/admin/pages/{$home->id}/toggle")->assertForbidden();
+        $this->actingAs($admin)->patch("/admin/pages/{$home->id}/move", ['direction' => 'down'])->assertForbidden();
+
+        $this->assertTrue($home->fresh()->visible);
+        $this->assertSame(0, $home->fresh()->menu_order);
+    }
+
+    public function test_page_reorder_and_toggle_require_authentication(): void
+    {
+        $page = Page::where('slug', 'abonos')->firstOrFail();
+
+        $this->patch("/admin/pages/{$page->id}/toggle")->assertRedirect('/login');
+        $this->patch("/admin/pages/{$page->id}/move", ['direction' => 'up'])->assertRedirect('/login');
+
+        $this->assertTrue($page->fresh()->visible);
     }
 
     public function test_hidden_section_disappears_from_the_public_page(): void
@@ -64,6 +147,44 @@ class SiteContentTest extends TestCase
         $section->update(['visible' => false]);
 
         $this->get('/')->assertDontSee('Mariel Aguirre');
+    }
+
+    public function test_missing_section_seeder_inserts_the_cover_without_touching_edited_sections(): void
+    {
+        $page = Page::where('slug', 'clases-semanales')->firstOrFail();
+
+        // Estado "producción": la portada todavía no existe y el dueño ya editó
+        // el resto de la página desde el panel.
+        $page->sections()->where('key', 'banner')->delete();
+
+        $edited = $page->sections()->where('key', 'clase-principal')->firstOrFail();
+        $edited->update([
+            'content' => [...$edited->content, 'image' => 'sections/subida-a-mano.png'],
+            'visible' => false,
+            'position' => 7,
+        ]);
+
+        (new ContentSeeder())->seedMissingSection('clases-semanales', 'banner');
+
+        $banner = $page->sections()->where('key', 'banner')->firstOrFail();
+        $titulo = $page->sections()->where('key', 'titulo')->firstOrFail();
+
+        $this->assertSame('hero', $banner->type);
+        $this->assertTrue($banner->visible);
+        $this->assertSame($titulo->position + 1, $banner->position);
+        $this->assertSame('seed/eventos-especiales/vista-julio-rosario-kelsang-panchen7.jpg', $banner->content['image']);
+
+        // La sección editada conserva imagen, visibilidad y su lugar (corrido uno).
+        $edited->refresh();
+        $this->assertSame('sections/subida-a-mano.png', $edited->content['image']);
+        $this->assertFalse($edited->visible);
+        $this->assertSame(8, $edited->position);
+
+        // Repetible: no duplica ni reordena de nuevo.
+        (new ContentSeeder())->seedMissingSection('clases-semanales', 'banner');
+
+        $this->assertSame(1, $page->sections()->where('key', 'banner')->count());
+        $this->assertSame(8, $edited->fresh()->position);
     }
 
     public function test_admin_requires_authentication(): void

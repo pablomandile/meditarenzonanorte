@@ -27,11 +27,17 @@ npm run dev            # o npm run build para producción
 
 Con Laragon el sitio queda disponible en `http://meditazn.test`. Alternativa: `php artisan serve`.
 
-`migrate:fresh --seed` deja el sitio **completo con contenido e imágenes reales**: **8 páginas** con sus secciones, 3 eventos, ~6 FAQs, los ajustes de contacto y un usuario admin. Todo el copy vive en `database/seeders/data/*.php` y las imágenes en `database/seeders/images/`.
+`migrate:fresh --seed` deja el sitio **completo con contenido e imágenes reales**: **9 páginas** con sus secciones, 3 eventos, ~6 FAQs, los ajustes de contacto y un usuario admin. Todo el copy vive en `database/seeders/data/*.php` y las imágenes en `database/seeders/images/`.
 
 ### Páginas
 
-`/` (home), `/clases-semanales`, `/eventos-especiales`, `/gratis`, `/quienes-somos` (incluye los maestros), `/voluntariado`, `/abonos` y `/programa-fundamental`. El menú, el orden y la visibilidad de cada página se administran desde el panel.
+`/` (home), `/clases-semanales`, `/eventos-especiales`, `/gratis`, `/quienes-somos` (incluye los maestros), `/voluntariado`, `/abonos`, `/programa-fundamental` y `/cursos-y-retiros`.
+
+`cursos-y-retiros` nació como clon de `eventos-especiales` (mismas secciones, mismo orden y mismo copy; solo cambian el título de la página y el encabezado del `page_header`).
+
+Desde `/admin/pages` se **ocultan/muestran** las páginas y se **reordenan con flechas**: ese orden es el que adopta la barra de navegación, y una página oculta sale del menú y su URL pasa a responder 404. La página de inicio queda fuera de ambas acciones (es la raíz del sitio y no figura en el menú); el guard también está en el servidor, no solo en los botones.
+
+El título, el slug y la etiqueta del menú siguen definidos en `database/seeders/data/content.php` — el panel no crea ni renombra páginas.
 
 ## Panel de administración
 
@@ -45,7 +51,7 @@ Qué se puede administrar:
 
 | Sección del panel | Permite |
 |---|---|
-| **Páginas** | Ver las 8 páginas → editar cada sección (textos, imágenes, enlaces, planes, personas…), ocultar/mostrar secciones, reordenarlas con flechas y **clonarlas**. |
+| **Páginas** | Listado de las 9 páginas: **ocultar/mostrar** cada una (sale del menú y su URL da 404) y **reordenarlas con flechas** (ese es el orden de la barra nav). Entrando a una página: editar cada sección (textos, imágenes, enlaces, planes, personas…), ocultar/mostrar secciones, reordenarlas con flechas y **clonarlas**. La home no se oculta ni se reordena. |
 | **Eventos** | CRUD de eventos especiales, con afiche, fecha, precio y enlace de inscripción. Toggle "destacar en inicio" (strip *próximamente* de la home) y visible/oculto. Si hay un solo evento destacado se muestra grande y centrado. |
 | **Preguntas frecuentes** | Pool global de FAQs compartido entre páginas: editar una vez, se actualiza en todas. Cada sección FAQ elige qué preguntas muestra. |
 | **Ajustes del sitio** | Logo, teléfono, WhatsApp, email, Instagram, dirección y los recursos (libros) del pie de página. |
@@ -95,15 +101,22 @@ El botón "Continuar con Google" aparece en el login **solo si `GOOGLE_CLIENT_ID
 ## Seeders
 
 - `ContentSeeder` — siembra el sitio completo (todas las páginas, FAQs, eventos, ajustes) desde `database/seeders/data/*.php`. Lo llama `DatabaseSeeder` junto con el usuario admin.
-- **Seeders puntuales** (agregan/actualizan **una sola página** sin pisar el resto del contenido ya editado — pensados para producción):
+- **Seeders puntuales** (tocan **una sola página** sin pisar el resto del contenido ya editado — pensados para producción):
 
   ```bash
   php artisan db:seed --class=AbonosSeeder --force
   php artisan db:seed --class=MaestrosSeeder --force          # página ¿Quienes somos?
   php artisan db:seed --class=ProgramaFundamentalSeeder --force
+  php artisan db:seed --class=CursosYRetirosSeeder --force
+  php artisan db:seed --class=ClasesSemanalesPortadaSeeder --force
   ```
 
-  Todos usan `ContentSeeder::seedSinglePage($slug)`.
+Hay dos primitivos, y la diferencia importa en producción:
+
+| Primitivo | Qué hace | Cuándo |
+|---|---|---|
+| `ContentSeeder::seedSinglePage($slug)` | Upsert de la página **y de todas sus secciones** desde el archivo de datos: reescribe contenido, vuelve a poner `visible = true` y renumera posiciones. **Pisa lo editado desde el panel en esa página.** | Publicar una página nueva, o resetear una a su estado sembrado. Lo usan los 4 primeros seeders. |
+| `ContentSeeder::seedMissingSection($slug, $key)` | Inserta **una sola sección** si esa página todavía no la tiene, justo debajo de la que la precede en el archivo de datos; el resto solo corre una posición. Repetible y no toca nada más. | Agregar un bloque a una página que el dueño ya editó. Lo usa `ClasesSemanalesPortadaSeeder`. |
 
 ## Deploy a producción (Hostinger)
 

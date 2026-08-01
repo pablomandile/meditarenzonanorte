@@ -168,6 +168,16 @@ return [
                 ],
             ],
             [
+                // Misma portada que 'eventos-especiales' y 'cursos-y-retiros'.
+                'type' => 'hero',
+                'key' => 'banner',
+                'content' => [
+                    'image' => 'eventos-especiales/vista-julio-rosario-kelsang-panchen7.jpg',
+                    'heading' => null,
+                    'subheading' => null,
+                ],
+            ],
+            [
                 'type' => 'class_info',
                 'key' => 'clase-principal',
                 'content' => [
@@ -767,6 +777,130 @@ return [
                     'image_side' => 'left',
                     'link_label' => 'Inscribite al Programa Fundamental',
                     'link_url' => 'https://wa.me/5491166633921',
+                ],
+            ],
+        ],
+    ],
+
+    // Clon de 'eventos-especiales': mismas secciones, mismo orden y mismo copy.
+    // Solo cambian el título de la página y el encabezado del page_header.
+    'cursos-y-retiros' => [
+        'title' => 'Cursos y Retiros',
+        'menu_label' => 'Cursos y Retiros',
+        'menu_order' => 8,
+        'meta_description' => 'Cursos y retiros de meditación kadampa: encuentros especiales para profundizar en la práctica, con enseñanzas y meditaciones guiadas.',
+        'sections' => [
+            [
+                'type' => 'page_header',
+                'key' => 'titulo',
+                'content' => [
+                    'heading' => 'CURSOS Y RETIROS',
+                    'intro' => null,
+                    'style' => 'sky',
+                ],
+            ],
+            [
+                'type' => 'hero',
+                'key' => 'banner',
+                'content' => [
+                    'image' => 'eventos-especiales/vista-julio-rosario-kelsang-panchen7.jpg',
+                    'heading' => null,
+                    'subheading' => null,
+                ],
+            ],
+            [
+                'type' => 'event_list',
+                'key' => 'eventos',
+                'content' => [
+                    'heading' => null,
+                    'empty_text' => 'próximamente',
+                ],
+            ],
+            [
+                'type' => 'text_block',
+                'key' => 'bienvenida',
+                'content' => [
+                    'heading' => '¡Todo el mundo es bienvenido!',
+                    'body' => null,
+                    'links' => [],
+                ],
+            ],
+            [
+                'type' => 'text_image',
+                'key' => 'maestro',
+                'content' => [
+                    'heading' => 'Kelsang Panchen',
+                    'body' => "Maestro Principal de Rosario\n\nEs el segundo maestro residente del Centro de Meditación Kadampa Argentina. Encontró las enseñanzas de Buda a los 23 años y al poco tiempo se ordenó como monje kadampa. Realizó su formación como maestro en el ITTP (International Intensive Training Program) en el Templo de Manyushri (Inglaterra) y en el Centro de Meditación Kadampa Barcelona. Sus enseñanzas son cercanas a la gente y de gran calidez. Es reconocido por su serenidad y claridad al transmitir las enseñanzas de Buda. Kelsang Panchen, es un ejemplo muy inspirador.",
+                    'image' => 'shared/K_Panchen.webp',
+                    'image_side' => 'right',
+                    'link_label' => null,
+                    'link_url' => null,
+                ],
+            ],
+            [
+                'type' => 'card_grid',
+                'key' => 'festivales',
+                'content' => [
+                    'heading' => 'NACIONALES E INTERNACIONALES',
+                    'cards' => [
+                        [
+                            'image' => 'shared/Festival-internacional-de-Verano-UK.jpg',
+                            'title' => null,
+                            'text' => null,
+                            'url' => 'https://kadampafestivals.org/es/verano',
+                        ],
+                        [
+                            'image' => 'shared/Festival-internacional-de-otono.jpg',
+                            'title' => null,
+                            'text' => null,
+                            'url' => 'https://kadampafestivals.org/es/otono',
+                        ],
+                        [
+                            'image' => 'shared/Festival-del-Dharma-buenos-aires-2026.jpg',
+                            'title' => null,
+                            'text' => null,
+                            'url' => 'https://meditarenargentina.org/eventos-nacionales/',
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'map',
+                'key' => 'donde-estamos',
+                'content' => [
+                    'heading' => '¿Dónde estamos?',
+                    'query' => 'Meditar en Rosario Cajaraville 173, S2000 Rosario, Santa Fe',
+                ],
+            ],
+            [
+                'type' => 'bullet_list',
+                'key' => 'detalles-clase',
+                'content' => [
+                    'heading' => 'Detalles de las clases',
+                    'intro' => '¿Qué temas se tratan en las sesiones?',
+                    'items' => [
+                        'Técnicas para el aprendizaje de la meditación y profundización en tu experiencia.',
+                        'Meditaciones guiadas en todas las sesiones.',
+                        'Enseñanzas prácticas sobre cómo aplicar la antigua sabiduría de Buda en nuestra ajetreada vida moderna.',
+                        'Aunque el aprendizaje es progresivo, podés sumarte en cualquier momento.',
+                    ],
+                ],
+            ],
+            [
+                'type' => 'text_block',
+                'key' => 'estructura-clase',
+                'content' => [
+                    'heading' => 'Estructura de una sesión',
+                    'body' => "¿Qué esperar de una clase?\n\nMeditación guiada\n\nCada sesión comienza con una meditación en la respiración, para calmar la mente, eliminar las distracciones y cultivar paz interior.\n\nEnseñanza\n\nA continuación, una explicación de los métodos prácticos que provienen de las enseñanzas de Buda para ser felices en nuestro día a día, solucionar nuestros problemas internos y cultivar estados mentales apacibles.\n\nMeditación final\n\nLas sesiones terminan con una segunda meditación basada en las ideas aprendidas y consejos para integrarlos en nuestra vida cotidiana.",
+                    'links' => [],
+                ],
+            ],
+            [
+                'type' => 'faq',
+                'key' => 'faq',
+                'content' => [
+                    'heading' => 'Preguntas frecuententes',
+                    'faq_refs' => [0, 1, 2, 3, 4, 5],
                 ],
             ],
         ],

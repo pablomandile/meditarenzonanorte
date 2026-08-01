@@ -9,6 +9,7 @@ use App\Models\Section;
 use App\Models\Setting;
 use App\Support\SectionRegistry;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 
@@ -118,6 +119,59 @@ class ContentSeeder extends Seeder
         $faqIds = Faq::orderBy('position')->pluck('id')->values()->all();
 
         $this->upsertPage($slug, $pages[$slug], $faqIds);
+    }
+
+    /**
+     * Adds one section from the data file to a page that does not have it yet.
+     * Unlike seedSinglePage() it never rewrites what the owner already edited:
+     * the block is inserted right below the section that precedes it in the data
+     * file, the rest shifts down, and running it again does nothing.
+     */
+    public function seedMissingSection(string $slug, string $key): void
+    {
+        $pages = require database_path('seeders/data/content.php');
+        $page = Page::where('slug', $slug)->first();
+
+        if (! $page || ! isset($pages[$slug])) {
+            return;
+        }
+
+        $sections = $pages[$slug]['sections'];
+        $index = collect($sections)->search(fn ($section) => $section['key'] === $key);
+
+        if ($index === false || Section::where('page_id', $page->id)->where('key', $key)->exists()) {
+            return;
+        }
+
+        $this->copyImages();
+
+        $previousKey = $sections[$index - 1]['key'] ?? null;
+        $previous = $previousKey
+            ? Section::where('page_id', $page->id)->where('key', $previousKey)->first()
+            : null;
+
+        $position = $previous ? $previous->position + 1 : 1;
+
+        $content = $this->prepareContent(
+            $sections[$index]['type'],
+            $sections[$index]['content'],
+            Faq::orderBy('position')->pluck('id')->values()->all(),
+        );
+
+        DB::transaction(function () use ($page, $sections, $index, $key, $position, $content) {
+            Section::where('page_id', $page->id)
+                ->where('position', '>=', $position)
+                ->increment('position');
+
+            Section::create([
+                'page_id' => $page->id,
+                'type' => $sections[$index]['type'],
+                'key' => $key,
+                'position' => $position,
+                'visible' => true,
+                'content' => $content,
+            ]);
+        });
     }
 
     /**

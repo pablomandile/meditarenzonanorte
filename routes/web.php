@@ -13,6 +13,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::get('pages', [AdminPageController::class, 'index'])->name('pages.index');
     Route::get('pages/{page}', [AdminPageController::class, 'show'])->name('pages.show');
+    Route::patch('pages/{page}/toggle', [AdminPageController::class, 'toggle'])->name('pages.toggle');
+    Route::patch('pages/{page}/move', [AdminPageController::class, 'move'])->name('pages.move');
 
     Route::get('sections/{section}/edit', [SectionController::class, 'edit'])->name('sections.edit');
     Route::put('sections/{section}', [SectionController::class, 'update'])->name('sections.update');
