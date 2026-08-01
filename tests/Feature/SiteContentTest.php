@@ -187,6 +187,181 @@ class SiteContentTest extends TestCase
         $this->assertSame(8, $edited->fresh()->position);
     }
 
+    public function test_reordering_cards_changes_their_order_on_the_public_page(): void
+    {
+        $admin = $this->admin();
+        $section = Section::whereHas('page', fn ($q) => $q->where('slug', 'home'))
+            ->where('key', 'actividades-semanales')->firstOrFail();
+
+        $cards = $section->content['cards'];
+        $this->assertGreaterThanOrEqual(2, count($cards));
+
+        [$first, $second] = [$cards[0]['title'], $cards[1]['title']];
+        $this->assertSame([$first, $second], $this->homeCardTitles('actividades-semanales'));
+
+        // El panel manda el array ya reordenado.
+        [$cards[0], $cards[1]] = [$cards[1], $cards[0]];
+
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => [...$section->content, 'cards' => $cards],
+        ])->assertRedirect();
+
+        $fresh = $section->fresh()->content['cards'];
+        $this->assertSame($second, $fresh[0]['title']);
+        $this->assertSame($first, $fresh[1]['title']);
+
+        // Y el orden que recibe el componente público es el nuevo.
+        $this->assertSame([$second, $first], $this->homeCardTitles('actividades-semanales'));
+    }
+
+    /**
+     * Card titles of a home card_grid, in the order CardGridSection.vue renders.
+     *
+     * @return array<int, string>
+     */
+    private function homeCardTitles(string $key): array
+    {
+        $titles = [];
+
+        $this->get('/')->assertInertia(function (AssertableInertia $page) use ($key, &$titles) {
+            $section = collect($page->toArray()['props']['sections'])->firstWhere('key', $key);
+            $titles = collect($section['content']['cards'])->pluck('title')->all();
+        });
+
+        return $titles;
+    }
+
+    public function test_replacing_an_image_after_reordering_cards_deletes_the_right_file(): void
+    {
+        $admin = $this->admin();
+        $section = Section::whereHas('page', fn ($q) => $q->where('slug', 'home'))
+            ->where('key', 'actividades-semanales')->firstOrFail();
+
+        // Cada tarjeta con su propia imagen subida, para que ambas sean borrables.
+        $cards = $section->content['cards'];
+
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => [...$section->content, 'cards' => $cards],
+            'files' => [
+                'cards' => [
+                    0 => ['image' => UploadedFile::fake()->image('primera.jpg', 400, 300)],
+                    1 => ['image' => UploadedFile::fake()->image('segunda.jpg', 400, 300)],
+                ],
+            ],
+        ]);
+
+        $cards = $section->fresh()->content['cards'];
+        [$imageA, $imageB] = [$cards[0]['image'], $cards[1]['image']];
+
+        // Se invierten y, en el mismo guardado, se reemplaza la imagen de la que
+        // quedó primera (la que traía $imageB).
+        [$cards[0], $cards[1]] = [$cards[1], $cards[0]];
+
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => [...$section->content, 'cards' => $cards],
+            'files' => ['cards' => [0 => ['image' => UploadedFile::fake()->image('nueva.jpg', 400, 300)]]],
+        ])->assertRedirect();
+
+        $fresh = $section->fresh()->content['cards'];
+
+        // Se borró la imagen de esa tarjeta, no la que ocupaba antes el índice 0.
+        Storage::disk('public')->assertMissing($imageB);
+        Storage::disk('public')->assertExists($imageA);
+        $this->assertSame($imageA, $fresh[1]['image']);
+        $this->assertNotSame($imageB, $fresh[0]['image']);
+        Storage::disk('public')->assertExists($fresh[0]['image']);
+    }
+
+    public function test_media_library_requires_authentication(): void
+    {
+        $this->get('/admin/media')->assertRedirect('/login');
+    }
+
+    public function test_media_library_lists_uploaded_and_seeded_images(): void
+    {
+        $admin = $this->admin();
+        $section = Section::whereHas('page', fn ($q) => $q->where('slug', 'home'))
+            ->where('key', 'fundador')->firstOrFail();
+
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => $section->content,
+            'files' => ['image' => UploadedFile::fake()->image('recien-subida.jpg', 800, 600)],
+        ]);
+
+        $images = $this->actingAs($admin)->get('/admin/media')->assertOk()->json('images');
+        $paths = array_column($images, 'path');
+
+        $this->assertContains($section->fresh()->content['image'], $paths);
+        $this->assertContains('seed/shared/K_Panchen.webp', $paths);
+
+        // Lo subido va antes que las imágenes sembradas del sitio.
+        $this->assertFalse($images[0]['seeded']);
+    }
+
+    public function test_picking_an_image_from_the_gallery_copies_it_so_two_sections_never_share_the_file(): void
+    {
+        $admin = $this->admin();
+        $source = Section::whereHas('page', fn ($q) => $q->where('slug', 'home'))
+            ->where('key', 'fundador')->firstOrFail();
+        $target = Section::whereHas('page', fn ($q) => $q->where('slug', 'clases-semanales'))
+            ->where('key', 'maestro')->firstOrFail();
+
+        $this->actingAs($admin)->put("/admin/sections/{$source->id}", [
+            'content' => $source->content,
+            'files' => ['image' => UploadedFile::fake()->image('compartida.jpg', 800, 600)],
+        ]);
+
+        $shared = $source->fresh()->content['image'];
+
+        // El panel manda la ruta elegida en content, sin archivo adjunto.
+        $this->actingAs($admin)->put("/admin/sections/{$target->id}", [
+            'content' => [...$target->content, 'image' => $shared],
+        ])->assertRedirect();
+
+        $adopted = $target->fresh()->content['image'];
+
+        $this->assertNotSame($shared, $adopted);
+        $this->assertStringStartsWith('sections/', $adopted);
+        Storage::disk('public')->assertExists($adopted);
+        Storage::disk('public')->assertExists($shared);
+        $this->assertSame($shared, $source->fresh()->content['image']);
+
+        // Y reemplazar la imagen de la copia no borra el archivo del original.
+        $this->actingAs($admin)->put("/admin/sections/{$target->id}", [
+            'content' => $target->fresh()->content,
+            'files' => ['image' => UploadedFile::fake()->image('otra.jpg', 400, 300)],
+        ]);
+
+        Storage::disk('public')->assertExists($shared);
+        Storage::disk('public')->assertMissing($adopted);
+    }
+
+    public function test_picking_a_seeded_image_shares_its_path_instead_of_copying(): void
+    {
+        $admin = $this->admin();
+        $section = Section::whereHas('page', fn ($q) => $q->where('slug', 'clases-semanales'))
+            ->where('key', 'maestro')->firstOrFail();
+
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => [...$section->content, 'image' => 'seed/home/18.jpg'],
+        ])->assertRedirect();
+
+        $this->assertSame('seed/home/18.jpg', $section->fresh()->content['image']);
+    }
+
+    public function test_section_update_rejects_an_image_path_outside_the_gallery_folders(): void
+    {
+        $admin = $this->admin();
+        $section = Section::whereHas('page', fn ($q) => $q->where('slug', 'clases-semanales'))
+            ->where('key', 'maestro')->firstOrFail();
+
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => [...$section->content, 'image' => '../../.env'],
+        ])->assertRedirect();
+
+        $this->assertNull($section->fresh()->content['image']);
+    }
+
     public function test_admin_requires_authentication(): void
     {
         $this->get('/admin/pages')->assertRedirect('/login');

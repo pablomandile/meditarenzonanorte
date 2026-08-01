@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\FaqController;
+use App\Http\Controllers\Admin\MediaController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\SectionController;
 use App\Http\Controllers\Admin\SettingController;
@@ -15,6 +16,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::get('pages/{page}', [AdminPageController::class, 'show'])->name('pages.show');
     Route::patch('pages/{page}/toggle', [AdminPageController::class, 'toggle'])->name('pages.toggle');
     Route::patch('pages/{page}/move', [AdminPageController::class, 'move'])->name('pages.move');
+
+    Route::get('media', [MediaController::class, 'index'])->name('media.index');
 
     Route::get('sections/{section}/edit', [SectionController::class, 'edit'])->name('sections.edit');
     Route::put('sections/{section}', [SectionController::class, 'update'])->name('sections.update');

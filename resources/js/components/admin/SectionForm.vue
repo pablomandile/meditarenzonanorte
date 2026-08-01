@@ -58,6 +58,7 @@ const files = defineModel<Record<string, any>>('files', { required: true });
                 v-model="content[field.key]"
                 v-model:file="files[field.key]"
                 :label="field.label"
+                gallery
                 :error="errors[`content.${field.key}`] ?? errors[`files.${field.key}`]"
             />
 

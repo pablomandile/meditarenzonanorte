@@ -36,17 +36,12 @@ function setFile(index: number, file: File | null) {
 
         <div class="grid gap-4 sm:grid-cols-2">
             <div v-for="(path, i) in model" :key="i" class="relative rounded-lg border p-4">
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    class="absolute right-2 top-2 text-red-600"
-                    @click="remove(i)"
-                >
+                <Button type="button" variant="ghost" size="icon" class="absolute right-2 top-2 text-red-600" @click="remove(i)">
                     <Trash2 class="h-4 w-4" />
                 </Button>
                 <ImageField
                     :label="`Imagen ${i + 1}`"
+                    gallery
                     :model-value="path"
                     :file="files?.[i] ?? null"
                     @update:model-value="model[i] = $event ?? null"
@@ -55,9 +50,7 @@ function setFile(index: number, file: File | null) {
             </div>
         </div>
 
-        <Button type="button" variant="outline" size="sm" class="w-fit" @click="add">
-            <Plus class="mr-1 h-4 w-4" /> Agregar imagen
-        </Button>
+        <Button type="button" variant="outline" size="sm" class="w-fit" @click="add"> <Plus class="mr-1 h-4 w-4" /> Agregar imagen </Button>
         <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
     </div>
 </template>

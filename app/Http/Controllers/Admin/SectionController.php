@@ -47,6 +47,7 @@ class SectionController extends Controller
         $content = $request->validated()['content'] ?? [];
         $files = $request->file('files') ?? [];
         $old = $section->content ?? [];
+        $owned = self::imagePaths($section->type, $old);
 
         foreach (SectionRegistry::fields($section->type) as $field) {
             $key = $field['key'];
@@ -55,6 +56,8 @@ class SectionController extends Controller
                 case 'image':
                     if (isset($files[$key])) {
                         $content[$key] = ImageStorage::replace($files[$key], 'sections', $old[$key] ?? null);
+                    } else {
+                        $content[$key] = ImageStorage::adopt($content[$key] ?? null, $owned, 'sections');
                     }
                     break;
 
@@ -64,8 +67,10 @@ class SectionController extends Controller
                             $content[$key][$i]['image'] = ImageStorage::replace(
                                 $files[$key][$i]['image'],
                                 'sections',
-                                $old[$key][$i]['image'] ?? null,
+                                self::replacedPath($card['image'] ?? null, $owned),
                             );
+                        } elseif (isset($card['image'])) {
+                            $content[$key][$i]['image'] = ImageStorage::adopt($card['image'], $owned, 'sections');
                         }
                     }
                     $content[$key] = array_values(array_filter($content[$key] ?? [], fn ($card) => array_filter($card ?? [])));
@@ -73,7 +78,16 @@ class SectionController extends Controller
 
                 case 'images':
                     foreach ($files[$key] ?? [] as $i => $file) {
-                        $content[$key][$i] = ImageStorage::replace($file, 'sections', $old[$key][$i] ?? null);
+                        $content[$key][$i] = ImageStorage::replace(
+                            $file,
+                            'sections',
+                            self::replacedPath($content[$key][$i] ?? null, $owned),
+                        );
+                    }
+                    foreach ($content[$key] ?? [] as $i => $path) {
+                        if (! isset($files[$key][$i])) {
+                            $content[$key][$i] = ImageStorage::adopt($path, $owned, 'sections');
+                        }
                     }
                     $content[$key] = array_values(array_filter($content[$key] ?? []));
                     break;
@@ -105,6 +119,53 @@ class SectionController extends Controller
         $section->update(['content' => $content]);
 
         return back()->with('success', 'Sección guardada.');
+    }
+
+    /**
+     * The file an upload replaces, taken from the path the form submits for that
+     * card/image instead of from its index: cards can be reordered, so the index
+     * may now point at another card's image and would delete the wrong file.
+     * Only paths the section already owns are deletable — a path just picked
+     * from the gallery still belongs to somebody else.
+     *
+     * @param  array<int, string>  $owned
+     */
+    private static function replacedPath(?string $submitted, array $owned): ?string
+    {
+        return in_array($submitted, $owned, true) ? $submitted : null;
+    }
+
+    /**
+     * Every image path the section already stores. A submitted path outside this
+     * set was picked from the gallery and belongs to another record, so it has
+     * to be adopted instead of shared — see ImageStorage::adopt().
+     *
+     * @param  array<string, mixed>  $content
+     * @return array<int, string>
+     */
+    private static function imagePaths(string $type, array $content): array
+    {
+        $paths = [];
+
+        foreach (SectionRegistry::fields($type) as $field) {
+            $value = $content[$field['key']] ?? null;
+
+            switch ($field['type']) {
+                case 'image':
+                    $paths[] = $value;
+                    break;
+
+                case 'images':
+                    $paths = [...$paths, ...array_values((array) $value)];
+                    break;
+
+                case 'cards':
+                    $paths = [...$paths, ...array_column((array) $value, 'image')];
+                    break;
+            }
+        }
+
+        return array_values(array_filter($paths, fn ($path) => is_string($path) && $path !== ''));
     }
 
     /**

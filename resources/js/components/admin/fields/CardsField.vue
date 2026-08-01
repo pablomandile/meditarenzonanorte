@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { type CardItem } from '@/lib/site';
-import { Plus, Trash2 } from 'lucide-vue-next';
+import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-vue-next';
 
 defineProps<{ label: string; error?: string }>();
 
@@ -30,6 +30,33 @@ function remove(index: number) {
 function setFile(index: number, file: File | null) {
     files.value = { ...(files.value ?? {}), [index]: { image: file } };
 }
+
+/**
+ * El orden del array es el que usa la web, así que mover una tarjeta acá cambia
+ * su lugar en la página. El archivo pendiente de subida viaja con su tarjeta:
+ * está indexado por posición y si no se mueve, terminaría en la de al lado.
+ */
+function move(index: number, direction: -1 | 1) {
+    const cards = [...(model.value ?? [])];
+    const target = index + direction;
+
+    if (target < 0 || target >= cards.length) return;
+
+    [cards[index], cards[target]] = [cards[target], cards[index]];
+    model.value = cards;
+
+    const next = { ...(files.value ?? {}) };
+    const moved = next[index];
+    const displaced = next[target];
+
+    if (displaced === undefined) delete next[index];
+    else next[index] = displaced;
+
+    if (moved === undefined) delete next[target];
+    else next[target] = moved;
+
+    files.value = next;
+}
 </script>
 
 <template>
@@ -39,13 +66,22 @@ function setFile(index: number, file: File | null) {
         <div v-for="(card, i) in model" :key="i" class="grid gap-3 rounded-lg border p-4">
             <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-muted-foreground">Tarjeta {{ i + 1 }}</span>
-                <Button type="button" variant="ghost" size="icon" class="text-red-600" @click="remove(i)">
-                    <Trash2 class="h-4 w-4" />
-                </Button>
+                <div class="flex items-center gap-1">
+                    <Button type="button" variant="ghost" size="icon" :disabled="i === 0" title="Subir" @click="move(i, -1)">
+                        <ArrowUp class="h-4 w-4" />
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" :disabled="i === model.length - 1" title="Bajar" @click="move(i, 1)">
+                        <ArrowDown class="h-4 w-4" />
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" class="text-red-600" title="Quitar tarjeta" @click="remove(i)">
+                        <Trash2 class="h-4 w-4" />
+                    </Button>
+                </div>
             </div>
 
             <ImageField
                 label="Imagen"
+                gallery
                 :model-value="card.image"
                 :file="files?.[i]?.image ?? null"
                 @update:model-value="card.image = $event ?? null"
@@ -68,9 +104,7 @@ function setFile(index: number, file: File | null) {
             </div>
         </div>
 
-        <Button type="button" variant="outline" size="sm" class="w-fit" @click="add">
-            <Plus class="mr-1 h-4 w-4" /> Agregar tarjeta
-        </Button>
+        <Button type="button" variant="outline" size="sm" class="w-fit" @click="add"> <Plus class="mr-1 h-4 w-4" /> Agregar tarjeta </Button>
         <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
     </div>
 </template>
