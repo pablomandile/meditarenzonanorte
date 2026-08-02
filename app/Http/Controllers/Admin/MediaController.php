@@ -23,7 +23,7 @@ class MediaController extends Controller
                 'seeded' => $image['seeded'],
                 'size' => $image['size'],
             ],
-            MediaLibrary::collapse(MediaLibrary::images()),
+            MediaLibrary::collapse(MediaLibrary::images(withHash: true)),
         );
 
         return response()->json(['images' => $images]);

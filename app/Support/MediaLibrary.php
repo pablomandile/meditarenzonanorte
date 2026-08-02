@@ -20,9 +20,13 @@ class MediaLibrary
      * Todas las imágenes, las subidas primero y más recientes arriba (es lo que
      * se busca reusar) y las sembradas al final por nombre.
      *
+     * $withHash lee cada archivo completo para hashearlo, y solo lo necesita
+     * collapse(): con 56 imágenes son 26 MB de disco, que triplican el tiempo
+     * del listado. La pantalla Galería no colapsa nada, así que no lo pide.
+     *
      * @return array<int, array<string, mixed>>
      */
-    public static function images(): array
+    public static function images(bool $withHash = false): array
     {
         $disk = Storage::disk('public');
         $usage = self::usage();
@@ -43,7 +47,7 @@ class MediaLibrary
                     'seeded' => $folder === 'seed',
                     'size' => $disk->size($path),
                     'modified' => $disk->lastModified($path),
-                    'hash' => md5($disk->get($path)),
+                    'hash' => $withHash ? md5($disk->get($path)) : null,
                     'used_by' => $usage[$path] ?? [],
                     'deletable' => ImageStorage::isDeletable($path),
                 ];
@@ -64,7 +68,8 @@ class MediaLibrary
     }
 
     /**
-     * Una entrada por imagen distinta. Elegir del selector copia el archivo
+     * Una entrada por imagen distinta; hay que pasarle images(withHash: true).
+     * Elegir del selector copia el archivo
      * (ImageStorage::adopt), así que la misma foto termina guardada varias veces
      * y el selector la mostraría repetida. Gana la sembrada —tiene nombre real y
      * el seeder siempre la restaura— y si no, la subida más vieja, que es la que

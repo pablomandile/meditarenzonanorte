@@ -32,16 +32,26 @@ const { confirm } = useConfirm();
 const { invalidate } = useMediaLibrary();
 
 const search = ref('');
+const filter = ref<'todas' | 'sin-uso'>('todas');
 
 const filtered = computed(() => {
     const term = search.value.trim().toLowerCase();
 
-    if (!term) return props.images;
+    return props.images.filter((image) => {
+        if (filter.value === 'sin-uso' && image.used_by.length) return false;
 
-    return props.images.filter((image) => image.name.toLowerCase().includes(term));
+        return !term || image.name.toLowerCase().includes(term);
+    });
 });
 
 const inUse = computed(() => props.images.filter((image) => image.used_by.length).length);
+
+const vacio = computed(() => {
+    if (!props.images.length) return 'Todavía no hay imágenes cargadas.';
+    if (search.value.trim()) return 'Ninguna imagen coincide con la búsqueda.';
+
+    return 'No hay imágenes sin uso: todas están en alguna publicación.';
+});
 
 // Click en la miniatura: se ve en grande en un modal, sin salir de la página.
 const preview = ref<GalleryImage | null>(null);
@@ -86,13 +96,24 @@ function kb(size: number) {
                 <span>{{ error }}</span>
             </div>
 
-            <Input v-model="search" placeholder="Buscar por nombre de archivo…" class="h-9 max-w-sm" />
+            <div class="flex flex-wrap items-center gap-2">
+                <Input v-model="search" placeholder="Buscar por nombre de archivo…" class="h-9 max-w-sm" />
+
+                <select
+                    v-model="filter"
+                    aria-label="Filtrar por uso"
+                    class="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                    <option value="todas">Mostrar todas</option>
+                    <option value="sin-uso">Sin uso</option>
+                </select>
+
+                <span class="text-sm text-muted-foreground">{{ filtered.length }} de {{ images.length }}</span>
+            </div>
 
             <Card>
                 <CardContent class="p-4">
-                    <p v-if="!filtered.length" class="py-8 text-center text-sm text-muted-foreground">
-                        {{ images.length ? 'Ninguna imagen coincide con la búsqueda.' : 'Todavía no hay imágenes cargadas.' }}
-                    </p>
+                    <p v-if="!filtered.length" class="py-8 text-center text-sm text-muted-foreground">{{ vacio }}</p>
 
                     <div v-else class="grid auto-rows-min grid-cols-2 content-start gap-4 sm:grid-cols-3 lg:grid-cols-4">
                         <div v-for="image in filtered" :key="image.path" class="overflow-hidden rounded-md border">

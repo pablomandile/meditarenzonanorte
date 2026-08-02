@@ -305,6 +305,40 @@ class SiteContentTest extends TestCase
         $this->assertFalse($seeded['deletable']);
     }
 
+    public function test_gallery_marks_unused_images_so_the_filter_can_list_them(): void
+    {
+        $admin = $this->admin();
+        Storage::disk('public')->put('sections/sin-uso.png', 'x');
+
+        $images = collect($this->actingAs($admin)->get('/admin/gallery')->assertOk()->viewData('page')['props']['images']);
+
+        // El filtro "Sin uso" se arma con used_by vacío, que es lo que manda el server.
+        $sinUso = $images->filter(fn ($i) => $i['used_by'] === []);
+
+        $this->assertTrue($sinUso->contains('path', 'sections/sin-uso.png'));
+        $this->assertNotEmpty($images->firstWhere('path', 'sections/sin-uso.png'));
+        $this->assertTrue($sinUso->every(fn ($i) => $i['used_by'] === []));
+        $this->assertTrue($images->reject(fn ($i) => $i['used_by'] === [])->isNotEmpty());
+    }
+
+    public function test_gallery_lists_every_copy_while_the_picker_collapses_them(): void
+    {
+        $admin = $this->admin();
+
+        // Dos archivos distintos con los mismos bytes, como los que deja adopt().
+        Storage::disk('public')->put('sections/copia-a.png', 'mismos-bytes');
+        Storage::disk('public')->put('sections/copia-b.png', 'mismos-bytes');
+
+        $gallery = collect($this->actingAs($admin)->get('/admin/gallery')->viewData('page')['props']['images'])
+            ->whereIn('path', ['sections/copia-a.png', 'sections/copia-b.png']);
+
+        $picker = collect($this->actingAs($admin)->get('/admin/media')->json('images'))
+            ->whereIn('path', ['sections/copia-a.png', 'sections/copia-b.png']);
+
+        $this->assertCount(2, $gallery, 'la galería administra archivos: muestra las dos copias');
+        $this->assertCount(1, $picker, 'el selector muestra una sola entrada por imagen');
+    }
+
     public function test_gallery_deletes_an_image_that_nobody_uses(): void
     {
         $admin = $this->admin();
