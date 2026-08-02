@@ -415,17 +415,19 @@ return [
                 ],
             ],
             [
+                // Los sábados a la mañana, para que sea una segunda oferta y no la
+                // misma actividad dos veces: tal como venía del sitio original,
+                // esta ficha repetía martes y jueves de 18, igual que la de
+                // 'clases-semanales', y en la página se leían dos tarjetas idénticas.
                 'type' => 'class_info',
-                'key' => 'oferta-martes-jueves',
+                'key' => 'oferta-sabados',
                 'content' => [
                     'heading' => "Meditaciones guiadas\nen 30 minutos",
                     'body' => null,
-                    'schedule' => "Martes y jueves\n18 a 18.30hs",
-                    // Sin fechas a propósito: es la misma actividad que
-                    // 'meditaciones-gratuitas' de clases-semanales (mismo horario,
-                    // mismo lugar), así que cargarla acá también la duplicaría en
-                    // el calendario. El dueño decide desde qué ficha se publica.
-                    'occurrences' => [],
+                    'schedule' => "Sábados\n10 a 10.30hs",
+                    'occurrences' => [
+                        ['type' => 'weekly', 'weekday' => 6, 'date' => null, 'from' => null, 'until' => null, 'start' => '10:00', 'end' => '10:30', 'label' => null],
+                    ],
                     'location' => 'Psj. Cajaraville 173, Barrio Martin, Rosario',
                     'price' => 'GRATUITAS',
                     'cta_label' => null,

@@ -53,7 +53,9 @@ class CalendarioFechasSeeder extends Seeder
                 self::weekly(3, '18:00', '18:30'),
                 self::weekly(4, '18:00', '18:30'),
             ]],
-            // "Viernes 17 de abril de 18.00 a 19.00 hs"
+            // "Viernes 17 de abril de 18.00 a 19.00 hs". La key es la de producción:
+            // en el archivo de datos esa ficha pasó a llamarse 'oferta-sabados', y
+            // acá se la sigue nombrando como está publicada.
             ['gratis', 'oferta-martes-jueves', [
                 self::once('2026-04-17', '18:00', '19:00'),
             ]],

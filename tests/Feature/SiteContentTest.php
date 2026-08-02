@@ -1083,6 +1083,33 @@ class SiteContentTest extends TestCase
         $this->assertSame(['Meditaciones guiadas'], $thursday);
     }
 
+    public function test_gratis_offers_two_different_schedules_and_not_the_same_one_twice(): void
+    {
+        $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
+
+        $schedules = [];
+        $this->get('/gratis')->assertOk()->assertInertia(function (AssertableInertia $page) use (&$schedules) {
+            $schedules = collect($page->toArray()['props']['sections'])
+                ->where('type', 'class_info')
+                ->pluck('content.schedule')
+                ->all();
+        });
+
+        // Dos fichas, con horarios distintos: antes las dos decían lo mismo.
+        $this->assertCount(2, $schedules);
+        $this->assertSame(count($schedules), count(array_unique($schedules)));
+
+        // Y la de los sábados cae en el calendario en su propio día.
+        $days = $this->calendarDays();
+
+        foreach (['2026-08-01', '2026-08-08', '2026-08-15', '2026-08-22', '2026-08-29'] as $saturday) {
+            $this->assertContains('Meditaciones guiadas', $days[$saturday] ?? [], "Falta la meditación del $saturday");
+        }
+
+        // El sábado no comparte horario con nada, así que no se deduplica con nada.
+        $this->assertSame(['Meditaciones guiadas'], $days['2026-08-01']);
+    }
+
     public function test_admin_calendar_screen_lists_the_class_cards_with_their_dates(): void
     {
         $admin = $this->admin();
