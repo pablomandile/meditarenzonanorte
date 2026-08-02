@@ -7,15 +7,17 @@ import { computed } from 'vue';
 const props = withDefaults(defineProps<{ event: EventData; featured?: boolean }>(), { featured: false });
 
 /**
- * La tarjeta lleva a la inscripción del evento. Si no tiene URL de botón cae en
- * la página de eventos, que es lo que hacía antes de tener botón.
+ * El afiche puede llevar a un lado y el botón a otro (la publicación por un lado,
+ * la inscripción por el otro). Sin URL propia, la imagen sigue al botón, y sin
+ * ninguna de las dos cae en la página de eventos, como hacía antes del botón.
  */
-const target = computed(() => props.event.cta_url || '/eventos-especiales');
-const external = computed(() => !isInternal(target.value));
+const target = computed(() => props.event.image_url || props.event.cta_url || '/eventos-especiales');
 
-/** El <a> externo y el <Link> interno de Inertia no se pueden intercambiar por props. */
-const wrapper = computed(() => (external.value ? 'a' : Link));
-const wrapperAttrs = computed(() => (external.value ? { href: target.value, target: '_blank', rel: 'noopener' } : { href: target.value }));
+/** El <a> externo y el <Link> interno de Inertia no se intercambian por props. */
+const wrapper = computed(() => (isInternal(target.value) ? Link : 'a'));
+const wrapperAttrs = computed(() =>
+    isInternal(target.value) ? { href: target.value } : { href: target.value, target: '_blank', rel: 'noopener' },
+);
 </script>
 
 <template>
@@ -52,8 +54,16 @@ const wrapperAttrs = computed(() => (external.value ? { href: target.value, targ
             </component>
 
             <div v-if="event.cta_label" class="mt-4">
+                <Link
+                    v-if="event.cta_url && isInternal(event.cta_url)"
+                    :href="event.cta_url"
+                    class="inline-block rounded-full bg-brand-sky font-medium uppercase tracking-wide text-white transition hover:bg-brand-sky-dark"
+                    :class="featured ? 'px-6 py-2.5 text-sm' : 'px-5 py-2 text-xs'"
+                >
+                    {{ event.cta_label }}
+                </Link>
                 <a
-                    v-if="event.cta_url && external"
+                    v-else-if="event.cta_url"
                     :href="event.cta_url"
                     target="_blank"
                     rel="noopener"
@@ -62,14 +72,6 @@ const wrapperAttrs = computed(() => (external.value ? { href: target.value, targ
                 >
                     {{ event.cta_label }}
                 </a>
-                <Link
-                    v-else-if="event.cta_url"
-                    :href="event.cta_url"
-                    class="inline-block rounded-full bg-brand-sky font-medium uppercase tracking-wide text-white transition hover:bg-brand-sky-dark"
-                    :class="featured ? 'px-6 py-2.5 text-sm' : 'px-5 py-2 text-xs'"
-                >
-                    {{ event.cta_label }}
-                </Link>
                 <!-- Con texto de botón pero sin URL todavía (ej. "inscripción próximamente"). -->
                 <span
                     v-else

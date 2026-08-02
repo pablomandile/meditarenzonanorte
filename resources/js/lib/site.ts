@@ -19,6 +19,7 @@ export type EventData = {
     cta_label: string | null;
     cta_url: string | null;
     image_path: string | null;
+    image_url: string | null;
     visible: boolean;
     show_on_home: boolean;
     show_on_calendar: boolean;

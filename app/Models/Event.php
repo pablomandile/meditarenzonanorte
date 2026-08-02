@@ -21,6 +21,7 @@ class Event extends Model
         'cta_label',
         'cta_url',
         'image_path',
+        'image_url',
         'visible',
         'show_on_home',
         'show_on_calendar',

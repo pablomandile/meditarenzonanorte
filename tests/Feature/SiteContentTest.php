@@ -1244,6 +1244,45 @@ class SiteContentTest extends TestCase
         ])->assertSessionHasErrors('end_time');
     }
 
+    public function test_event_can_have_a_different_url_for_its_image_than_for_its_button(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->post('/admin/events', [
+            'title' => 'Retiro de primavera',
+            'starts_at' => '2026-09-25',
+            'cta_label' => 'INSCRIPCIÓN',
+            'cta_url' => 'https://forms.gle/inscripcion',
+            'image_url' => 'https://instagram.com/p/afiche',
+            'visible' => true,
+            'show_on_home' => true,
+        ])->assertRedirect();
+
+        $event = Event::where('title', 'Retiro de primavera')->firstOrFail();
+
+        $this->assertSame('https://instagram.com/p/afiche', $event->image_url);
+        $this->assertSame('https://forms.gle/inscripcion', $event->cta_url);
+
+        // Y las dos llegan a la tira de la home, que es la que las usa.
+        $home = [];
+        $this->get('/')->assertOk()->assertInertia(function (AssertableInertia $page) use (&$home) {
+            $home = collect($page->toArray()['props']['homeEvents'])->firstWhere('title', 'Retiro de primavera');
+        });
+
+        $this->assertSame('https://instagram.com/p/afiche', $home['image_url']);
+        $this->assertSame('https://forms.gle/inscripcion', $home['cta_url']);
+
+        // Vaciarla la deja en null, y ahí la imagen vuelve a seguir al botón.
+        $this->actingAs($admin)->put("/admin/events/{$event->id}", [
+            'title' => 'Retiro de primavera',
+            'starts_at' => '2026-09-25',
+            'cta_url' => 'https://forms.gle/inscripcion',
+            'image_url' => '',
+        ])->assertRedirect();
+
+        $this->assertNull($event->fresh()->image_url);
+    }
+
     public function test_calendario_seeder_publishes_the_page_without_touching_the_classes(): void
     {
         Page::where('slug', 'calendario')->firstOrFail()->delete();

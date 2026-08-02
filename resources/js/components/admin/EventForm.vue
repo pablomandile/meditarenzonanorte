@@ -25,6 +25,7 @@ const form = useForm<Record<string, any>>({
     cta_label: props.event?.cta_label ?? null,
     cta_url: props.event?.cta_url ?? null,
     image_path: props.event?.image_path ?? null,
+    image_url: props.event?.image_url ?? null,
     image: null as File | null,
     visible: props.event?.visible ?? true,
     show_on_home: props.event?.show_on_home ?? false,
@@ -125,6 +126,15 @@ function submit() {
                     label="Imagen / afiche"
                     :error="form.errors.image"
                 />
+
+                <div class="grid gap-2">
+                    <Label>URL de la imagen (opcional)</Label>
+                    <Input v-model="form.image_url" placeholder="https://instagram.com/p/..." />
+                    <p class="text-xs text-muted-foreground">
+                        A dónde lleva el click sobre el afiche. Si se deja vacía, va al mismo lugar que el botón.
+                    </p>
+                    <p v-if="form.errors.image_url" class="text-sm text-red-600">{{ form.errors.image_url }}</p>
+                </div>
 
                 <div class="flex flex-wrap gap-6">
                     <label class="flex items-center gap-2 text-sm">

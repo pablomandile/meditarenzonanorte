@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { img, mapsUrl, paragraphs, type EventData, type SectionData } from '@/lib/site';
+import { img, isInternal, mapsUrl, paragraphs, type EventData, type SectionData } from '@/lib/site';
+import { Link } from '@inertiajs/vue3';
 import { Calendar, Clock, MapPin, Ticket } from 'lucide-vue-next';
 import { computed } from 'vue';
 
@@ -21,7 +22,25 @@ const list = computed(() => props.events ?? []);
 
             <article v-for="(event, index) in list" :key="event.id" class="grid items-center gap-8 md:grid-cols-2">
                 <div v-if="event.image_path" :class="{ 'md:order-2': index % 2 === 1 }">
-                    <img :src="img(event.image_path)" :alt="event.title" class="mx-auto w-full max-w-lg rounded-lg object-cover shadow-sm" />
+                    <!-- El afiche sólo es clickeable si el evento tiene URL de imagen. -->
+                    <component
+                        :is="event.image_url ? (isInternal(event.image_url) ? Link : 'a') : 'div'"
+                        v-bind="
+                            event.image_url
+                                ? isInternal(event.image_url)
+                                    ? { href: event.image_url }
+                                    : { href: event.image_url, target: '_blank', rel: 'noopener' }
+                                : {}
+                        "
+                        class="block"
+                    >
+                        <img
+                            :src="img(event.image_path)"
+                            :alt="event.title"
+                            class="mx-auto w-full max-w-lg rounded-lg object-cover shadow-sm transition"
+                            :class="event.image_url ? 'hover:opacity-95' : ''"
+                        />
+                    </component>
                 </div>
 
                 <div :class="{ 'md:order-1': index % 2 === 1, 'md:col-span-2': !event.image_path }">
