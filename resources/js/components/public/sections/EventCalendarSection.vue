@@ -120,23 +120,29 @@ function dayAriaLabel(label: string, count: number): string {
                                             </span>
                                             <span v-else class="px-0.5 text-[13px] font-semibold leading-none text-brand-ink">{{ day.day }}</span>
 
+                                            <!--
+                                                El texto fluye en línea (no como items de
+                                                flex) para poder ocupar dos renglones: en
+                                                una celda de ~105 px, una sola línea corta
+                                                casi todos los títulos.
+                                            -->
                                             <span
                                                 v-for="activity in day.activities.slice(0, 2)"
                                                 :key="activity.key"
-                                                class="flex w-full min-w-0 items-center gap-1 rounded px-1 py-0.5 text-[11px] leading-tight ring-1"
+                                                class="line-clamp-2 w-full rounded px-1 py-0.5 text-[11px] leading-[1.35] ring-1"
                                                 :class="styleFor(styles, activity.source.slug).chip"
                                             >
                                                 <component
                                                     :is="styleFor(styles, activity.source.slug).icon"
-                                                    class="h-3 w-3 shrink-0"
+                                                    class="mr-1 inline h-3 w-3 align-[-2px]"
                                                     :class="styleFor(styles, activity.source.slug).iconText"
                                                     aria-hidden="true"
                                                 />
                                                 <span class="sr-only">{{ activity.source.title }}:</span>
-                                                <span v-if="activity.start" class="shrink-0 font-semibold tabular-nums">
+                                                <span v-if="activity.start" class="font-semibold tabular-nums">
                                                     {{ timeLabel(activity.start) }} hs
                                                 </span>
-                                                <span class="truncate">{{ activity.title }}</span>
+                                                {{ activity.title }}
                                             </span>
 
                                             <span v-if="day.activities.length > 2" class="pl-1 text-[11px] font-medium text-brand-sky">
