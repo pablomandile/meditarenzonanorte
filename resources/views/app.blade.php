@@ -6,9 +6,15 @@
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
-        @php($favicon = rescue(fn () => \App\Models\Setting::get('logo_path'), null, false))
+        {{-- rescue(): antes de migrar o sembrar, la tabla de ajustes todavía no existe. --}}
+        @php($favicon = rescue(fn () => \App\Models\Setting::favicon(), null, false))
         @if ($favicon)
-            <link rel="icon" type="image/png" href="/storage/{{ $favicon }}">
+            @if ($favicon['type'])
+                <link rel="icon" type="{{ $favicon['type'] }}" href="/storage/{{ $favicon['path'] }}">
+            @else
+                <link rel="icon" href="/storage/{{ $favicon['path'] }}">
+            @endif
+            <link rel="apple-touch-icon" href="/storage/{{ $favicon['path'] }}">
         @endif
 
         @routes

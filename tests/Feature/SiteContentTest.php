@@ -722,6 +722,44 @@ class SiteContentTest extends TestCase
         $this->assertSame($menu, $this->footerLogo());
     }
 
+    public function test_the_favicon_is_the_footer_logo_and_falls_back_to_the_menu_one(): void
+    {
+        $menu = Setting::get('logo_path');
+        $this->assertNotNull($menu);
+
+        // Sin logo del pie, el icono es el del menú (que es lo que había antes).
+        Setting::set('footer_logo_path', null);
+        $this->get('/')->assertOk()->assertSee('<link rel="icon" type="image/png" href="/storage/'.$menu.'">', false);
+
+        // Con logo del pie cargado, gana ese: suele ser el isotipo cuadrado.
+        Setting::set('footer_logo_path', 'settings/isotipo.webp');
+
+        $this->get('/')->assertOk()
+            ->assertSee('<link rel="icon" type="image/webp" href="/storage/settings/isotipo.webp">', false)
+            ->assertSee('<link rel="apple-touch-icon" href="/storage/settings/isotipo.webp">', false)
+            ->assertDontSee($menu, false);
+
+        // El tipo sale de la extensión, no está fijo en png.
+        $this->assertSame('image/webp', Setting::favicon()['type']);
+
+        Setting::set('footer_logo_path', 'settings/isotipo.png');
+        $this->assertSame('image/png', Setting::favicon()['type']);
+
+        Setting::set('footer_logo_path', 'settings/isotipo.jpeg');
+        $this->assertSame('image/jpeg', Setting::favicon()['type']);
+
+        // Una extensión que no reconocemos no inventa un tipo.
+        Setting::set('footer_logo_path', 'settings/isotipo.avif');
+        $this->assertNull(Setting::favicon()['type']);
+
+        // Y sin ningún logo no se emite el enlace.
+        Setting::set('footer_logo_path', null);
+        Setting::set('logo_path', null);
+
+        $this->assertNull(Setting::favicon());
+        $this->get('/')->assertOk()->assertDontSee('rel="icon"', false);
+    }
+
     /** Ruta del logo que el pie está mostrando, leída de los props compartidos. */
     private function footerLogo(): ?string
     {

@@ -20,6 +20,40 @@ class Setting extends Model
     }
 
     /**
+     * El icono de la pestaña: el logo del pie, y si no está cargado el del menú
+     * — el mismo orden que usa SiteFooter.vue.
+     *
+     * Se prefiere el del pie porque suele ser el isotipo cuadrado, mientras que el
+     * del menú es el logo ancho con el nombre al lado: reducido a 16 px no se lee.
+     *
+     * Devuelve la ruta y el tipo MIME deducido de la extensión (el archivo lo sube
+     * el dueño, así que puede ser png, webp o jpg), o null si no hay ningún logo.
+     *
+     * @return array{path: string, type: ?string}|null
+     */
+    public static function favicon(): ?array
+    {
+        $path = static::get('footer_logo_path') ?: static::get('logo_path');
+
+        if (! $path) {
+            return null;
+        }
+
+        return [
+            'path' => $path,
+            'type' => match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
+                'png' => 'image/png',
+                'webp' => 'image/webp',
+                'jpg', 'jpeg' => 'image/jpeg',
+                'gif' => 'image/gif',
+                'svg' => 'image/svg+xml',
+                'ico' => 'image/x-icon',
+                default => null,
+            },
+        ];
+    }
+
+    /**
      * All settings as a cached key => value map.
      *
      * @return array<string, string|null>
