@@ -134,7 +134,7 @@ function dayAriaLabel(label: string, count: number): string {
                                                 />
                                                 <span class="sr-only">{{ activity.source.title }}:</span>
                                                 <span v-if="activity.start" class="shrink-0 font-semibold tabular-nums">
-                                                    {{ timeLabel(activity.start) }}
+                                                    {{ timeLabel(activity.start) }} hs
                                                 </span>
                                                 <span class="truncate">{{ activity.title }}</span>
                                             </span>
