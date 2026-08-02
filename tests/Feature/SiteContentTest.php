@@ -1550,6 +1550,49 @@ class SiteContentTest extends TestCase
         $this->assertStringContainsString('Sábado 8 de agosto de 16 a 19 hs', $hints['schedule']);
     }
 
+    public function test_class_card_can_name_one_or_more_teachers(): void
+    {
+        $admin = $this->admin();
+
+        /** El campo tal como lo recibe la vista de esa ficha. */
+        $published = function (string $slug, string $key) {
+            $value = null;
+
+            $this->get('/'.$slug)->assertOk()->assertInertia(function (AssertableInertia $page) use ($key, &$value) {
+                $value = collect($page->toArray()['props']['sections'])->firstWhere('key', $key)['content']['teachers'] ?? null;
+            });
+
+            return $value;
+        };
+
+        // Sembrado: el maestro salió del título y vive en su propio campo.
+        $this->assertSame('Kelsang Panchen', $published('clases-semanales', 'clase-principal'));
+        $this->get('/clases-semanales')->assertOk()->assertSee('Libertad emocional');
+
+        $section = Section::whereHas('page', fn ($query) => $query->where('slug', 'cursos-y-retiros'))
+            ->where('key', 'curso')
+            ->firstOrFail();
+
+        // Varios, separados por coma, con espacios de más.
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => [...$section->content, 'teachers' => 'Kelsang Dema ,  Gen Kelsang Chikuo '],
+        ])->assertRedirect()->assertSessionHas('success');
+
+        $this->assertSame('Kelsang Dema ,  Gen Kelsang Chikuo', $section->fresh()->content['teachers']);
+
+        // Y se puede vaciar: el campo es opcional.
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => [...$section->content, 'teachers' => ''],
+        ])->assertRedirect();
+
+        $this->assertNull($section->fresh()->content['teachers']);
+
+        // Más de 255 no entra (es un campo de texto del registro).
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => [...$section->content, 'teachers' => str_repeat('a', 256)],
+        ])->assertSessionHasErrors('content.teachers');
+    }
+
     public function test_class_card_can_carry_the_classes_of_the_cycle(): void
     {
         $admin = $this->admin();

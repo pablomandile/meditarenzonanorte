@@ -92,6 +92,7 @@ class SectionRegistry
             'label' => 'Información de clase',
             'fields' => [
                 ['key' => 'heading', 'type' => 'text', 'label' => 'Título'],
+                ['key' => 'teachers', 'type' => 'text', 'label' => 'Maestr@ (varios separados por coma)'],
                 ['key' => 'body', 'type' => 'textarea', 'label' => 'Descripción'],
                 ['key' => 'schedule', 'type' => 'text', 'label' => 'Horario (opcional, se arma solo)'],
                 ['key' => 'occurrences', 'type' => 'occurrences', 'label' => 'Fechas para el calendario'],

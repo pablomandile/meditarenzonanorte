@@ -181,7 +181,10 @@ return [
                 'type' => 'class_info',
                 'key' => 'clase-principal',
                 'content' => [
-                    'heading' => "Clases semanales\nLibertad emocional con Kelsang Panchen",
+                    // El maestro sale del título y va en su propio campo, que es el
+                    // que lo muestra al lado, más chico y en otro color.
+                    'heading' => "Clases semanales\nLibertad emocional",
+                    'teachers' => 'Kelsang Panchen',
                     'body' => "Todos los miércoles, nos encontramos a mirar juntos en video las clases que Kelsang Panchen dicta en el Centro de Meditación Kadampa de Buenos Aires. En junio y julio veremos claves para vínculos más sanos.\n\n*No es necesario experiencia ni inscripción previa.\n\n¡TODO EL MUNDO ES BIENVENIDO!",
                     'schedule' => 'Miércoles de 19 a 20.15 hs',
                     // La lectura de 'schedule' en clave de calendario: 3 = miércoles (ISO).
@@ -854,7 +857,8 @@ return [
                 'type' => 'class_info',
                 'key' => 'curso',
                 'content' => [
-                    'heading' => "Nombre del curso o retiro\nCon quién lo dicta",
+                    'heading' => 'Nombre del curso o retiro',
+                    'teachers' => 'Quién lo dicta',
                     'body' => "Contá de qué se trata: a quién está dirigido, qué se practica y con qué se va quien participa.\n\n*No hace falta experiencia previa ni inscripción.\n\n¡TODO EL MUNDO ES BIENVENIDO!",
                     'schedule' => 'Día y horario',
                     // Vacías a propósito: una fecha de ejemplo terminaría publicada

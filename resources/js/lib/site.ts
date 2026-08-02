@@ -54,6 +54,24 @@ export function mapsUrl(query?: string | null): string | undefined {
     return query ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}` : undefined;
 }
 
+/**
+ * Nombres separados por coma, enumerados como se dice en castellano:
+ * "Ana" → "Ana"; "Ana, Luis" → "Ana y Luis"; "Ana, Luis, Sol" → "Ana, Luis y Sol".
+ * Devuelve null si no hay ninguno, así el llamador decide si muestra algo.
+ */
+export function joinNames(text?: string | null): string | null {
+    const names = (text ?? '')
+        .split(',')
+        .map((name) => name.trim())
+        .filter(Boolean);
+
+    if (!names.length) return null;
+
+    const last = names.pop() as string;
+
+    return names.length ? `${names.join(', ')} y ${last}` : last;
+}
+
 /** Divide un texto en líneas no vacías (una por renglón), para listas. */
 export function lines(text?: string | null): string[] {
     if (!text) return [];

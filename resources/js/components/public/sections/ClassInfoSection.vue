@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { img, isInternal, lines, mapsUrl, paragraphs, type SectionData } from '@/lib/site';
+import { img, isInternal, joinNames, lines, mapsUrl, paragraphs, type SectionData } from '@/lib/site';
 import { Link } from '@inertiajs/vue3';
 import { ChevronDown, Clock, MapPin, RotateCcw, RotateCw, Ticket } from 'lucide-vue-next';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
@@ -8,6 +8,9 @@ const props = defineProps<{ section: SectionData }>();
 
 /** Una clase por línea; sin contenido no hay dorso ni giro. */
 const cycle = computed(() => lines(props.section.content.cycle));
+
+/** "Ana, Luis" → "con Ana y Luis". Vacío no muestra nada. */
+const teachers = computed(() => joinNames(props.section.content.teachers));
 const flipped = ref(false);
 
 /**
@@ -141,8 +144,24 @@ watch(expanded, () => nextTick(measure));
                             section.content.image && !expanded ? 'md:absolute md:inset-y-0 md:right-0 md:w-1/2 md:overflow-hidden' : '',
                         ]"
                     >
+                        <!--
+                            El maestro va dentro del h2 para que fluya después del
+                            título (que puede tener varios renglones), más chico y en
+                            naranja para que se lea como un dato aparte y no como
+                            parte del nombre de la actividad.
+                        -->
                         <h2 class="shrink-0 whitespace-pre-line font-heading text-3xl font-light leading-snug text-brand-sky md:text-[32px]">
-                            {{ section.content.heading }}
+                            <!--
+                                El espacio va dentro del span y es duro: si fuera sólo
+                                el margen, un lector de pantalla (y quien copie el
+                                texto) leería "Libertad emocionalcon Kelsang Panchen",
+                                y "con" no debe quedar solo al final de un renglón.
+                            -->
+                            {{ section.content.heading }}<span
+                                v-if="teachers"
+                                class="ml-0.5 whitespace-normal text-lg font-normal text-brand-orange md:text-xl"
+                                >&nbsp;con {{ teachers }}</span
+                            >
                         </h2>
 
                         <div v-if="paragraphs(section.content.body).length" ref="body" class="relative min-h-0 overflow-hidden">
