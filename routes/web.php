@@ -36,7 +36,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::get('calendar', [CalendarController::class, 'index'])->name('calendar.index');
     Route::patch('calendar', [CalendarController::class, 'bulk'])->name('calendar.bulk');
-    Route::patch('calendar/{event}', [CalendarController::class, 'toggle'])->name('calendar.toggle');
+    Route::patch('calendar/sections/{section}', [CalendarController::class, 'toggleSection'])->name('calendar.sections.toggle');
+    Route::patch('calendar/events/{event}', [CalendarController::class, 'toggleEvent'])->name('calendar.events.toggle');
 
     Route::get('faqs', [FaqController::class, 'index'])->name('faqs.index');
     Route::post('faqs', [FaqController::class, 'store'])->name('faqs.store');

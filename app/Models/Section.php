@@ -14,6 +14,7 @@ class Section extends Model
         'key',
         'position',
         'visible',
+        'show_on_calendar',
         'content',
     ];
 
@@ -21,6 +22,7 @@ class Section extends Model
     {
         return [
             'visible' => 'boolean',
+            'show_on_calendar' => 'boolean',
             'position' => 'integer',
             'content' => 'array',
         ];
@@ -34,5 +36,10 @@ class Section extends Model
     public function scopeVisible(Builder $query): Builder
     {
         return $query->where('visible', true);
+    }
+
+    public function scopeOnCalendar(Builder $query): Builder
+    {
+        return $query->where('show_on_calendar', true);
     }
 }

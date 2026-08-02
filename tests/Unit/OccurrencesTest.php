@@ -131,6 +131,42 @@ class OccurrencesTest extends TestCase
         $this->assertNull($withBlank[0]['label']);
     }
 
+    public function test_describe_reads_the_dates_back_in_spanish(): void
+    {
+        $this->assertSame(
+            'miércoles de 19:00 a 20:15 hs',
+            Occurrences::describe([$this->weekly(3)]),
+        );
+
+        $this->assertSame(
+            'martes de 18:00 a 18:30 hs · jueves de 18:00 a 18:30 hs',
+            Occurrences::describe([
+                $this->weekly(2, ['start' => '18:00', 'end' => '18:30']),
+                $this->weekly(4, ['start' => '18:00', 'end' => '18:30']),
+            ]),
+        );
+
+        $this->assertSame(
+            'lunes de 19:00 a 20:15 hs (hasta el 31 de agosto)',
+            Occurrences::describe([$this->weekly(1, ['until' => '2026-08-31'])]),
+        );
+
+        $this->assertSame(
+            '8 de agosto de 16:00 a 19:00 hs',
+            Occurrences::describe([['type' => 'date', 'date' => '2026-08-08', 'start' => '16:00', 'end' => '19:00']]),
+        );
+
+        $this->assertSame(
+            'del 28 al 30 de agosto de 10:00 a 17:30 hs',
+            Occurrences::describe([['type' => 'date', 'date' => '2026-08-28', 'until' => '2026-08-30', 'start' => '10:00', 'end' => '17:30']]),
+        );
+
+        // Sin hora se describe igual, y una fila inservible no aporta ruido.
+        $this->assertSame('sábados', Occurrences::describe([$this->weekly(6, ['start' => null, 'end' => null])]));
+        $this->assertSame('', Occurrences::describe([$this->weekly(9), ['type' => 'date', 'date' => 'ayer']]));
+        $this->assertSame('', Occurrences::describe([]));
+    }
+
     public function test_empty_rows_and_a_broken_window_yield_nothing(): void
     {
         $this->assertSame([], Occurrences::expand([], '2026-08-01', '2026-08-31'));

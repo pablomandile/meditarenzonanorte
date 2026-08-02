@@ -48,32 +48,47 @@ class EventCalendar
     ];
 
     /**
+     * El mes en curso, y sólo ése: la grilla no navega a otros meses ni muestra
+     * los días de los vecinos. Las celdas que sobran al principio y al final
+     * viajan como null, para que la vista las deje vacías.
+     *
      * @return array<string, mixed>
      */
-    public static function forMonth(?string $month): array
+    public static function currentMonth(): array
     {
         $today = CarbonImmutable::today(self::TIMEZONE);
-        $first = self::parseMonth($month, $today);
+        $first = $today->startOfMonth();
+        $last = $today->endOfMonth();
 
-        $gridStart = $first->startOfWeek(CarbonInterface::MONDAY);
-        $gridEnd = $first->endOfMonth()->endOfWeek(CarbonInterface::SUNDAY);
-
-        $activities = self::activities($gridStart, $gridEnd);
+        $activities = self::activities($first, $last);
 
         $weeks = [];
-        $cursor = $gridStart;
+        // Se recorre desde el lunes de la primera semana para que cada fila caiga
+        // bajo su día de la semana, pero fuera del mes no se emite ningún día.
+        $cursor = $first->startOfWeek(CarbonInterface::MONDAY);
+        $gridEnd = $last->endOfWeek(CarbonInterface::SUNDAY);
 
         while ($cursor->lessThanOrEqualTo($gridEnd)) {
             $days = [];
 
             for ($i = 0; $i < 7; $i++) {
+                if ($cursor->month !== $first->month) {
+                    $days[] = null;
+                    $cursor = $cursor->addDay();
+
+                    continue;
+                }
+
                 $date = $cursor->toDateString();
 
                 $days[] = [
                     'date' => $date,
                     'day' => $cursor->day,
+                    // El día de la semana lo resuelve el servidor: la vista de
+                    // celular saltea las celdas vacías, así que la posición en la
+                    // fila ya no alcanza, y no se parsea una fecha en el navegador.
+                    'weekday' => $cursor->dayOfWeekIso,
                     'label' => self::dayLabel($cursor),
-                    'in_month' => $cursor->month === $first->month,
                     'is_today' => $date === $today->toDateString(),
                     'activities' => $activities[$date] ?? [],
                 ];
@@ -81,32 +96,17 @@ class EventCalendar
                 $cursor = $cursor->addDay();
             }
 
-            $weeks[] = ['label' => self::weekLabel($days[0]['date'], $days[6]['date']), 'days' => $days];
+            $weeks[] = ['label' => self::weekLabel($days), 'days' => $days];
         }
 
         return [
             'month' => $first->format('Y-m'),
             'label' => self::MONTHS[$first->month].' de '.$first->year,
             'today' => $today->toDateString(),
-            'prev' => $first->subMonth()->format('Y-m'),
-            'next' => $first->addMonth()->format('Y-m'),
             'weekdays' => array_column(self::WEEKDAYS, 'short'),
             'sources' => self::sources(),
             'weeks' => $weeks,
         ];
-    }
-
-    /**
-     * Un ?mes= inservible abre el mes actual: es una página pública por GET, no
-     * puede responder 422 porque alguien tocó la URL.
-     */
-    private static function parseMonth(?string $month, CarbonImmutable $today): CarbonImmutable
-    {
-        if (is_string($month) && preg_match('/^(\d{4})-(0[1-9]|1[0-2])$/', $month, $parts)) {
-            return CarbonImmutable::create((int) $parts[1], (int) $parts[2], 1)->startOfDay();
-        }
-
-        return $today->startOfMonth();
     }
 
     /**
@@ -151,6 +151,7 @@ class EventCalendar
         $sections = Section::query()
             ->where('type', 'class_info')
             ->visible()
+            ->onCalendar()
             ->whereHas('page', fn ($query) => $query->visible())
             ->with('page')
             ->orderBy('page_id')
@@ -254,13 +255,14 @@ class EventCalendar
         $sources = [];
 
         $pages = Page::inMenu()
-            ->whereHas('sections', fn ($query) => $query->where('type', 'class_info')->visible())
+            ->whereHas('sections', fn ($query) => $query->where('type', 'class_info')->visible()->onCalendar())
             ->get();
 
         foreach ($pages as $page) {
             $hasDates = $page->sections()
                 ->where('type', 'class_info')
                 ->visible()
+                ->onCalendar()
                 ->get()
                 ->contains(fn ($section) => ! empty($section->content['occurrences'] ?? []));
 
@@ -306,16 +308,25 @@ class EventCalendar
         return self::WEEKDAYS[$date->dayOfWeekIso - 1]['long'].' '.$date->day.' de '.self::MONTHS[$date->month];
     }
 
-    private static function weekLabel(string $from, string $to): string
+    /**
+     * El rango de la semana, contando sólo sus días del mes (las semanas de los
+     * bordes tienen menos de siete). Es el encabezado de la vista de celular.
+     *
+     * @param  array<int, array<string, mixed>|null>  $days
+     */
+    private static function weekLabel(array $days): string
     {
-        $start = CarbonImmutable::createFromFormat('Y-m-d', $from);
-        $end = CarbonImmutable::createFromFormat('Y-m-d', $to);
+        $numbers = array_column(array_filter($days), 'day');
 
-        if ($start->month === $end->month) {
-            return $start->day.' al '.$end->day.' de '.self::MONTHS[$end->month];
+        if ($numbers === []) {
+            return '';
         }
 
-        return $start->day.' de '.self::MONTHS[$start->month].' al '.$end->day.' de '.self::MONTHS[$end->month];
+        $first = (int) min($numbers);
+        $last = (int) max($numbers);
+        $month = self::MONTHS[CarbonImmutable::today(self::TIMEZONE)->month];
+
+        return ($first === $last ? $first : $first.' al '.$last).' de '.$month;
     }
 
     private static function firstLine(mixed $value): ?string

@@ -69,8 +69,10 @@ Qué se puede administrar:
 
 | Fuente | Cómo entra | Dónde se edita |
 |---|---|---|
-| **Clases** (`class_info`) | Por el campo **“Fechas para el calendario”** de cada ficha: día de la semana + hora de inicio/fin (o una fecha puntual, con fecha de fin si dura varios días), y una vigencia opcional *desde/hasta* para las temporadas. Una ficha sin fechas no aparece. | Páginas → la página → la sección de la clase |
-| **Eventos** | Sólo los que estén **tildados en el panel → Calendario** y tengan fecha de inicio. Con fecha de fin ocupan todos los días del rango. | Eventos (o el tilde masivo en Calendario) |
+| **Clases, cursos y retiros, gratis** (`class_info`) | Necesitan dos cosas: el campo **“Fechas para el calendario”** de la ficha (día de la semana + hora, o una fecha puntual con fecha de fin si dura varios días, y vigencia opcional *desde/hasta*), y estar **tildadas en el panel → Calendario** (`sections.show_on_calendar`, que arranca en true). Sin fechas no aparece, aunque esté tildada. | Las fechas en Páginas → la página → la ficha. El tilde en Calendario. |
+| **Eventos** | Igual: **tildados en el panel → Calendario** (`events.show_on_calendar`, que arranca en false) y con fecha de inicio. Con fecha de fin ocupan todos los días del rango. | Eventos, o el tilde en Calendario. |
+
+La pantalla **Calendario** del panel lista las dos fuentes juntas, cada una con su tilde y un tilde maestro arriba que marca o desmarca todo. Sólo se lista lo que podría aparecer —visible, en una página visible—, porque lo que está oculto en el sitio tampoco está en el calendario. Al lado de cada ficha se lee el resumen de sus fechas (`Occurrences::describe()`, ej. *“miércoles de 19:00 a 20:15 hs”*), así se ve qué va a publicar sin abrirla. Sacar una ficha del calendario **no** la oculta de su página.
 
 El campo **“Horario”** de la ficha de clase (`'Miércoles de 19 a 20.15 hs'`) sigue siendo texto libre y es lo que se lee en la tarjeta; las “Fechas para el calendario” son la versión que entiende el código. Son dos cosas separadas a propósito: el texto admite cualquier redacción (“a partir de septiembre, los miércoles”) y adivinarla sería frágil.
 
@@ -78,10 +80,10 @@ Qué se respeta solo:
 
 - **Ocultar** una ficha de clase, o su página, la saca del calendario. Misma regla que el resto del sitio: lo que no se ve, no está.
 - Una actividad cargada dos veces (misma fecha, título, hora y lugar) **aparece una sola vez por día** — pasa con las meditaciones que están tanto en Clases semanales como en Gratis, y al clonar una sección.
-- El mes se navega con `?mes=AAAA-MM` (enlace compartible, y el botón atrás del navegador camina los meses). Cualquier valor raro abre el mes actual.
-- El “hoy” y el mes se calculan en **hora de Argentina**, no en UTC: `config/app.php` sigue en UTC y la zona vive en `EventCalendar::TIMEZONE`. Sin eso, a las 21 del 31 de agosto el calendario ya abriría en septiembre.
-- Los nombres de meses y días están escritos a mano en `EventCalendar` (`APP_LOCALE` es `en`, así que Carbon devolvería inglés).
-- En **escritorio** es la grilla del mes con píldoras por día (hasta 2, después “+N más”) y el detalle del día en un modal; en **celular** es una semana por vez con las actividades desplegadas, y al pasarse del borde salta al mes vecino. El color y el ícono de cada píldora identifican de qué página sale la actividad (hay una referencia debajo).
+- **Es siempre el mes en curso**: no hay navegación a otros meses ni `?mes=`, y las celdas de los meses vecinos que completan la primera y la última fila van **vacías** (viajan como `null`, sin número ni actividades). Las filas conservan las 7 celdas para que cada día caiga bajo su columna.
+- El “hoy” y el mes se calculan en **hora de Argentina**, no en UTC: `config/app.php` sigue en UTC y la zona vive en `EventCalendar::TIMEZONE`. Sin eso, a las 21 del 31 de agosto el calendario ya mostraría septiembre.
+- Los nombres de meses y días están escritos a mano en `EventCalendar` (`APP_LOCALE` es `en`, así que Carbon devolvería inglés). Cada día viaja con su `weekday` ISO para que la vista no tenga que parsear fechas en el navegador.
+- En **escritorio** es la grilla del mes con píldoras por día (hasta 2, después “+N más”) y el detalle del día en un modal; en **celular** es una semana por vez con las actividades desplegadas, moviéndose sólo entre las semanas del mes. El color y el ícono de cada píldora identifican de qué página sale la actividad (hay una referencia debajo).
 
 ### Login con Google (opcional)
 

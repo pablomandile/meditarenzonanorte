@@ -9,28 +9,89 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { AlertCircle, Check, ExternalLink, LoaderCircle, Minus, Pencil } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
-const props = defineProps<{ events: EventData[] }>();
+type CalendarCard = {
+    id: number;
+    page: string;
+    title: string;
+    dates: string;
+    show_on_calendar: boolean;
+    edit_url: string;
+};
+
+/** Una fila del listado, ya sea una ficha de clase o un evento. */
+type Row = {
+    key: string;
+    page: string;
+    title: string;
+    detail: string;
+    image: string | null;
+    on: boolean;
+    selectable: boolean;
+    warning: string | null;
+    editUrl: string;
+    url: string;
+};
+
+const props = defineProps<{ cards: CalendarCard[]; events: EventData[] }>();
 
 const breadcrumbs = [{ title: 'Calendario', href: '/admin/calendar' }];
 
 /**
- * El tilde se guarda al instante, así que hasta que vuelve el servidor se
- * muestra el valor elegido (override) y la fila queda deshabilitada (pending).
+ * El tilde se guarda al instante, así que hasta que vuelve el servidor se muestra
+ * el valor elegido (override) y la fila queda deshabilitada (pending).
  */
-const override = ref(new Map<number, boolean>());
-const pending = ref(new Set<number>());
+const override = ref(new Map<string, boolean>());
+const pending = ref(new Set<string>());
 const bulk = ref(false);
 
-/** Sin fecha de inicio no hay día donde ubicar el evento. */
-function selectable(event: EventData): boolean {
-    return !!event.starts_at;
-}
+const cardRows = computed<Row[]>(() =>
+    props.cards.map((card) => ({
+        key: `s${card.id}`,
+        page: card.page,
+        title: card.title,
+        detail: card.dates,
+        image: null,
+        on: card.show_on_calendar,
+        selectable: card.dates !== '',
+        warning: card.dates === '' ? 'Cargale las “Fechas para el calendario” para poder mostrarla.' : null,
+        editUrl: card.edit_url,
+        url: route('admin.calendar.sections.toggle', card.id),
+    })),
+);
 
-function isOn(event: EventData): boolean {
-    return override.value.get(event.id) ?? event.show_on_calendar;
-}
+const eventRows = computed<Row[]>(() =>
+    props.events.map((event) => ({
+        key: `e${event.id}`,
+        page: 'Evento',
+        title: event.title,
+        detail: event.date_text ?? '',
+        image: event.image_path,
+        on: event.show_on_calendar,
+        selectable: !!event.starts_at,
+        warning: event.starts_at ? null : 'Agregale la fecha de inicio para poder mostrarlo.',
+        editUrl: `/admin/events/${event.id}/edit`,
+        url: route('admin.calendar.events.toggle', event.id),
+    })),
+);
 
-const selectables = computed(() => props.events.filter(selectable));
+const groups = computed(() => [
+    {
+        title: 'Clases, cursos y actividades',
+        hint: 'Las fechas de cada una se cargan en su ficha, dentro de la página.',
+        rows: cardRows.value,
+        empty: 'No hay fichas de clase visibles.',
+    },
+    {
+        title: 'Eventos',
+        hint: 'Se editan desde Eventos. Los ocultos no se listan.',
+        rows: eventRows.value,
+        empty: 'No hay eventos visibles.',
+    },
+]);
+
+const isOn = (row: Row) => override.value.get(row.key) ?? row.on;
+
+const selectables = computed(() => [...cardRows.value, ...eventRows.value].filter((row) => row.selectable));
 const checkedCount = computed(() => selectables.value.filter(isOn).length);
 
 const masterState = computed<boolean | 'indeterminate'>(() => {
@@ -39,12 +100,12 @@ const masterState = computed<boolean | 'indeterminate'>(() => {
     return checkedCount.value === selectables.value.length ? true : 'indeterminate';
 });
 
-function setOne(event: EventData, value: boolean) {
-    override.value.set(event.id, value);
-    pending.value.add(event.id);
+function setOne(row: Row, value: boolean) {
+    override.value.set(row.key, value);
+    pending.value.add(row.key);
 
     router.patch(
-        route('admin.calendar.toggle', event.id),
+        row.url,
         { show: value },
         {
             preserveScroll: true,
@@ -52,8 +113,8 @@ function setOne(event: EventData, value: boolean) {
             // marcado optimista antes de que lleguen los datos nuevos.
             preserveState: true,
             onFinish: () => {
-                pending.value.delete(event.id);
-                override.value.delete(event.id);
+                pending.value.delete(row.key);
+                override.value.delete(row.key);
             },
         },
     );
@@ -61,7 +122,7 @@ function setOne(event: EventData, value: boolean) {
 
 function setAll(value: boolean) {
     bulk.value = true;
-    selectables.value.forEach((event) => override.value.set(event.id, value));
+    selectables.value.forEach((row) => override.value.set(row.key, value));
 
     router.patch(
         route('admin.calendar.bulk'),
@@ -86,10 +147,7 @@ function setAll(value: boolean) {
             <div class="flex flex-wrap items-start justify-between gap-2">
                 <div>
                     <h1 class="text-xl font-semibold">Calendario</h1>
-                    <p class="text-sm text-muted-foreground">Elegí qué eventos aparecen en el calendario del sitio.</p>
-                    <p class="text-sm text-muted-foreground">
-                        Las clases semanales se agregan solas, con las “Fechas para el calendario” de cada ficha de clase.
-                    </p>
+                    <p class="text-sm text-muted-foreground">Elegí qué aparece en el calendario del sitio.</p>
                 </div>
                 <Button as-child variant="outline">
                     <a href="/calendario" target="_blank" rel="noopener"><ExternalLink class="mr-1 h-4 w-4" /> Ver el calendario</a>
@@ -98,66 +156,62 @@ function setAll(value: boolean) {
 
             <Card>
                 <CardContent class="p-0">
-                    <p v-if="!events.length" class="px-4 py-8 text-center text-sm text-muted-foreground">
-                        No hay eventos visibles. Creá uno desde <Link href="/admin/events" class="underline">Eventos</Link>.
-                    </p>
+                    <div class="flex items-center gap-3 border-b bg-muted/40 px-3 py-3 sm:px-4">
+                        <Checkbox
+                            id="calendar-all"
+                            :checked="masterState"
+                            :disabled="bulk || !selectables.length"
+                            class="focus-visible:outline-none data-[state=indeterminate]:border-accent-foreground data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-primary-foreground"
+                            @update:checked="setAll"
+                        >
+                            <Minus v-if="masterState === 'indeterminate'" class="size-3.5 stroke-[3]" />
+                            <Check v-else class="size-3.5 stroke-[3]" />
+                        </Checkbox>
 
-                    <template v-else>
-                        <div class="flex items-center gap-3 border-b bg-muted/40 px-3 py-3 sm:px-4">
-                            <Checkbox
-                                id="calendar-all"
-                                :checked="masterState"
-                                :disabled="bulk || !selectables.length"
-                                class="focus-visible:outline-none data-[state=indeterminate]:border-accent-foreground data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-primary-foreground"
-                                @update:checked="setAll"
-                            >
-                                <Minus v-if="masterState === 'indeterminate'" class="size-3.5 stroke-[3]" />
-                                <Check v-else class="size-3.5 stroke-[3]" />
-                            </Checkbox>
+                        <Label for="calendar-all" class="min-w-0 flex-1 cursor-pointer text-sm font-medium">
+                            Mostrar todo en el calendario
+                        </Label>
 
-                            <Label for="calendar-all" class="min-w-0 flex-1 cursor-pointer text-sm font-medium">
-                                Mostrar todos en el calendario
-                            </Label>
+                        <span class="shrink-0 text-sm text-muted-foreground">{{ checkedCount }} de {{ selectables.length }}</span>
+                    </div>
 
-                            <span class="shrink-0 text-sm text-muted-foreground">{{ checkedCount }} de {{ selectables.length }}</span>
+                    <template v-for="group in groups" :key="group.title">
+                        <div class="border-b bg-muted/20 px-3 py-2 sm:px-4">
+                            <p class="text-sm font-medium">{{ group.title }}</p>
+                            <p class="text-xs text-muted-foreground">{{ group.hint }}</p>
                         </div>
 
-                        <div class="divide-y">
-                            <div v-for="event in events" :key="event.id" class="flex items-start gap-3 px-3 py-3 sm:items-center sm:px-4">
+                        <p v-if="!group.rows.length" class="border-b px-4 py-4 text-sm text-muted-foreground">{{ group.empty }}</p>
+
+                        <div v-else class="divide-y border-b">
+                            <div v-for="row in group.rows" :key="row.key" class="flex items-start gap-3 px-3 py-3 sm:px-4">
                                 <Checkbox
-                                    :id="`calendar-${event.id}`"
-                                    :checked="isOn(event)"
-                                    :disabled="bulk || pending.has(event.id) || !selectable(event)"
-                                    class="mt-1 shrink-0 focus-visible:outline-none sm:mt-0"
-                                    @update:checked="(value) => setOne(event, value)"
+                                    :id="`cal-${row.key}`"
+                                    :checked="isOn(row)"
+                                    :disabled="bulk || pending.has(row.key) || !row.selectable"
+                                    class="mt-1 shrink-0 focus-visible:outline-none"
+                                    @update:checked="(value) => setOne(row, value)"
                                 />
 
-                                <img
-                                    v-if="event.image_path"
-                                    :src="img(event.image_path)"
-                                    alt=""
-                                    class="h-12 w-12 shrink-0 rounded-md border object-cover"
-                                />
-                                <div v-else class="h-12 w-12 shrink-0 rounded-md border border-dashed"></div>
+                                <img v-if="row.image" :src="img(row.image)" alt="" class="h-12 w-12 shrink-0 rounded-md border object-cover" />
 
                                 <div class="min-w-0 flex-1">
-                                    <Label :for="`calendar-${event.id}`" class="block truncate font-medium" :class="selectable(event) ? 'cursor-pointer' : ''">
-                                        {{ event.title }}
+                                    <p class="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{{ row.page }}</p>
+                                    <Label :for="`cal-${row.key}`" class="block truncate font-medium" :class="row.selectable ? 'cursor-pointer' : ''">
+                                        {{ row.title }}
                                     </Label>
 
-                                    <p v-if="selectable(event)" class="truncate text-sm text-muted-foreground">
-                                        {{ event.date_text ?? 'Sin texto de fecha' }}
-                                    </p>
-                                    <p v-else class="flex items-start gap-1.5 text-sm text-amber-700">
+                                    <p v-if="row.warning" class="flex items-start gap-1.5 text-sm text-amber-700">
                                         <AlertCircle class="mt-0.5 h-4 w-4 shrink-0" />
-                                        Agregá la fecha de inicio para poder mostrarlo en el calendario.
+                                        {{ row.warning }}
                                     </p>
+                                    <p v-else class="truncate text-sm text-muted-foreground">{{ row.detail }}</p>
                                 </div>
 
-                                <LoaderCircle v-if="pending.has(event.id)" class="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
+                                <LoaderCircle v-if="pending.has(row.key)" class="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
 
                                 <Button as-child size="sm" variant="outline" class="shrink-0">
-                                    <Link :href="`/admin/events/${event.id}/edit`" title="Editar el evento"><Pencil class="h-4 w-4" /></Link>
+                                    <Link :href="row.editUrl" title="Editar"><Pencil class="h-4 w-4" /></Link>
                                 </Button>
                             </div>
                         </div>
@@ -166,7 +220,7 @@ function setAll(value: boolean) {
             </Card>
 
             <p class="text-sm text-muted-foreground">
-                Los eventos ocultos no se listan acá. Se muestran u ocultan desde <Link href="/admin/events" class="underline">Eventos</Link>.
+                Lo que está oculto en el sitio no se lista acá, porque tampoco puede aparecer en el calendario.
             </p>
         </div>
     </AdminLayout>

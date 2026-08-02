@@ -17,6 +17,64 @@ use Carbon\CarbonImmutable;
  */
 class Occurrences
 {
+    /** @var array<int, string> */
+    private const WEEKDAYS = [1 => 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados', 'domingos'];
+
+    /** @var array<int, string> */
+    private const MONTHS = [
+        1 => 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+    ];
+
+    /**
+     * Las fechas en una línea legible, para el listado del panel: el dueño tiene
+     * que poder ver de un vistazo qué va a publicar cada ficha sin abrirla.
+     *
+     * @param  array<int, array<string, mixed>>  $rows
+     */
+    public static function describe(array $rows): string
+    {
+        $parts = [];
+
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $start = self::time($row['start'] ?? null);
+            $end = self::time($row['end'] ?? null);
+            $hours = $start ? ' de '.$start.($end ? ' a '.$end : '').' hs' : '';
+
+            if (($row['type'] ?? 'weekly') === 'date') {
+                $date = self::date($row['date'] ?? null);
+
+                if (! $date) {
+                    continue;
+                }
+
+                $until = self::date($row['until'] ?? null);
+                $when = $until && $until->greaterThan($date)
+                    ? 'del '.$date->day.' al '.$until->day.' de '.self::MONTHS[$until->month]
+                    : $date->day.' de '.self::MONTHS[$date->month];
+
+                $parts[] = $when.$hours;
+
+                continue;
+            }
+
+            $weekday = filter_var($row['weekday'] ?? null, FILTER_VALIDATE_INT);
+
+            if ($weekday === false || $weekday < 1 || $weekday > 7) {
+                continue;
+            }
+
+            $until = self::date($row['until'] ?? null);
+            $parts[] = self::WEEKDAYS[$weekday].$hours.($until ? ' (hasta el '.$until->day.' de '.self::MONTHS[$until->month].')' : '');
+        }
+
+        return implode(' · ', $parts);
+    }
+
     /**
      * @param  array<int, array<string, mixed>>  $rows
      * @return array<int, array{date: string, start: ?string, end: ?string, label: ?string}>

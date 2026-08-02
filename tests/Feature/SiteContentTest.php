@@ -737,12 +737,11 @@ class SiteContentTest extends TestCase
     // ---------------------------------------------------------------- calendario
 
     /** El prop del calendario, tal como lo recibe EventCalendarSection.vue. */
-    private function calendar(?string $mes = null): array
+    private function calendar(): array
     {
         $data = [];
-        $url = '/calendario'.($mes === null ? '' : '?mes='.$mes);
 
-        $this->get($url)->assertOk()->assertInertia(function (AssertableInertia $page) use (&$data) {
+        $this->get('/calendario')->assertOk()->assertInertia(function (AssertableInertia $page) use (&$data) {
             $data = $page->toArray()['props']['calendar'];
         });
 
@@ -754,12 +753,12 @@ class SiteContentTest extends TestCase
      *
      * @return array<string, array<int, string>>
      */
-    private function calendarDays(?string $mes = null): array
+    private function calendarDays(): array
     {
         $days = [];
 
-        foreach ($this->calendar($mes)['weeks'] as $week) {
-            foreach ($week['days'] as $day) {
+        foreach ($this->calendar()['weeks'] as $week) {
+            foreach (array_filter($week['days']) as $day) {
                 if ($day['activities']) {
                     $days[$day['date']] = array_column($day['activities'], 'title');
                 }
@@ -781,19 +780,32 @@ class SiteContentTest extends TestCase
         $this->assertSame('Lun', $calendar['weekdays'][0]);
         $this->assertSame('Dom', $calendar['weekdays'][6]);
 
-        // La grilla arranca el lunes de la semana del 1 y termina un domingo.
-        $first = $calendar['weeks'][0]['days'];
-        $this->assertSame('2026-07-27', $first[0]['date']);
-        $this->assertFalse($first[0]['in_month']);
-        $this->assertSame('lunes 27 de julio', $first[0]['label']);
-        $this->assertSame('27 de julio al 2 de agosto', $calendar['weeks'][0]['label']);
+        // Sin navegación: el calendario es siempre el mes en curso.
+        $this->assertArrayNotHasKey('prev', $calendar);
+        $this->assertArrayNotHasKey('next', $calendar);
 
+        // Las filas siguen teniendo 7 celdas para que cada día caiga bajo su
+        // columna, pero las de los meses vecinos van vacías.
         foreach ($calendar['weeks'] as $week) {
             $this->assertCount(7, $week['days']);
         }
 
+        // Agosto de 2026 empieza sábado: las cinco primeras celdas están vacías.
+        $first = $calendar['weeks'][0]['days'];
+        $this->assertSame([null, null, null, null, null], array_slice($first, 0, 5));
+        $this->assertSame('2026-08-01', $first[5]['date']);
+        $this->assertSame('sábado 1 de agosto', $first[5]['label']);
+        $this->assertSame(6, $first[5]['weekday']);
+        $this->assertSame('1 al 2 de agosto', $calendar['weeks'][0]['label']);
+
+        // Y ninguna celda del mes vecino se cuela, ni con actividades.
+        $dates = collect($calendar['weeks'])->flatMap(fn ($week) => array_filter($week['days']))->pluck('date');
+        $this->assertSame('2026-08-01', $dates->first());
+        $this->assertSame('2026-08-31', $dates->last());
+        $this->assertCount(31, $dates);
+
         // El día de hoy queda marcado una sola vez en todo el mes.
-        $todays = collect($calendar['weeks'])->flatMap(fn ($week) => $week['days'])->where('is_today', true);
+        $todays = collect($calendar['weeks'])->flatMap(fn ($week) => array_filter($week['days']))->where('is_today', true);
         $this->assertCount(1, $todays);
         $this->assertSame('2026-08-15', $todays->first()['date']);
     }
@@ -811,14 +823,14 @@ class SiteContentTest extends TestCase
 
         // Y en ningún otro día.
         foreach ($days as $date => $titles) {
-            if (! in_array($date, ['2026-07-29', '2026-08-05', '2026-08-12', '2026-08-19', '2026-08-26', '2026-09-02'], true)) {
+            if (! in_array($date, ['2026-08-05', '2026-08-12', '2026-08-19', '2026-08-26'], true)) {
                 $this->assertNotContains('Clases semanales', $titles, "Sobra la clase del $date");
             }
         }
 
         // Con la hora estructurada, no el texto libre.
         $wednesday = collect($this->calendar()['weeks'])
-            ->flatMap(fn ($week) => $week['days'])
+            ->flatMap(fn ($week) => array_filter($week['days']))
             ->firstWhere('date', '2026-08-05');
         $class = collect($wednesday['activities'])->firstWhere('title', 'Clases semanales');
 
@@ -882,7 +894,7 @@ class SiteContentTest extends TestCase
         $this->assertContains('Charla abierta', $days['2026-08-20']);
 
         $activity = collect($this->calendar()['weeks'])
-            ->flatMap(fn ($week) => $week['days'])
+            ->flatMap(fn ($week) => array_filter($week['days']))
             ->firstWhere('date', '2026-08-20')['activities'];
         $charla = collect($activity)->firstWhere('title', 'Charla abierta');
 
@@ -913,24 +925,32 @@ class SiteContentTest extends TestCase
         $this->assertNotContains('Retiro de fin de semana', $days['2026-08-31'] ?? []);
     }
 
-    public function test_month_navigation_uses_the_query_string_and_ignores_garbage(): void
+    public function test_the_calendar_is_always_the_current_month_and_ignores_any_query_string(): void
     {
         $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
 
-        $september = $this->calendar('2026-09');
+        // No se puede pedir otro mes: un ?mes= viejo (o cualquier parámetro) se
+        // ignora y la página responde el mes en curso, sin 422 ni redirección.
+        foreach (['?mes=2026-09', '?mes=2025-03', '?mes=basura', '?cualquier=cosa'] as $query) {
+            $data = [];
 
+            $this->get('/calendario'.$query)->assertOk()->assertInertia(function (AssertableInertia $page) use (&$data) {
+                $data = $page->toArray()['props']['calendar'];
+            });
+
+            $this->assertSame('2026-08', $data['month'], "$query debería seguir mostrando agosto");
+        }
+
+        // Y al cambiar el mes, el calendario acompaña.
+        $this->travelTo(Carbon::parse('2026-09-10 12:00', EventCalendar::TIMEZONE));
+
+        $september = $this->calendar();
         $this->assertSame('2026-09', $september['month']);
         $this->assertSame('septiembre de 2026', $september['label']);
-        $this->assertSame('2026-08', $september['prev']);
-        $this->assertSame('2026-10', $september['next']);
+        $this->assertSame('2026-09-10', $september['today']);
 
-        // Un mes cualquiera del pasado también responde: las reglas semanales no caducan.
-        $this->assertSame('2025-03', $this->calendar('2025-03')['month']);
-
-        // Y cualquier cosa rara abre el mes actual, sin 422 ni redirección.
-        foreach (['basura', '2026-13', '2026-00', '', '2026-9', '99999-01'] as $mes) {
-            $this->assertSame('2026-08', $this->calendar($mes)['month'], "?mes=$mes debería caer en agosto");
-        }
+        // Las clases semanales sembradas no tienen vigencia, así que siguen ahí.
+        $this->assertContains('Clases semanales', $this->calendarDays()['2026-09-02'] ?? []);
     }
 
     public function test_calendar_uses_the_argentine_day_and_not_utc(): void
@@ -944,7 +964,7 @@ class SiteContentTest extends TestCase
         $this->assertSame('2026-08', $calendar['month']);
         $this->assertSame('2026-08-31', $calendar['today']);
 
-        $todays = collect($calendar['weeks'])->flatMap(fn ($week) => $week['days'])->where('is_today', true);
+        $todays = collect($calendar['weeks'])->flatMap(fn ($week) => array_filter($week['days']))->where('is_today', true);
         $this->assertSame(['2026-08-31'], $todays->pluck('date')->all());
     }
 
@@ -1062,6 +1082,65 @@ class SiteContentTest extends TestCase
         $this->assertSame(['Meditaciones guiadas'], $thursday);
     }
 
+    public function test_admin_calendar_screen_lists_the_class_cards_with_their_dates(): void
+    {
+        $admin = $this->admin();
+
+        $cards = collect($this->actingAs($admin)->get('/admin/calendar')->assertOk()->viewData('page')['props']['cards']);
+
+        // Están las tres fuentes, no sólo los eventos.
+        $this->assertEqualsCanonicalizing(
+            ['Clases semanales', 'Gratis', 'Cursos y Retiros'],
+            $cards->pluck('page')->unique()->values()->all(),
+        );
+
+        // Y las fechas vienen resumidas para leerlas sin abrir la ficha.
+        $clase = $cards->firstWhere('title', 'Clases semanales');
+        $this->assertSame('miércoles de 19:00 a 20:15 hs', $clase['dates']);
+        $this->assertTrue($clase['show_on_calendar']);
+
+        // Una ficha sin fechas se lista igual, pero avisando que no puede aparecer.
+        $sinFechas = $cards->firstWhere('dates', '');
+        $this->assertNotNull($sinFechas);
+
+        // Lo oculto no se lista: tampoco puede llegar al calendario.
+        Section::whereHas('page', fn ($query) => $query->where('slug', 'clases-semanales'))
+            ->where('key', 'clase-principal')
+            ->firstOrFail()
+            ->update(['visible' => false]);
+
+        Page::where('slug', 'gratis')->firstOrFail()->update(['visible' => false]);
+
+        $cards = collect($this->actingAs($admin)->get('/admin/calendar')->viewData('page')['props']['cards']);
+
+        $this->assertNotContains('Clases semanales', $cards->pluck('title'));
+        $this->assertNotContains('Gratis', $cards->pluck('page'));
+    }
+
+    public function test_admin_can_take_a_class_card_off_the_calendar(): void
+    {
+        $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
+
+        $admin = $this->admin();
+        $section = Section::whereHas('page', fn ($query) => $query->where('slug', 'clases-semanales'))
+            ->where('key', 'clase-principal')
+            ->firstOrFail();
+
+        $this->assertContains('Clases semanales', $this->calendarDays()['2026-08-05']);
+
+        $this->actingAs($admin)->patch("/admin/calendar/sections/{$section->id}", ['show' => false])->assertRedirect();
+
+        $this->assertFalse($section->fresh()->show_on_calendar);
+        $this->assertNotContains('Clases semanales', $this->calendarDays()['2026-08-05'] ?? []);
+        // Sigue publicada en su página: sólo salió del calendario.
+        $this->assertTrue($section->fresh()->visible);
+        $this->get('/clases-semanales')->assertOk()->assertSee('de 19 a 20.15 hs');
+
+        $this->actingAs($admin)->patch("/admin/calendar/sections/{$section->id}", ['show' => true])->assertRedirect();
+
+        $this->assertContains('Clases semanales', $this->calendarDays()['2026-08-05']);
+    }
+
     public function test_admin_calendar_screen_lists_visible_events_and_toggles_them(): void
     {
         $admin = $this->admin();
@@ -1077,35 +1156,57 @@ class SiteContentTest extends TestCase
         $this->assertContains('Sin fecha', $titles);
         $this->assertNotContains('Evento oculto', $titles);
 
-        $this->actingAs($admin)->patch("/admin/calendar/{$listed->id}", ['show' => true])->assertRedirect();
+        $this->actingAs($admin)->patch("/admin/calendar/events/{$listed->id}", ['show' => true])->assertRedirect();
         $this->assertTrue($listed->fresh()->show_on_calendar);
 
-        $this->actingAs($admin)->patch("/admin/calendar/{$listed->id}", ['show' => false])->assertRedirect();
+        $this->actingAs($admin)->patch("/admin/calendar/events/{$listed->id}", ['show' => false])->assertRedirect();
         $this->assertFalse($listed->fresh()->show_on_calendar);
+    }
 
-        // Marcar todos alcanza a los visibles con fecha y no toca a los demás.
-        $this->actingAs($admin)->patch('/admin/calendar', ['show' => true])->assertRedirect()->assertSessionHas('success');
+    public function test_the_master_toggle_covers_the_cards_and_the_events_at_once(): void
+    {
+        $admin = $this->admin();
 
-        $this->assertTrue($listed->fresh()->show_on_calendar);
+        $listed = Event::create(['title' => 'Charla abierta', 'starts_at' => '2026-08-20', 'visible' => true]);
+        $hidden = Event::create(['title' => 'Evento oculto', 'starts_at' => '2026-08-21', 'visible' => false, 'show_on_calendar' => true]);
+        $undated = Event::create(['title' => 'Sin fecha', 'visible' => true]);
+
+        // Una ficha oculta: no se lista, así que el masivo no debe tocarla.
+        $hiddenCard = Section::whereHas('page', fn ($query) => $query->where('slug', 'cursos-y-retiros'))
+            ->where('key', 'curso')
+            ->firstOrFail();
+        $hiddenCard->update(['visible' => false]);
+
+        // Destildar todo: alcanza a las fichas y a los eventos listados.
+        $this->actingAs($admin)->patch('/admin/calendar', ['show' => false])->assertRedirect()->assertSessionHas('success');
+
+        $this->assertSame(0, Section::where('type', 'class_info')->visible()->onCalendar()->count());
+        $this->assertFalse($listed->fresh()->show_on_calendar);
+        // Y no le pisa la marca a lo que no se lista.
+        $this->assertTrue($hidden->fresh()->show_on_calendar);
+        $this->assertTrue($hiddenCard->fresh()->show_on_calendar);
         $this->assertFalse($undated->fresh()->show_on_calendar);
-        $this->assertTrue($hidden->fresh()->show_on_calendar);
 
-        // Y destildar todos tampoco le pisa la marca al oculto.
-        $this->actingAs($admin)->patch('/admin/calendar', ['show' => false])->assertRedirect();
+        // Marcar todo, de vuelta.
+        $this->actingAs($admin)->patch('/admin/calendar', ['show' => true])->assertRedirect();
 
-        $this->assertFalse($listed->fresh()->show_on_calendar);
-        $this->assertTrue($hidden->fresh()->show_on_calendar);
+        $this->assertTrue($listed->fresh()->show_on_calendar);
+        $this->assertGreaterThan(0, Section::where('type', 'class_info')->visible()->onCalendar()->count());
+        $this->assertFalse($undated->fresh()->show_on_calendar);
     }
 
     public function test_admin_calendar_screen_needs_a_session(): void
     {
         $event = Event::create(['title' => 'Charla abierta', 'starts_at' => '2026-08-20', 'visible' => true]);
+        $section = Section::where('type', 'class_info')->firstOrFail();
 
         $this->get('/admin/calendar')->assertRedirect('/login');
         $this->patch('/admin/calendar', ['show' => true])->assertRedirect('/login');
-        $this->patch("/admin/calendar/{$event->id}", ['show' => true])->assertRedirect('/login');
+        $this->patch("/admin/calendar/events/{$event->id}", ['show' => true])->assertRedirect('/login');
+        $this->patch("/admin/calendar/sections/{$section->id}", ['show' => false])->assertRedirect('/login');
 
         $this->assertFalse($event->fresh()->show_on_calendar);
+        $this->assertTrue($section->fresh()->show_on_calendar);
     }
 
     public function test_event_form_stores_the_new_calendar_fields_and_rejects_an_inverted_range(): void
@@ -1216,11 +1317,14 @@ class SiteContentTest extends TestCase
         // La ficha ya cargada quedó como estaba.
         $this->assertSame(6, $gratuitas->fresh()->content['occurrences'][0]['weekday']);
 
-        // La clase cae los lunes de agosto y no en septiembre, por la vigencia.
+        // La clase cae los lunes de agosto.
         $days = $this->calendarDays();
         $this->assertContains('Clases semanales', $days['2026-08-03'] ?? []);
         $this->assertContains('Clases semanales', $days['2026-08-24'] ?? []);
-        $this->assertNotContains('Clases semanales', $this->calendarDays('2026-09')['2026-09-07'] ?? []);
+
+        // Y en septiembre ya no, por la vigencia hasta el 31 de agosto.
+        $this->travelTo(Carbon::parse('2026-09-07 12:00', EventCalendar::TIMEZONE));
+        $this->assertNotContains('Clases semanales', $this->calendarDays()['2026-09-07'] ?? []);
 
         // Repetirlo no cambia nada.
         $this->seed(CalendarioFechasSeeder::class);

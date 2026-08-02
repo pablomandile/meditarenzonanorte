@@ -3,112 +3,40 @@ import CalendarActivity from '@/components/public/CalendarActivity.vue';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DIAS, sourceStyles, styleFor, timeLabel, type CalendarData } from '@/lib/calendar';
 import { paragraphs, type SectionData } from '@/lib/site';
-import { Link, router, usePage } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{ section: SectionData; calendar?: CalendarData }>();
 
-const page = usePage();
-
-const loading = ref(false);
 const selectedDate = ref<string | null>(null);
 const weekIndex = ref(0);
-/** Al cruzar de mes hay que recordar de qué semana venimos (ver pickWeek). */
-const pending = ref<{ monday: string; dir: 1 | -1 } | null>(null);
 
 const weeks = computed(() => props.calendar?.weeks ?? []);
 const week = computed(() => weeks.value[weekIndex.value] ?? null);
 const styles = computed(() => sourceStyles(props.calendar?.sources ?? []));
-const days = computed(() => weeks.value.flatMap((w) => w.days));
+const days = computed(() => weeks.value.flatMap((w) => w.days).filter((day) => day !== null));
 const hasActivities = computed(() => days.value.some((day) => day.activities.length > 0));
 const selectedDay = computed(() => days.value.find((day) => day.date === selectedDate.value) ?? null);
-const isCurrentMonth = computed(() => props.calendar?.month === props.calendar?.today.slice(0, 7));
-const weekHasToday = computed(() => !!week.value?.days.some((day) => day.is_today));
 
-function goToMonth(month?: string | null) {
-    if (!month || loading.value) return;
+/** En celular se muestra una semana por vez, dentro del mes. */
+const weekDays = computed(() => (week.value?.days ?? []).filter((day) => day !== null));
+const weekHasToday = computed(() => weekDays.value.some((day) => day.is_today));
 
-    router.get(
-        page.url.split('?')[0],
-        { mes: month },
-        {
-            only: ['calendar'],
-            // Sin preserveState el componente se vuelve a montar y se pierden
-            // weekIndex y pending, que es justo lo que hace andar el cruce de mes.
-            preserveState: true,
-            preserveScroll: true,
-            onStart: () => (loading.value = true),
-            onFinish: () => (loading.value = false),
-        },
-    );
+function stepWeek(direction: -1 | 1) {
+    const next = weekIndex.value + direction;
+
+    if (next >= 0 && next < weeks.value.length) weekIndex.value = next;
 }
 
-function stepWeek(dir: 1 | -1) {
-    if (loading.value) return;
+/** Arranca en la semana de hoy, que es la que la persona vino a ver. */
+function pickTodaysWeek() {
+    const found = weeks.value.findIndex((w) => w.days.some((day) => day?.is_today));
 
-    const next = weekIndex.value + dir;
-
-    if (next >= 0 && next < weeks.value.length) {
-        weekIndex.value = next;
-
-        return;
-    }
-
-    pending.value = { monday: week.value!.days[0].date, dir };
-    goToMonth(dir === 1 ? props.calendar!.next : props.calendar!.prev);
+    weekIndex.value = found >= 0 ? found : 0;
 }
 
-/**
- * Qué semana mostrar cuando llegan los datos de un mes. Dos meses seguidos
- * comparten la semana del borde, así que al cruzar no sirve "la primera del mes":
- * puede ser la misma que se estaba viendo. Se busca la primera realmente posterior
- * (o anterior). Las fechas ISO se comparan como texto.
- */
-function pickWeek() {
-    const list = weeks.value;
-
-    if (!list.length) {
-        weekIndex.value = 0;
-
-        return;
-    }
-
-    if (pending.value) {
-        const { monday, dir } = pending.value;
-        const mondays = list.map((w) => w.days[0].date);
-        const found = dir === 1 ? mondays.findIndex((d) => d > monday) : mondays.filter((d) => d < monday).length - 1;
-
-        weekIndex.value = found >= 0 ? found : dir === 1 ? 0 : list.length - 1;
-        pending.value = null;
-
-        return;
-    }
-
-    const today = list.findIndex((w) => w.days.some((day) => day.in_month && day.date === props.calendar!.today));
-
-    weekIndex.value = today >= 0 ? today : 0;
-}
-
-function goToToday() {
-    pending.value = null;
-
-    if (isCurrentMonth.value) {
-        pickWeek();
-    } else {
-        goToMonth(props.calendar!.today.slice(0, 7));
-    }
-}
-
-// Al cambiar de mes se cierra el detalle abierto: sería de un día que ya no se ve.
-watch(
-    () => props.calendar?.month,
-    () => {
-        selectedDate.value = null;
-        pickWeek();
-    },
-    { immediate: true },
-);
+watch(() => props.calendar?.month, pickTodaysWeek, { immediate: true });
 
 function dayAriaLabel(label: string, count: number): string {
     if (!count) return label;
@@ -132,52 +60,13 @@ function dayAriaLabel(label: string, count: number): string {
                 {{ p }}
             </p>
 
-            <p class="sr-only" role="status" aria-live="polite">
-                {{ loading ? 'Cargando el calendario…' : `Mostrando ${calendar.label}` }}
-            </p>
+            <h3 class="mb-5 mt-8 hidden text-center font-heading text-2xl font-light leading-none text-brand-sky first-letter:uppercase md:block md:text-[28px]">
+                {{ calendar.label }}
+            </h3>
 
-            <!-- Navegación por mes: en celular se navega por semana. -->
-            <div class="mb-5 mt-8 hidden items-center justify-center gap-3 md:flex">
-                <button
-                    type="button"
-                    :disabled="loading"
-                    aria-label="Mes anterior"
-                    title="Mes anterior"
-                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-brand-sky ring-1 ring-brand-line transition hover:bg-brand-light disabled:opacity-40"
-                    @click="goToMonth(calendar.prev)"
-                >
-                    <ChevronLeft class="h-5 w-5" />
-                </button>
-
-                <h3 class="min-w-[13rem] text-center font-heading text-2xl font-light leading-none text-brand-sky first-letter:uppercase md:text-[28px]">
-                    {{ calendar.label }}
-                </h3>
-
-                <button
-                    type="button"
-                    :disabled="loading"
-                    aria-label="Mes siguiente"
-                    title="Mes siguiente"
-                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-brand-sky ring-1 ring-brand-line transition hover:bg-brand-light disabled:opacity-40"
-                    @click="goToMonth(calendar.next)"
-                >
-                    <ChevronRight class="h-5 w-5" />
-                </button>
-
-                <button
-                    v-if="!isCurrentMonth"
-                    type="button"
-                    :disabled="loading"
-                    class="ml-2 rounded-full px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-brand-sky ring-1 ring-brand-sky/40 transition hover:bg-brand-light disabled:opacity-40"
-                    @click="goToToday"
-                >
-                    hoy
-                </button>
-            </div>
-
-            <!-- Escritorio: grilla del mes. Es una tabla de verdad (día × semana). -->
-            <div class="hidden md:block" :aria-busy="loading">
-                <div class="overflow-hidden rounded-xl transition-opacity" :class="loading ? 'pointer-events-none opacity-40' : 'opacity-100'">
+            <!-- Escritorio: la grilla del mes. Es una tabla de verdad (día × semana). -->
+            <div class="hidden md:block">
+                <div class="overflow-hidden rounded-xl">
                     <table class="w-full table-fixed border-collapse">
                         <caption class="sr-only">Actividades de {{ calendar.label }}</caption>
                         <thead>
@@ -195,64 +84,67 @@ function dayAriaLabel(label: string, count: number): string {
                         </thead>
                         <tbody>
                             <tr v-for="(row, w) in weeks" :key="w">
-                                <td
-                                    v-for="day in row.days"
-                                    :key="day.date"
-                                    class="border border-brand-line/50 p-0 align-top"
-                                    :class="day.in_month ? 'bg-white' : 'bg-brand-line/10'"
-                                    :aria-current="day.is_today ? 'date' : undefined"
-                                >
-                                    <component
-                                        :is="day.activities.length ? 'button' : 'div'"
-                                        v-bind="
-                                            day.activities.length
-                                                ? { type: 'button', 'aria-haspopup': 'dialog', 'aria-label': dayAriaLabel(day.label, day.activities.length) }
-                                                : {}
-                                        "
-                                        class="flex min-h-[104px] w-full flex-col items-start gap-1 p-1.5 text-left lg:min-h-[120px]"
-                                        :class="
-                                            day.activities.length
-                                                ? 'cursor-pointer transition hover:bg-brand-light/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-sky'
-                                                : ''
-                                        "
-                                        @click="day.activities.length && (selectedDate = day.date)"
+                                <template v-for="(day, d) in row.days" :key="d">
+                                    <!-- Fuera del mes no se dibuja nada, ni el número. -->
+                                    <td v-if="!day" class="border border-brand-line/50 bg-brand-line/10 p-0"></td>
+
+                                    <td
+                                        v-else
+                                        class="border border-brand-line/50 bg-white p-0 align-top"
+                                        :aria-current="day.is_today ? 'date' : undefined"
                                     >
-                                        <span
-                                            v-if="day.is_today"
-                                            class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-sky text-[13px] font-semibold leading-none text-white"
+                                        <component
+                                            :is="day.activities.length ? 'button' : 'div'"
+                                            v-bind="
+                                                day.activities.length
+                                                    ? {
+                                                          type: 'button',
+                                                          'aria-haspopup': 'dialog',
+                                                          'aria-label': dayAriaLabel(day.label, day.activities.length),
+                                                      }
+                                                    : {}
+                                            "
+                                            class="flex min-h-[104px] w-full flex-col items-start gap-1 p-1.5 text-left lg:min-h-[120px]"
+                                            :class="
+                                                day.activities.length
+                                                    ? 'cursor-pointer transition hover:bg-brand-light/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-sky'
+                                                    : ''
+                                            "
+                                            @click="day.activities.length && (selectedDate = day.date)"
                                         >
-                                            {{ day.day }}
-                                        </span>
-                                        <span
-                                            v-else
-                                            class="px-0.5 text-[13px] font-semibold leading-none"
-                                            :class="day.in_month ? 'text-brand-ink' : 'text-brand-muted/60'"
-                                        >
-                                            {{ day.day }}
-                                        </span>
+                                            <span
+                                                v-if="day.is_today"
+                                                class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-sky text-[13px] font-semibold leading-none text-white"
+                                            >
+                                                {{ day.day }}
+                                            </span>
+                                            <span v-else class="px-0.5 text-[13px] font-semibold leading-none text-brand-ink">{{ day.day }}</span>
 
-                                        <span
-                                            v-for="activity in day.activities.slice(0, 2)"
-                                            :key="activity.key"
-                                            class="flex w-full min-w-0 items-center gap-1 rounded px-1 py-0.5 text-[11px] leading-tight ring-1"
-                                            :class="[styleFor(styles, activity.source.slug).chip, day.in_month ? '' : 'opacity-60']"
-                                        >
-                                            <component
-                                                :is="styleFor(styles, activity.source.slug).icon"
-                                                class="h-3 w-3 shrink-0"
-                                                :class="styleFor(styles, activity.source.slug).iconText"
-                                                aria-hidden="true"
-                                            />
-                                            <span class="sr-only">{{ activity.source.title }}:</span>
-                                            <span v-if="activity.start" class="shrink-0 font-semibold tabular-nums">{{ timeLabel(activity.start) }}</span>
-                                            <span class="truncate">{{ activity.title }}</span>
-                                        </span>
+                                            <span
+                                                v-for="activity in day.activities.slice(0, 2)"
+                                                :key="activity.key"
+                                                class="flex w-full min-w-0 items-center gap-1 rounded px-1 py-0.5 text-[11px] leading-tight ring-1"
+                                                :class="styleFor(styles, activity.source.slug).chip"
+                                            >
+                                                <component
+                                                    :is="styleFor(styles, activity.source.slug).icon"
+                                                    class="h-3 w-3 shrink-0"
+                                                    :class="styleFor(styles, activity.source.slug).iconText"
+                                                    aria-hidden="true"
+                                                />
+                                                <span class="sr-only">{{ activity.source.title }}:</span>
+                                                <span v-if="activity.start" class="shrink-0 font-semibold tabular-nums">
+                                                    {{ timeLabel(activity.start) }}
+                                                </span>
+                                                <span class="truncate">{{ activity.title }}</span>
+                                            </span>
 
-                                        <span v-if="day.activities.length > 2" class="pl-1 text-[11px] font-medium text-brand-sky">
-                                            +{{ day.activities.length - 2 }} más
-                                        </span>
-                                    </component>
-                                </td>
+                                            <span v-if="day.activities.length > 2" class="pl-1 text-[11px] font-medium text-brand-sky">
+                                                +{{ day.activities.length - 2 }} más
+                                            </span>
+                                        </component>
+                                    </td>
+                                </template>
                             </tr>
                         </tbody>
                     </table>
@@ -264,10 +156,10 @@ function dayAriaLabel(label: string, count: number): string {
                 <div class="mb-3 mt-6 flex items-center gap-1">
                     <button
                         type="button"
-                        :disabled="loading"
+                        :disabled="weekIndex === 0"
                         aria-label="Semana anterior"
                         title="Semana anterior"
-                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-brand-sky ring-1 ring-brand-line transition hover:bg-brand-light disabled:opacity-40"
+                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-brand-sky ring-1 ring-brand-line transition hover:bg-brand-light disabled:opacity-30"
                         @click="stepWeek(-1)"
                     >
                         <ChevronLeft class="h-5 w-5" />
@@ -282,10 +174,10 @@ function dayAriaLabel(label: string, count: number): string {
 
                     <button
                         type="button"
-                        :disabled="loading"
+                        :disabled="weekIndex >= weeks.length - 1"
                         aria-label="Semana siguiente"
                         title="Semana siguiente"
-                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-brand-sky ring-1 ring-brand-line transition hover:bg-brand-light disabled:opacity-40"
+                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-brand-sky ring-1 ring-brand-line transition hover:bg-brand-light disabled:opacity-30"
                         @click="stepWeek(1)"
                     >
                         <ChevronRight class="h-5 w-5" />
@@ -295,33 +187,24 @@ function dayAriaLabel(label: string, count: number): string {
                 <button
                     v-if="!weekHasToday"
                     type="button"
-                    :disabled="loading"
-                    class="mx-auto mb-3 block rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wide text-brand-sky ring-1 ring-brand-sky/40 disabled:opacity-40"
-                    @click="goToToday"
+                    class="mx-auto mb-3 block rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wide text-brand-sky ring-1 ring-brand-sky/40"
+                    @click="pickTodaysWeek"
                 >
                     volver a hoy
                 </button>
 
-                <ol class="space-y-2 transition-opacity" :aria-busy="loading" :class="loading ? 'opacity-40' : ''">
+                <ol class="space-y-2">
                     <li
-                        v-for="(day, i) in week?.days ?? []"
+                        v-for="day in weekDays"
                         :key="day.date"
                         class="overflow-hidden rounded-xl"
                         :class="day.is_today ? 'ring-2 ring-brand-sky' : 'ring-1 ring-brand-line/60'"
                     >
-                        <div class="flex items-baseline gap-2 px-3 py-2" :class="day.in_month ? 'bg-brand-light/60' : 'bg-brand-line/20'">
-                            <span
-                                class="text-[11px] font-semibold uppercase tracking-wide"
-                                :class="day.in_month ? 'text-brand-sky-dark' : 'text-brand-muted'"
-                            >
-                                {{ DIAS[i].short }}
+                        <div class="flex items-baseline gap-2 bg-brand-light/60 px-3 py-2">
+                            <span class="text-[11px] font-semibold uppercase tracking-wide text-brand-sky-dark">
+                                {{ DIAS[day.weekday - 1].short }}
                             </span>
-                            <span
-                                class="font-heading text-lg font-semibold leading-none"
-                                :class="day.in_month ? 'text-brand-ink' : 'text-brand-muted'"
-                            >
-                                {{ day.day }}
-                            </span>
+                            <span class="font-heading text-lg font-semibold leading-none text-brand-ink">{{ day.day }}</span>
                             <span
                                 v-if="day.is_today"
                                 class="ml-auto rounded-full bg-brand-sky px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white"
@@ -346,10 +229,7 @@ function dayAriaLabel(label: string, count: number): string {
                 </ol>
             </div>
 
-            <p
-                v-if="!hasActivities"
-                class="mt-5 text-center font-display text-xl uppercase tracking-wide text-brand-muted"
-            >
+            <p v-if="!hasActivities" class="mt-5 text-center font-display text-xl uppercase tracking-wide text-brand-muted">
                 {{ section.content.empty_text ?? 'este mes no tiene actividades cargadas' }}
             </p>
 

@@ -21,20 +21,20 @@ export type CalendarActivityData = {
 export type CalendarDay = {
     date: string;
     day: number;
+    /** 1 = lunes … 7 = domingo (ISO), como lo manda el servidor. */
+    weekday: number;
     label: string;
-    in_month: boolean;
     is_today: boolean;
     activities: CalendarActivityData[];
 };
 
-export type CalendarWeek = { label: string; days: CalendarDay[] };
+/** Las celdas de los bordes que no son del mes vienen en null: van vacías. */
+export type CalendarWeek = { label: string; days: (CalendarDay | null)[] };
 
 export type CalendarData = {
     month: string;
     label: string;
     today: string;
-    prev: string;
-    next: string;
     weekdays: string[];
     sources: CalendarSource[];
     weeks: CalendarWeek[];

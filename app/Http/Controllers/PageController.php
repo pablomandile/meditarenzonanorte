@@ -7,18 +7,17 @@ use App\Models\Faq;
 use App\Models\Page;
 use App\Support\EventCalendar;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PageController extends Controller
 {
-    public function home(Request $request): Response
+    public function home(): Response
     {
-        return $this->render(Page::where('slug', 'home')->firstOrFail(), $request);
+        return $this->render(Page::where('slug', 'home')->firstOrFail());
     }
 
-    public function show(Request $request, Page $page): Response|RedirectResponse
+    public function show(Page $page): Response|RedirectResponse
     {
         abort_unless($page->visible, 404);
 
@@ -26,10 +25,10 @@ class PageController extends Controller
             return redirect()->route('home');
         }
 
-        return $this->render($page, $request);
+        return $this->render($page);
     }
 
-    private function render(Page $page, Request $request): Response
+    private function render(Page $page): Response
     {
         $sections = $page->sections()->visible()->orderBy('position')->get();
         $types = $sections->pluck('type');
@@ -57,7 +56,7 @@ class PageController extends Controller
         }
 
         if ($types->contains('event_calendar')) {
-            $props['calendar'] = EventCalendar::forMonth($request->query('mes'));
+            $props['calendar'] = EventCalendar::currentMonth();
         }
 
         $faqIds = $sections->where('type', 'faq')
