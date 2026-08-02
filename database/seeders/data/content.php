@@ -586,6 +586,26 @@ return [
         'meta_description' => 'Voluntariado Forma parte de la comunidad de Meditar en Rosario a través del programa de voluntariado Este espacio de paz y meditación depende completamente de',
         'sections' => [
             [
+                'type' => 'page_header',
+                'key' => 'titulo',
+                'content' => [
+                    'heading' => 'VOLUNTARIADO',
+                    'intro' => null,
+                    'style' => 'sky',
+                ],
+            ],
+            [
+                // El banner ancho de Zona Norte (1920x500) y no el afiche de un
+                // evento: la portada acompaña a la página, no anuncia una fecha.
+                'type' => 'hero',
+                'key' => 'banner',
+                'content' => [
+                    'image' => 'abonos/banner-zona-norte.jpg',
+                    'heading' => null,
+                    'subheading' => null,
+                ],
+            ],
+            [
                 'type' => 'text_block',
                 'key' => 'intro',
                 'content' => [

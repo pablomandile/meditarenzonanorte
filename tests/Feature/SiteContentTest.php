@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Database\Seeders\CalendarioFechasSeeder;
 use Database\Seeders\CalendarioSeeder;
 use Database\Seeders\ContentSeeder;
+use Database\Seeders\VoluntariadoPortadaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -1242,6 +1243,58 @@ class SiteContentTest extends TestCase
             'start_time' => '17:00',
             'end_time' => '10:00',
         ])->assertSessionHasErrors('end_time');
+    }
+
+    public function test_voluntariado_gets_its_header_and_cover_without_touching_the_rest(): void
+    {
+        $page = Page::where('slug', 'voluntariado')->firstOrFail();
+
+        // Estado "producción": las dos secciones no existen y el resto está editado.
+        $page->sections()->whereIn('key', ['titulo', 'banner'])->delete();
+
+        $intro = $page->sections()->where('key', 'intro')->firstOrFail();
+        $intro->update(['content' => [...$intro->content, 'heading' => 'Editado por el dueño'], 'visible' => false]);
+
+        $galeria = $page->sections()->where('key', 'galeria')->firstOrFail();
+        $galeria->update(['content' => [...$galeria->content, 'images' => ['sections/subida-a-mano.png']]]);
+
+        $this->seed(VoluntariadoPortadaSeeder::class);
+
+        // Entran primero el encabezado y después la portada, arriba de todo.
+        $this->assertSame(
+            ['titulo', 'banner', 'intro', 'galeria'],
+            $page->sections()->orderBy('position')->pluck('key')->take(4)->all(),
+        );
+
+        $titulo = $page->sections()->where('key', 'titulo')->firstOrFail();
+        $banner = $page->sections()->where('key', 'banner')->firstOrFail();
+
+        $this->assertSame('page_header', $titulo->type);
+        $this->assertSame('VOLUNTARIADO', $titulo->content['heading']);
+        $this->assertSame('hero', $banner->type);
+        $this->assertStringStartsWith('seed/', $banner->content['image']);
+        $this->assertTrue($titulo->visible);
+        $this->assertTrue($banner->visible);
+
+        // Y lo editado quedó intacto, sólo corrido dos lugares.
+        $this->assertSame('Editado por el dueño', $intro->fresh()->content['heading']);
+        $this->assertFalse($intro->fresh()->visible);
+        $this->assertSame(['sections/subida-a-mano.png'], $galeria->fresh()->content['images']);
+
+        // Repetible: no duplica ni vuelve a correr las posiciones.
+        $positions = $page->sections()->orderBy('position')->pluck('position', 'key')->all();
+        $this->seed(VoluntariadoPortadaSeeder::class);
+
+        $this->assertSame($positions, $page->sections()->orderBy('position')->pluck('position', 'key')->all());
+        $this->assertSame(1, $page->sections()->where('key', 'banner')->count());
+
+        // La página sigue respondiendo con las secciones nuevas.
+        $keys = [];
+        $this->get('/voluntariado')->assertOk()->assertInertia(function (AssertableInertia $p) use (&$keys) {
+            $keys = collect($p->toArray()['props']['sections'])->pluck('key')->all();
+        });
+
+        $this->assertSame(['titulo', 'banner'], array_slice($keys, 0, 2));
     }
 
     public function test_class_schedule_is_built_from_the_calendar_dates_when_it_is_empty(): void
