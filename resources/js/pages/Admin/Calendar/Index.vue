@@ -64,7 +64,7 @@ const eventRows = computed<Row[]>(() =>
         key: `e${event.id}`,
         page: 'Evento',
         title: event.title,
-        detail: event.date_text ?? '',
+        detail: event.date_label ?? '',
         image: event.image_path,
         on: event.show_on_calendar,
         selectable: !!event.starts_at,

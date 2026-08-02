@@ -62,9 +62,20 @@ function submit() {
 
                 <TextareaField v-model="form.description" label="Descripción" :error="form.errors.description" />
 
+                <!--
+                    El texto de la fecha se arma con los campos de abajo; este campo
+                    queda sólo para lo que no se puede expresar con una fecha y una
+                    hora ("consultar horario", "todos los sábados de agosto").
+                -->
                 <div class="grid gap-2">
-                    <Label>Fecha y horario (texto que se muestra)</Label>
-                    <Input v-model="form.date_text" placeholder="Sábado 8 de agosto de 17 a 19 hs" />
+                    <Label>Fecha y horario (opcional, se arma solo)</Label>
+                    <Input v-model="form.date_text" :placeholder="props.event?.date_auto ?? 'Se arma con la fecha y la hora de abajo'" />
+                    <p v-if="props.event?.date_auto" class="text-xs text-muted-foreground">
+                        Vacío se publica <span class="font-medium">“{{ props.event.date_auto }}”</span>. Escribí algo sólo si querés otro texto.
+                    </p>
+                    <p v-else class="text-xs text-muted-foreground">
+                        Completá la fecha y la hora de inicio abajo y el texto se arma solo.
+                    </p>
                     <p v-if="form.errors.date_text" class="text-sm text-red-600">{{ form.errors.date_text }}</p>
                 </div>
 

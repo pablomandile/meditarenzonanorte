@@ -44,12 +44,12 @@ const wrapperAttrs = computed(() =>
                     {{ event.title }}
                 </h3>
                 <p
-                    v-if="event.date_text"
+                    v-if="event.date_label"
                     class="mt-2 flex items-center gap-2 text-brand-muted"
                     :class="featured ? 'text-base md:text-lg' : 'text-sm'"
                 >
                     <Calendar class="shrink-0 text-brand-orange" :class="featured ? 'h-5 w-5' : 'h-4 w-4'" />
-                    {{ event.date_text }}
+                    {{ event.date_label }}
                 </p>
             </component>
 

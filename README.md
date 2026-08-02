@@ -49,6 +49,7 @@ El título, el slug y la etiqueta del menú siguen definidos en `database/seeder
 - Al guardar una sección o los ajustes, la **vista previa de las imágenes se refresca automáticamente** (sin recargar la página).
 - **Ordenar tarjetas**: en las secciones `card_grid`, cada tarjeta tiene flechas para subirla o bajarla. El orden del array `content.cards` es el que renderiza `CardGridSection.vue`, así que es directamente el orden en la web. Al mover una tarjeta, su archivo pendiente de subida se mueve con ella (el mapa `files` va indexado por posición), y el guardado resuelve **qué archivo reemplaza cada imagen por la ruta de la tarjeta y no por su índice** — si no, reordenar y subir en el mismo guardado borra el archivo de otra tarjeta.
 - **Elegir de galería**: además de subir un archivo, todo campo de imagen de una sección (incluidas las de tarjetas y galerías) puede reusar una foto ya cargada al sitio. El listado sale de `GET /admin/media` (`MediaController`) y junta `sections/`, `events/`, `settings/` y `seed/`, colapsando los archivos de bytes idénticos en una sola entrada. Al elegir una, el guardado **se queda con una copia propia** (`ImageStorage::adopt()`): sin eso, reemplazar la imagen en una sección borraría el archivo que otra sigue usando. Las sembradas (`seed/…`) se comparten tal cual, porque nunca se borran. El logo y el afiche de eventos no tienen el botón: usan el mismo componente pero su guardado todavía no se apropia de la copia.
+- **Clases del ciclo**: campo de texto de la ficha de clase, **una clase por renglón**. Si tiene contenido, el afiche se vuelve clickeable y **gira** (flip 3D) mostrando el listado numerado sobre un degradado celeste; una píldora en el afiche avisa que se puede girar, y el dorso tiene un "volver". Vacío, la ficha se comporta como siempre y el afiche no gira. El giro respeta `prefers-reduced-motion`.
 - **Fechas para el calendario**: las fichas de clase (`class_info`) tienen, debajo del "Horario", un repetidor de fechas que es lo que ubica la actividad en `/calendario` (ver [Calendario](#calendario)). Cada fila es semanal (día + hora, con vigencia opcional) o una fecha puntual. Si falta el día o la hora es inválida, el guardado se rechaza con un mensaje en castellano en lugar de descartar la fila en silencio; para descartarla está el tacho.
 - **Clonar una sección** copia su contenido a una sección nueva del mismo tipo, ubicada justo debajo del original y **oculta** (para que la página pública no muestre el bloque duplicado hasta terminar de editarla). La key de la copia es `<key>-copia`, `<key>-copia-2`… y las imágenes subidas desde el panel se duplican en disco, así reemplazar la foto de la copia no afecta al original. Las imágenes sembradas (`seed/…`) se comparten, como ya hace el resto del sitio.
 
@@ -115,7 +116,7 @@ El botón "Continuar con Google" aparece en el login **solo si `GOOGLE_CLIENT_ID
   | `card_grid` | Grilla de tarjetas |
   | `bullet_list` | Lista de ítems |
   | `gallery` | Galería de imágenes |
-  | `class_info` | Ficha de clase (horario, lugar, precio, CTA) |
+  | `class_info` | Ficha de clase (horario, lugar, precio, CTA, clases del ciclo) |
   | `person` | Maestro / persona (rol, nombre, cargo, bio, foto, lado) |
   | `figure` | Imagen destacada (título + imagen + pie) |
   | `pricing` | Planes / abonos (tarjetas de precios) |

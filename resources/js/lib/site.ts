@@ -9,7 +9,12 @@ export type EventData = {
     id: number;
     title: string;
     description: string | null;
+    /** Texto escrito a mano; si está vacío se publica date_auto. */
     date_text: string | null;
+    /** Armado con la fecha y la hora, siempre presente si hay fecha de inicio. */
+    date_auto: string | null;
+    /** Lo que se muestra: date_text si lo hay, y si no date_auto. */
+    date_label: string | null;
     starts_at: string | null;
     ends_at: string | null;
     start_time: string | null;
@@ -47,6 +52,16 @@ export function img(path?: string | null): string | undefined {
  */
 export function mapsUrl(query?: string | null): string | undefined {
     return query ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}` : undefined;
+}
+
+/** Divide un texto en líneas no vacías (una por renglón), para listas. */
+export function lines(text?: string | null): string[] {
+    if (!text) return [];
+
+    return text
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
 }
 
 /** Splits a plain-text body into paragraphs (blank-line separated). */

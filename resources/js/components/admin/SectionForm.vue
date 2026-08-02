@@ -27,7 +27,7 @@ const props = defineProps<{
 /**
  * El error del campo. Los repetidores validan cada fila por separado
  * ("content.occurrences.1.weekday"), y esa clave no coincide con la del campo:
- * sin este respaldo el guardado fallarÃ­a sin mostrar ningÃºn mensaje.
+ * sin este respaldo el guardado fallaría sin mostrar ningún mensaje.
  */
 function fieldError(key: string): string | undefined {
     const own = props.errors[`content.${key}`] ?? props.errors[`files.${key}`];

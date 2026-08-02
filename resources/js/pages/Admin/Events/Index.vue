@@ -74,7 +74,7 @@ async function destroy(event: EventData) {
 
                                 <div class="min-w-0">
                                     <p class="truncate font-medium">{{ event.title }}</p>
-                                    <p class="truncate text-sm text-muted-foreground">{{ event.date_text }}</p>
+                                    <p class="truncate text-sm text-muted-foreground">{{ event.date_label }}</p>
                                 </div>
                             </div>
 

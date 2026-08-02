@@ -1244,6 +1244,100 @@ class SiteContentTest extends TestCase
         ])->assertSessionHasErrors('end_time');
     }
 
+    public function test_class_card_can_carry_the_classes_of_the_cycle(): void
+    {
+        $admin = $this->admin();
+        $section = Section::whereHas('page', fn ($query) => $query->where('slug', 'clases-semanales'))
+            ->where('key', 'clase-principal')
+            ->firstOrFail();
+
+        // El campo es nuevo, así que las fichas sembradas no lo tienen: sin él la
+        // ficha se muestra igual, sólo que el afiche no gira.
+        $this->assertArrayNotHasKey('cycle', $section->content);
+        $this->get('/clases-semanales')->assertOk();
+
+        // Con un renglón en blanco en medio y un salto al final, que es como queda
+        // un textarea escrito a mano.
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => [...$section->content, 'cycle' => "Clase 1 - Qué es la meditación\n\nClase 2 - La mente apacible\n"],
+        ])->assertRedirect()->assertSessionHas('success');
+
+        // TrimStrings recorta el salto del final; el resto se guarda tal cual y las
+        // líneas vacías las descarta lines() al renderizar.
+        $stored = $section->fresh()->content['cycle'];
+        $this->assertSame("Clase 1 - Qué es la meditación\n\nClase 2 - La mente apacible", $stored);
+
+        // Y llega a la página, que es donde el componente lo parte en renglones.
+        $content = [];
+        $this->get('/clases-semanales')->assertOk()->assertInertia(function (AssertableInertia $page) use (&$content) {
+            $content = collect($page->toArray()['props']['sections'])->firstWhere('key', 'clase-principal')['content'];
+        });
+
+        $this->assertSame($stored, $content['cycle']);
+    }
+
+    public function test_event_date_text_is_built_from_its_date_and_time(): void
+    {
+        $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
+
+        $cases = [
+            // [starts_at, ends_at, start_time, end_time, esperado]
+            ['2026-08-29', null, '10:00', '17:30', 'Sábado 29 de agosto de 10 a 17.30 hs'],
+            ['2026-08-08', null, '17:00', '19:00', 'Sábado 8 de agosto de 17 a 19 hs'],
+            ['2026-08-08', null, '17:00', null, 'Sábado 8 de agosto a las 17 hs'],
+            ['2026-08-08', null, null, null, 'Sábado 8 de agosto'],
+            ['2026-08-28', '2026-08-30', '10:00', '17:30', 'Del 28 al 30 de agosto de 10 a 17.30 hs'],
+            ['2026-08-30', '2026-09-01', null, null, 'Del 30 de agosto al 1 de septiembre'],
+            // Otro año: se aclara, porque "8 de agosto" solo sería ambiguo.
+            ['2027-08-08', null, '17:00', null, 'Domingo 8 de agosto de 2027 a las 17 hs'],
+        ];
+
+        foreach ($cases as [$start, $end, $from, $to, $expected]) {
+            $event = new Event(['starts_at' => $start, 'ends_at' => $end, 'start_time' => $from, 'end_time' => $to]);
+
+            $this->assertSame($expected, $event->date_auto, "Fecha mal armada para $start");
+            $this->assertSame($expected, $event->date_label);
+        }
+
+        // Sin fecha de inicio no hay nada que armar.
+        $this->assertNull((new Event(['title' => 'Sin fecha']))->date_auto);
+
+        // Y el texto a mano manda sobre el automático.
+        $manual = new Event(['starts_at' => '2026-08-29', 'start_time' => '10:00', 'date_text' => 'Consultar horario']);
+        $this->assertSame('Sábado 29 de agosto a las 10 hs', $manual->date_auto);
+        $this->assertSame('Consultar horario', $manual->date_label);
+    }
+
+    public function test_the_public_pages_show_the_built_date_when_there_is_no_manual_text(): void
+    {
+        $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
+
+        $event = Event::create([
+            'title' => 'Charla abierta',
+            'starts_at' => '2026-08-20',
+            'start_time' => '17:00',
+            'end_time' => '19:00',
+            'visible' => true,
+            'show_on_home' => true,
+        ]);
+
+        $label = null;
+        $this->get('/')->assertOk()->assertInertia(function (AssertableInertia $page) use (&$label) {
+            $label = collect($page->toArray()['props']['homeEvents'])->firstWhere('title', 'Charla abierta')['date_label'];
+        });
+
+        $this->assertSame('Jueves 20 de agosto de 17 a 19 hs', $label);
+
+        // Y en el calendario, el texto armado es el que se usa cuando falta la hora.
+        $event->update(['date_text' => 'Jueves 20, a confirmar']);
+
+        $this->get('/')->assertOk()->assertInertia(function (AssertableInertia $page) use (&$label) {
+            $label = collect($page->toArray()['props']['homeEvents'])->firstWhere('title', 'Charla abierta')['date_label'];
+        });
+
+        $this->assertSame('Jueves 20, a confirmar', $label);
+    }
+
     public function test_event_can_have_a_different_url_for_its_image_than_for_its_button(): void
     {
         $admin = $this->admin();

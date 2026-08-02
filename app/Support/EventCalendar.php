@@ -23,29 +23,8 @@ class EventCalendar
      */
     public const TIMEZONE = 'America/Argentina/Buenos_Aires';
 
-    /** @var array<int, string> */
-    private const MONTHS = [
-        1 => 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
-    ];
-
-    /**
-     * Los nombres van a mano en lugar de Carbon->locale('es'): APP_LOCALE es 'en'
-     * y nadie fija el locale, así que translatedFormat() devolvería inglés; y el
-     * catálogo 'es' de Carbon abrevia con minúscula y punto ('ago.'), que igual
-     * habría que retocar. Con 19 palabras fijas, CI y producción imprimen lo mismo.
-     *
-     * @var array<int, array{short: string, long: string}>
-     */
-    private const WEEKDAYS = [
-        ['short' => 'Lun', 'long' => 'lunes'],
-        ['short' => 'Mar', 'long' => 'martes'],
-        ['short' => 'Mié', 'long' => 'miércoles'],
-        ['short' => 'Jue', 'long' => 'jueves'],
-        ['short' => 'Vie', 'long' => 'viernes'],
-        ['short' => 'Sáb', 'long' => 'sábado'],
-        ['short' => 'Dom', 'long' => 'domingo'],
-    ];
+    /** Encabezados de las columnas. Los nombres largos salen de SpanishDate. */
+    private const WEEKDAY_HEADERS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
     /**
      * El mes en curso, y sólo ése: la grilla no navega a otros meses ni muestra
@@ -101,9 +80,9 @@ class EventCalendar
 
         return [
             'month' => $first->format('Y-m'),
-            'label' => self::MONTHS[$first->month].' de '.$first->year,
+            'label' => SpanishDate::month($first->month).' de '.$first->year,
             'today' => $today->toDateString(),
-            'weekdays' => array_column(self::WEEKDAYS, 'short'),
+            'weekdays' => self::WEEKDAY_HEADERS,
             'sources' => self::sources(),
             'weeks' => $weeks,
         ];
@@ -227,7 +206,7 @@ class EventCalendar
                     'title' => $event->title,
                     'start' => $event->start_time,
                     'end' => $event->end_time,
-                    'time_text' => $event->date_text,
+                    'time_text' => $event->date_label,
                     'location' => $event->location,
                     'price' => $event->price,
                     'cta_label' => $event->cta_label,
@@ -305,7 +284,7 @@ class EventCalendar
 
     private static function dayLabel(CarbonImmutable $date): string
     {
-        return self::WEEKDAYS[$date->dayOfWeekIso - 1]['long'].' '.$date->day.' de '.self::MONTHS[$date->month];
+        return SpanishDate::weekday($date->dayOfWeekIso).' '.$date->day.' de '.SpanishDate::month($date->month);
     }
 
     /**
@@ -324,7 +303,7 @@ class EventCalendar
 
         $first = (int) min($numbers);
         $last = (int) max($numbers);
-        $month = self::MONTHS[CarbonImmutable::today(self::TIMEZONE)->month];
+        $month = SpanishDate::month(CarbonImmutable::today(self::TIMEZONE)->month);
 
         return ($first === $last ? $first : $first.' al '.$last).' de '.$month;
     }

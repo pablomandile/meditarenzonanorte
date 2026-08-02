@@ -53,9 +53,9 @@ const list = computed(() => props.events ?? []);
                     </p>
 
                     <ul class="mt-6 space-y-2.5 text-brand-body">
-                        <li v-if="event.date_text" class="flex items-start gap-3">
+                        <li v-if="event.date_label" class="flex items-start gap-3">
                             <Calendar class="mt-0.5 h-5 w-5 shrink-0 text-brand-sky" />
-                            <span class="font-medium">{{ event.date_text }}</span>
+                            <span class="font-medium">{{ event.date_label }}</span>
                         </li>
                         <li v-if="event.location" class="flex items-start gap-3">
                             <MapPin class="mt-0.5 h-5 w-5 shrink-0 text-brand-sky" />

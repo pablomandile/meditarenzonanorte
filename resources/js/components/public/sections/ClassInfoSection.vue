@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { img, isInternal, mapsUrl, paragraphs, type SectionData } from '@/lib/site';
+import { img, isInternal, lines, mapsUrl, paragraphs, type SectionData } from '@/lib/site';
 import { Link } from '@inertiajs/vue3';
-import { ChevronDown, Clock, MapPin, Ticket } from 'lucide-vue-next';
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { ChevronDown, Clock, MapPin, RotateCcw, RotateCw, Ticket } from 'lucide-vue-next';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
-defineProps<{ section: SectionData }>();
+const props = defineProps<{ section: SectionData }>();
+
+/** Una clase por línea; sin contenido no hay dorso ni giro. */
+const cycle = computed(() => lines(props.section.content.cycle));
+const flipped = ref(false);
 
 const expanded = ref(false);
 const body = ref<HTMLElement>();
@@ -46,12 +50,67 @@ watch(expanded, () => nextTick(measure));
                         afiches suelen ser verticales 4:5 y estirarlos al alto de la
                         columna de texto los recortaba.
                     -->
-                    <div v-if="section.content.image">
-                        <img
-                            :src="img(section.content.image)"
-                            :alt="section.content.heading ?? ''"
-                            class="h-auto w-full rounded-t-xl md:rounded-l-xl md:rounded-tr-none"
-                        />
+                    <div v-if="section.content.image" class="[perspective:1400px]">
+                        <!--
+                            El afiche y las clases del ciclo son las dos caras de la
+                            misma tarjeta. El frente queda en el flujo (define el alto)
+                            y el dorso va absoluto encima, girado 180°: al rotar el
+                            contenedor, backface-visibility deja ver sólo una cara.
+                        -->
+                        <div
+                            class="relative transition-transform duration-700 [transform-style:preserve-3d] motion-reduce:transition-none"
+                            :class="flipped ? '[transform:rotateY(180deg)]' : ''"
+                        >
+                            <component
+                                :is="cycle.length ? 'button' : 'div'"
+                                v-bind="cycle.length ? { type: 'button', 'aria-expanded': flipped, 'aria-label': 'Ver las clases del ciclo' } : {}"
+                                class="relative block w-full [backface-visibility:hidden]"
+                                :class="cycle.length ? 'group/flip cursor-pointer' : ''"
+                                @click="cycle.length && (flipped = true)"
+                            >
+                                <img
+                                    :src="img(section.content.image)"
+                                    :alt="section.content.heading ?? ''"
+                                    class="h-auto w-full rounded-t-xl md:rounded-l-xl md:rounded-tr-none"
+                                />
+
+                                <span
+                                    v-if="cycle.length"
+                                    class="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-brand-sky/95 px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-white shadow-md transition group-hover/flip:bg-brand-sky-dark"
+                                >
+                                    <RotateCw class="h-3.5 w-3.5" /> clases del ciclo
+                                </span>
+                            </component>
+
+                            <div
+                                v-if="cycle.length"
+                                class="absolute inset-0 flex flex-col overflow-y-auto rounded-t-xl bg-gradient-to-br from-brand-sky to-brand-sky-dark p-6 text-white [backface-visibility:hidden] [transform:rotateY(180deg)] md:rounded-l-xl md:rounded-tr-none md:p-8"
+                                :aria-hidden="!flipped"
+                            >
+                                <div class="flex items-start justify-between gap-3">
+                                    <h3 class="font-display text-2xl uppercase tracking-wide md:text-3xl">Clases del ciclo</h3>
+                                    <button
+                                        type="button"
+                                        class="flex shrink-0 items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium uppercase tracking-wide transition hover:bg-white/30"
+                                        :tabindex="flipped ? 0 : -1"
+                                        @click="flipped = false"
+                                    >
+                                        <RotateCcw class="h-3.5 w-3.5" /> volver
+                                    </button>
+                                </div>
+
+                                <ol class="mt-5 space-y-3">
+                                    <li v-for="(item, i) in cycle" :key="i" class="flex items-start gap-3">
+                                        <span
+                                            class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-cream text-xs font-bold text-brand-sky-dark"
+                                        >
+                                            {{ i + 1 }}
+                                        </span>
+                                        <span class="text-[15px] font-medium leading-snug md:text-base">{{ item }}</span>
+                                    </li>
+                                </ol>
+                            </div>
+                        </div>
                     </div>
 
                     <!--

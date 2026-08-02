@@ -100,6 +100,7 @@ class SectionRegistry
                 ['key' => 'cta_label', 'type' => 'text', 'label' => 'Texto del botón'],
                 ['key' => 'cta_url', 'type' => 'url', 'label' => 'URL del botón'],
                 ['key' => 'image', 'type' => 'image', 'label' => 'Imagen'],
+                ['key' => 'cycle', 'type' => 'textarea', 'label' => 'Clases del ciclo'],
             ],
         ],
         'person' => [

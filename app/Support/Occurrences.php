@@ -17,14 +17,13 @@ use Carbon\CarbonImmutable;
  */
 class Occurrences
 {
-    /** @var array<int, string> */
+    /**
+     * En plural, porque describen una repetición ("sábados de 10 a 13 hs"). Los
+     * singulares y los meses viven en SpanishDate.
+     *
+     * @var array<int, string>
+     */
     private const WEEKDAYS = [1 => 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados', 'domingos'];
-
-    /** @var array<int, string> */
-    private const MONTHS = [
-        1 => 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
-    ];
 
     /**
      * Las fechas en una línea legible, para el listado del panel: el dueño tiene
@@ -54,8 +53,8 @@ class Occurrences
 
                 $until = self::date($row['until'] ?? null);
                 $when = $until && $until->greaterThan($date)
-                    ? 'del '.$date->day.' al '.$until->day.' de '.self::MONTHS[$until->month]
-                    : $date->day.' de '.self::MONTHS[$date->month];
+                    ? 'del '.$date->day.' al '.$until->day.' de '.SpanishDate::month($until->month)
+                    : $date->day.' de '.SpanishDate::month($date->month);
 
                 $parts[] = $when.$hours;
 
@@ -69,7 +68,7 @@ class Occurrences
             }
 
             $until = self::date($row['until'] ?? null);
-            $parts[] = self::WEEKDAYS[$weekday].$hours.($until ? ' (hasta el '.$until->day.' de '.self::MONTHS[$until->month].')' : '');
+            $parts[] = self::WEEKDAYS[$weekday].$hours.($until ? ' (hasta el '.$until->day.' de '.SpanishDate::month($until->month).')' : '');
         }
 
         return implode(' · ', $parts);
