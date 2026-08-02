@@ -98,7 +98,11 @@ class ImageStorage
         Storage::disk('public')->delete($path);
     }
 
-    private static function isDeletable(string $path): bool
+    /**
+     * Los archivos subidos desde el panel se pueden borrar; los sembrados no,
+     * porque se comparten entre secciones y el seeder los vuelve a poner.
+     */
+    public static function isDeletable(string $path): bool
     {
         return self::hasPrefix($path, self::DELETABLE_PREFIXES);
     }

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\FaqController;
+use App\Http\Controllers\Admin\GalleryController;
 use App\Http\Controllers\Admin\MediaController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\SectionController;
@@ -18,6 +19,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::patch('pages/{page}/move', [AdminPageController::class, 'move'])->name('pages.move');
 
     Route::get('media', [MediaController::class, 'index'])->name('media.index');
+
+    Route::get('gallery', [GalleryController::class, 'index'])->name('gallery.index');
+    Route::delete('gallery', [GalleryController::class, 'destroy'])->name('gallery.destroy');
 
     Route::get('sections/{section}/edit', [SectionController::class, 'edit'])->name('sections.edit');
     Route::put('sections/{section}', [SectionController::class, 'update'])->name('sections.update');

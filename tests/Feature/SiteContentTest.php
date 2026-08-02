@@ -272,6 +272,85 @@ class SiteContentTest extends TestCase
         Storage::disk('public')->assertExists($fresh[0]['image']);
     }
 
+    public function test_gallery_requires_authentication(): void
+    {
+        $this->get('/admin/gallery')->assertRedirect('/login');
+        $this->delete('/admin/gallery', ['path' => 'sections/x.png'])->assertRedirect('/login');
+    }
+
+    public function test_gallery_lists_images_and_says_where_each_one_is_used(): void
+    {
+        $admin = $this->admin();
+        $section = Section::whereHas('page', fn ($q) => $q->where('slug', 'home'))
+            ->where('key', 'fundador')->firstOrFail();
+
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => $section->content,
+            'files' => ['image' => UploadedFile::fake()->image('en-uso.jpg', 400, 300)],
+        ]);
+
+        $used = $section->fresh()->content['image'];
+        $images = collect($this->actingAs($admin)->get('/admin/gallery')->assertOk()->viewData('page')['props']['images']);
+
+        $entry = $images->firstWhere('path', $used);
+        $this->assertNotNull($entry);
+        $this->assertFalse($entry['deletable']);
+        $this->assertNotEmpty($entry['used_by']);
+        $this->assertStringContainsString('fundador', $entry['used_by'][0]);
+
+        // Las sembradas figuran y tampoco se pueden borrar.
+        $seeded = $images->firstWhere('path', 'seed/shared/K_Panchen.webp');
+        $this->assertNotNull($seeded);
+        $this->assertTrue($seeded['seeded']);
+        $this->assertFalse($seeded['deletable']);
+    }
+
+    public function test_gallery_deletes_an_image_that_nobody_uses(): void
+    {
+        $admin = $this->admin();
+        Storage::disk('public')->put('sections/huerfana.png', 'x');
+
+        $this->actingAs($admin)->delete('/admin/gallery', ['path' => 'sections/huerfana.png'])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        Storage::disk('public')->assertMissing('sections/huerfana.png');
+    }
+
+    public function test_gallery_refuses_to_delete_an_image_in_use(): void
+    {
+        $admin = $this->admin();
+        $section = Section::whereHas('page', fn ($q) => $q->where('slug', 'home'))
+            ->where('key', 'fundador')->firstOrFail();
+
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => $section->content,
+            'files' => ['image' => UploadedFile::fake()->image('en-uso.jpg', 400, 300)],
+        ]);
+
+        $used = $section->fresh()->content['image'];
+
+        $this->actingAs($admin)->delete('/admin/gallery', ['path' => $used])
+            ->assertRedirect()
+            ->assertSessionHasErrors('image');
+
+        Storage::disk('public')->assertExists($used);
+        $this->assertSame($used, $section->fresh()->content['image']);
+    }
+
+    public function test_gallery_refuses_to_delete_a_seeded_image_and_rejects_paths_outside_the_folders(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->delete('/admin/gallery', ['path' => 'seed/shared/K_Panchen.webp'])
+            ->assertRedirect()
+            ->assertSessionHasErrors('image');
+
+        Storage::disk('public')->assertExists('seed/shared/K_Panchen.webp');
+
+        $this->actingAs($admin)->delete('/admin/gallery', ['path' => '../../.env'])->assertForbidden();
+    }
+
     public function test_media_library_requires_authentication(): void
     {
         $this->get('/admin/media')->assertRedirect('/login');

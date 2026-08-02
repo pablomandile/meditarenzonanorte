@@ -47,7 +47,7 @@ class SectionController extends Controller
         $content = $request->validated()['content'] ?? [];
         $files = $request->file('files') ?? [];
         $old = $section->content ?? [];
-        $owned = self::imagePaths($section->type, $old);
+        $owned = SectionRegistry::imagePaths($section->type, $old);
 
         foreach (SectionRegistry::fields($section->type) as $field) {
             $key = $field['key'];
@@ -133,39 +133,6 @@ class SectionController extends Controller
     private static function replacedPath(?string $submitted, array $owned): ?string
     {
         return in_array($submitted, $owned, true) ? $submitted : null;
-    }
-
-    /**
-     * Every image path the section already stores. A submitted path outside this
-     * set was picked from the gallery and belongs to another record, so it has
-     * to be adopted instead of shared — see ImageStorage::adopt().
-     *
-     * @param  array<string, mixed>  $content
-     * @return array<int, string>
-     */
-    private static function imagePaths(string $type, array $content): array
-    {
-        $paths = [];
-
-        foreach (SectionRegistry::fields($type) as $field) {
-            $value = $content[$field['key']] ?? null;
-
-            switch ($field['type']) {
-                case 'image':
-                    $paths[] = $value;
-                    break;
-
-                case 'images':
-                    $paths = [...$paths, ...array_values((array) $value)];
-                    break;
-
-                case 'cards':
-                    $paths = [...$paths, ...array_column((array) $value, 'image')];
-                    break;
-            }
-        }
-
-        return array_values(array_filter($paths, fn ($path) => is_string($path) && $path !== ''));
     }
 
     /**

@@ -170,6 +170,38 @@ class SectionRegistry
     }
 
     /**
+     * Every storage path stored in a section's content, sin importar el tipo:
+     * el campo simple, las galerías y las imágenes de las tarjetas.
+     *
+     * @param  array<string, mixed>  $content
+     * @return array<int, string>
+     */
+    public static function imagePaths(string $type, array $content): array
+    {
+        $paths = [];
+
+        foreach (self::fields($type) as $field) {
+            $value = $content[$field['key']] ?? null;
+
+            switch ($field['type']) {
+                case 'image':
+                    $paths[] = $value;
+                    break;
+
+                case 'images':
+                    $paths = [...$paths, ...array_values((array) $value)];
+                    break;
+
+                case 'cards':
+                    $paths = [...$paths, ...array_column((array) $value, 'image')];
+                    break;
+            }
+        }
+
+        return array_values(array_filter($paths, fn ($path) => is_string($path) && $path !== ''));
+    }
+
+    /**
      * Validation rules for the `content` payload and the parallel `files` payload.
      *
      * @return array<string, mixed>

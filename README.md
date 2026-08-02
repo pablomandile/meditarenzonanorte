@@ -55,6 +55,7 @@ Qué se puede administrar:
 |---|---|
 | **Páginas** | Listado de las 9 páginas: **ocultar/mostrar** cada una (sale del menú y su URL da 404) y **reordenarlas con flechas** (ese es el orden de la barra nav). Entrando a una página: editar cada sección (textos, imágenes, enlaces, planes, personas…), ocultar/mostrar secciones, reordenarlas con flechas y **clonarlas**. La home no se oculta ni se reordena. |
 | **Eventos** | CRUD de eventos especiales, con afiche, fecha, precio y enlace de inscripción. Toggle "destacar en inicio" (strip *próximamente* de la home) y visible/oculto. Si hay un solo evento destacado se muestra grande y centrado. |
+| **Galería** | Grilla con **todas** las imágenes del disco (`sections/`, `events/`, `settings/`, `seed/`) y **dónde se usa cada una**. Permite borrar solo las que no usa nadie: si está en uso muestra el lugar y bloquea el botón, y las sembradas (`seed/…`) tampoco se borran porque el seeder las restaura. El servidor vuelve a comprobarlo al borrar, por si la vista quedó vieja. A diferencia del selector, no colapsa las copias de bytes idénticos: acá se administran archivos. |
 | **Preguntas frecuentes** | Pool global de FAQs compartido entre páginas: editar una vez, se actualiza en todas. Cada sección FAQ elige qué preguntas muestra. |
 | **Ajustes del sitio** | **Logo del menú** y **logo del pie** por separado (`logo_path` y `footer_logo_path`): pueden ser archivos distintos, y si el del pie está vacío el pie usa el del menú. Teléfono, WhatsApp, email, Instagram, dirección y los recursos (libros) del pie de página. |
 
