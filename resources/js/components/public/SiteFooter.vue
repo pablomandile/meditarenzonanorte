@@ -7,6 +7,9 @@ import { computed } from 'vue';
 const page = usePage();
 const settings = computed(() => (page.props.settings ?? {}) as Record<string, any>);
 const resources = computed(() => (settings.value.footer_resources ?? []) as CardItem[]);
+
+/** El pie puede tener su propio logo; si no se cargó, usa el del menú. */
+const logo = computed(() => settings.value.footer_logo_path || settings.value.logo_path);
 </script>
 
 <template>
@@ -35,14 +38,10 @@ const resources = computed(() => (settings.value.footer_resources ?? []) as Card
 
         <div class="bg-white">
             <div class="mx-auto flex max-w-6xl flex-col items-center gap-6 border-t border-brand-line/60 px-4 py-10">
-                <img v-if="settings.logo_path" :src="img(settings.logo_path)" alt="Logo" class="h-24 w-24 object-contain" />
+                <img v-if="logo" :src="img(logo)" alt="Logo" class="h-24 w-24 object-contain" />
 
                 <div class="flex flex-wrap items-center justify-center gap-6 text-sm text-brand-body">
-                    <a
-                        v-if="settings.email"
-                        :href="`mailto:${settings.email}`"
-                        class="flex items-center gap-2 transition hover:text-brand-sky"
-                    >
+                    <a v-if="settings.email" :href="`mailto:${settings.email}`" class="flex items-center gap-2 transition hover:text-brand-sky">
                         <Mail class="h-4 w-4" /> {{ settings.email }}
                     </a>
                     <a

@@ -536,4 +536,56 @@ class SiteContentTest extends TestCase
 
         $this->get('/')->assertSee('341 0000000');
     }
+
+    public function test_footer_logo_is_a_separate_file_and_falls_back_to_the_menu_one(): void
+    {
+        $admin = $this->admin();
+
+        // Sin logo propio, el pie usa el del menú.
+        $this->actingAs($admin)->post('/admin/settings', [
+            'files' => ['logo' => UploadedFile::fake()->image('menu.png', 300, 300)],
+        ])->assertRedirect();
+
+        $menu = Setting::get('logo_path');
+        $this->assertNull(Setting::get('footer_logo_path'));
+        $this->assertSame($menu, $this->footerLogo());
+
+        // Con logo propio, cada uno es su archivo.
+        $this->actingAs($admin)->post('/admin/settings', [
+            'logo_path' => $menu,
+            'files' => ['footer_logo' => UploadedFile::fake()->image('pie.png', 400, 200)],
+        ])->assertRedirect();
+
+        $footer = Setting::get('footer_logo_path');
+        $this->assertNotNull($footer);
+        $this->assertNotSame($menu, $footer);
+        $this->assertSame($menu, Setting::get('logo_path'));
+        Storage::disk('public')->assertExists($menu);
+        Storage::disk('public')->assertExists($footer);
+        $this->assertSame($footer, $this->footerLogo());
+
+        // Quitarlo borra el archivo y vuelve al del menú, sin tocar ese.
+        $this->actingAs($admin)->post('/admin/settings', [
+            'logo_path' => $menu,
+            'footer_logo_path' => '',
+        ])->assertRedirect();
+
+        $this->assertNull(Setting::get('footer_logo_path'));
+        Storage::disk('public')->assertMissing($footer);
+        Storage::disk('public')->assertExists($menu);
+        $this->assertSame($menu, $this->footerLogo());
+    }
+
+    /** Ruta del logo que el pie está mostrando, leída de los props compartidos. */
+    private function footerLogo(): ?string
+    {
+        $logo = null;
+
+        $this->get('/')->assertInertia(function (AssertableInertia $page) use (&$logo) {
+            $settings = $page->toArray()['props']['settings'];
+            $logo = $settings['footer_logo_path'] ?? $settings['logo_path'] ?? null;
+        });
+
+        return $logo;
+    }
 }

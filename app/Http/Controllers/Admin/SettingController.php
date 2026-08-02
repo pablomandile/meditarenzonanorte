@@ -51,14 +51,37 @@ class SettingController extends Controller
 
         Setting::set('footer_resources', json_encode($resources, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 
-        if ($request->hasFile('files.logo')) {
-            Setting::set('logo_path', ImageStorage::replace(
-                $request->file('files.logo'),
-                'settings',
-                Setting::get('logo_path'),
-            ));
-        }
+        self::saveLogo($request, 'logo', 'logo_path');
+        self::saveLogo($request, 'footer_logo', 'footer_logo_path');
 
         return back()->with('success', 'Ajustes guardados.');
+    }
+
+    /**
+     * El logo del menú y el del pie son ajustes separados, así que pueden ser
+     * archivos distintos; si el del pie queda vacío, el pie usa el del menú.
+     *
+     * Se reemplaza subiendo un archivo nuevo y se quita mandando la ruta vacía
+     * (el botón "Quitar" del campo). La ruta solo se limpia si el formulario
+     * mandó el campo: si no viene, el ajuste queda intacto.
+     */
+    private static function saveLogo(UpdateSettingsRequest $request, string $fileKey, string $settingKey): void
+    {
+        $current = Setting::get($settingKey);
+
+        if ($request->hasFile("files.$fileKey")) {
+            Setting::set($settingKey, ImageStorage::replace(
+                $request->file("files.$fileKey"),
+                'settings',
+                $current,
+            ));
+
+            return;
+        }
+
+        if ($current !== null && $request->has($settingKey) && blank($request->input($settingKey))) {
+            ImageStorage::delete($current);
+            Setting::set($settingKey, null);
+        }
     }
 }

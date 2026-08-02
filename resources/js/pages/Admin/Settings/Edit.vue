@@ -24,6 +24,7 @@ const form = useForm<Record<string, any>>({
     address: props.settings.address ?? '',
     footer_resources: JSON.parse(JSON.stringify(props.settings.footer_resources ?? [])) as CardItem[],
     logo_path: props.settings.logo_path ?? null,
+    footer_logo_path: props.settings.footer_logo_path ?? null,
     files: {} as Record<string, any>,
 });
 
@@ -31,6 +32,7 @@ function submit() {
     form.transform((data) => {
         const files: Record<string, any> = { ...data.files };
         if (files.logo === null) delete files.logo;
+        if (files.footer_logo === null) delete files.footer_logo;
 
         return { ...data, files };
     }).post(route('admin.settings.update'), {
@@ -41,6 +43,7 @@ function submit() {
             // footer images refresh in the panel without needing a page reload.
             form.files = {};
             form.logo_path = props.settings.logo_path ?? null;
+            form.footer_logo_path = props.settings.footer_logo_path ?? null;
             form.footer_resources = JSON.parse(JSON.stringify(props.settings.footer_resources ?? []));
             form.defaults();
         },
@@ -71,7 +74,12 @@ const textFields: { key: string; label: string; placeholder?: string }[] = [
             <form @submit.prevent="submit">
                 <Card>
                     <CardContent class="grid gap-5 pt-6">
-                        <ImageField v-model="form.logo_path" v-model:file="form.files.logo" label="Logo" :error="form.errors['files.logo']" />
+                        <ImageField
+                            v-model="form.logo_path"
+                            v-model:file="form.files.logo"
+                            label="Logo del menú"
+                            :error="form.errors['files.logo']"
+                        />
 
                         <div class="grid gap-5 sm:grid-cols-2">
                             <div v-for="field in textFields" :key="field.key" class="grid gap-2">
@@ -84,7 +92,19 @@ const textFields: { key: string; label: string; placeholder?: string }[] = [
                 </Card>
 
                 <Card class="mt-4">
-                    <CardContent class="pt-6">
+                    <CardContent class="grid gap-6 pt-6">
+                        <div class="grid gap-1">
+                            <ImageField
+                                v-model="form.footer_logo_path"
+                                v-model:file="form.files.footer_logo"
+                                label="Logo del pie de página"
+                                :error="form.errors['files.footer_logo']"
+                            />
+                            <p class="text-xs text-muted-foreground">
+                                Si lo dejás vacío, el pie usa el logo del menú. Con "Quitar" volvés a ese comportamiento.
+                            </p>
+                        </div>
+
                         <CardsField
                             v-model="form.footer_resources"
                             v-model:files="form.files.footer_resources"

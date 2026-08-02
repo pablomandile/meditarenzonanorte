@@ -21,6 +21,10 @@ class UpdateSettingsRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255'],
             'instagram_url' => ['nullable', 'string', 'max:500'],
             'address' => ['nullable', 'string', 'max:500'],
+            // Las rutas viajan de vuelta para poder detectar el "Quitar" del campo
+            // de imagen: llegan vacías cuando se sacó el logo.
+            'logo_path' => ['nullable', 'string', 'max:500'],
+            'footer_logo_path' => ['nullable', 'string', 'max:500'],
             'footer_resources' => ['nullable', 'array', 'max:6'],
             'footer_resources.*.image' => ['nullable', 'string', 'max:500'],
             'footer_resources.*.title' => ['nullable', 'string', 'max:255'],
@@ -28,6 +32,7 @@ class UpdateSettingsRequest extends FormRequest
             'footer_resources.*.url' => ['nullable', 'string', 'max:500'],
             'files' => ['nullable', 'array'],
             'files.logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
+            'files.footer_logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
             'files.footer_resources.*.image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
         ];
     }
