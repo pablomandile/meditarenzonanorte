@@ -10,6 +10,14 @@ const props = defineProps<{ section: SectionData }>();
 const cycle = computed(() => lines(props.section.content.cycle));
 const flipped = ref(false);
 
+/**
+ * Cerrar al hacer click en cualquier parte del dorso, salvo que se esté
+ * seleccionando texto: copiarse el nombre de una clase no debería taparla.
+ */
+function closeUnlessSelecting() {
+    if (!window.getSelection()?.toString()) flipped.value = false;
+}
+
 const expanded = ref(false);
 const body = ref<HTMLElement>();
 const clipped = ref(false);
@@ -82,10 +90,16 @@ watch(expanded, () => nextTick(measure));
                                 </span>
                             </component>
 
+                            <!--
+                                El dorso entero vuelve al afiche, igual que el afiche
+                                entero lo da vuelta. El botón "volver" sigue estando
+                                para el teclado y para que se vea que se puede cerrar.
+                            -->
                             <div
                                 v-if="cycle.length"
-                                class="absolute inset-0 flex flex-col overflow-y-auto rounded-t-xl bg-gradient-to-br from-brand-sky to-brand-sky-dark p-6 text-white [backface-visibility:hidden] [transform:rotateY(180deg)] md:rounded-l-xl md:rounded-tr-none md:p-8"
+                                class="absolute inset-0 flex cursor-pointer flex-col overflow-y-auto rounded-t-xl bg-gradient-to-br from-brand-sky to-brand-sky-dark p-6 text-white [backface-visibility:hidden] [transform:rotateY(180deg)] md:rounded-l-xl md:rounded-tr-none md:p-8"
                                 :aria-hidden="!flipped"
+                                @click="closeUnlessSelecting"
                             >
                                 <div class="flex items-start justify-between gap-3">
                                     <h3 class="font-display text-2xl uppercase tracking-wide md:text-3xl">Clases del ciclo</h3>
