@@ -15,8 +15,13 @@ const open = ref(false);
 <template>
     <header class="sticky top-0 z-40 border-b border-brand-line/60 bg-white/95 backdrop-blur">
         <div class="mx-auto flex h-20 max-w-6xl items-center justify-between gap-4 px-4">
-            <Link href="/" class="flex shrink-0 items-center gap-3" aria-label="Inicio">
-                <img v-if="settings.logo_path" :src="img(settings.logo_path)" alt="Logo" class="h-14 w-14 object-contain" />
+            <!--
+                El logo toma el alto completo de la barra: h-full en el enlace (el
+                contenedor tiene alto fijo) y h-full w-auto en la imagen, así el
+                ancho lo define su propia proporción y no se deforma.
+            -->
+            <Link href="/" class="flex h-full shrink-0 items-center gap-3" aria-label="Inicio">
+                <img v-if="settings.logo_path" :src="img(settings.logo_path)" alt="Logo" class="h-full w-auto object-contain" />
                 <span v-else class="font-display text-xl text-brand-ink">{{ settings.site_name }}</span>
             </Link>
 
