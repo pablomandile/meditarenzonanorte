@@ -18,7 +18,11 @@ defineProps<{ section: SectionData }>();
                         el afiche, items-center lo centra sobre el fondo crema.
                     -->
                     <div v-if="section.content.image">
-                        <img :src="img(section.content.image)" :alt="section.content.heading ?? ''" class="h-auto w-full" />
+                        <img
+                            :src="img(section.content.image)"
+                            :alt="section.content.heading ?? ''"
+                            class="h-auto w-full rounded-t-xl md:rounded-l-xl md:rounded-tr-none"
+                        />
                     </div>
 
                     <div class="p-8 md:p-10" :class="{ 'md:col-span-2': !section.content.image }">
