@@ -40,10 +40,11 @@ class SectionController extends Controller
             $props['faqPool'] = Faq::ordered()->get(['id', 'question', 'visible']);
         }
 
-        // Aclaraciones por campo, debajo del input. Hoy sólo el horario, que se
-        // arma con las fechas del calendario si se deja vacío.
+        // Aclaraciones por campo, debajo del input.
         if ($section->type === 'class_info') {
             $auto = Occurrences::schedule($section->content['occurrences'] ?? []);
+            $anchor = $section->content['anchor'] ?? null;
+            $path = $section->page->slug === 'home' ? '' : '/'.$section->page->slug;
 
             $props['hints'] = [
                 // Las llaves son necesarias: sin ellas PHP toma la comilla de cierre
@@ -51,6 +52,10 @@ class SectionController extends Controller
                 'schedule' => $auto
                     ? "Vacío se publica “{$auto}”, armado con las fechas de abajo. Escribí algo sólo si querés otro texto."
                     : 'Cargá las “Fechas para el calendario” de abajo y el horario se arma solo.',
+                // La URL ya armada, que es para lo que existe el campo.
+                'anchor' => filled($anchor)
+                    ? "Para enlazar directo a esta ficha: {$path}#{$anchor}"
+                    : "Una palabra o un número, sin espacios ni acentos, para enlazar directo a esta ficha: {$path}#lo-que-pongas",
             ];
         }
 

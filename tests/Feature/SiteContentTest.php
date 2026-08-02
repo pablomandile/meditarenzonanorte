@@ -1550,6 +1550,94 @@ class SiteContentTest extends TestCase
         $this->assertStringContainsString('Sábado 8 de agosto de 16 a 19 hs', $hints['schedule']);
     }
 
+    public function test_class_card_can_have_an_anchor_to_link_straight_to_it(): void
+    {
+        $admin = $this->admin();
+        $page = Page::where('slug', 'cursos-y-retiros')->firstOrFail();
+        $section = $page->sections()->where('key', 'curso')->firstOrFail();
+
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => [...$section->content, 'anchor' => 'retiro-de-agosto'],
+        ])->assertRedirect()->assertSessionHas('success');
+
+        $this->assertSame('retiro-de-agosto', $section->fresh()->content['anchor']);
+
+        /**
+         * El ancla que recibe la vista. El atributo id lo pinta Vue en el navegador,
+         * así que en el HTML del servidor sólo está el prop — el id renderizado y el
+         * salto se verifican con el navegador.
+         */
+        $publicada = function () {
+            $valor = null;
+
+            $this->get('/cursos-y-retiros')->assertOk()->assertInertia(function (AssertableInertia $page) use (&$valor) {
+                $valor = collect($page->toArray()['props']['sections'])->firstWhere('key', 'curso')['content']['anchor'] ?? null;
+            });
+
+            return $valor;
+        };
+
+        $section->fresh()->update(['visible' => true]);
+        $this->assertSame('retiro-de-agosto', $publicada());
+
+        // Un número suelto también sirve, que es el caso más simple.
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => [...$section->content, 'anchor' => '4'],
+        ])->assertRedirect();
+
+        $this->assertSame('4', $section->fresh()->content['anchor']);
+        $this->assertSame('4', $publicada());
+
+        // Lo que no sirve dentro de una URL se rechaza.
+        foreach (['con espacios', 'con#numeral', 'acentuadó', '-empieza-con-guion', 'barra/adentro'] as $malo) {
+            $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+                'content' => [...$section->content, 'anchor' => $malo],
+            ])->assertSessionHasErrors('content.anchor');
+        }
+
+        $this->assertSame('4', $section->fresh()->content['anchor']);
+
+        // Y se puede vaciar: el campo es opcional.
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => [...$section->content, 'anchor' => ''],
+        ])->assertRedirect();
+
+        $this->assertNull($section->fresh()->content['anchor']);
+    }
+
+    public function test_two_sections_of_a_page_cannot_share_an_anchor(): void
+    {
+        $admin = $this->admin();
+        $page = Page::where('slug', 'cursos-y-retiros')->firstOrFail();
+
+        $primera = $page->sections()->where('key', 'curso')->firstOrFail();
+        $primera->update(['content' => [...$primera->content, 'anchor' => 'retiro']]);
+
+        // Otra sección de la misma página no puede repetirla: el navegador salta a
+        // la primera y la segunda queda inalcanzable sin aviso.
+        $segunda = $page->sections()->where('key', 'detalles-clase')->firstOrFail();
+
+        $this->actingAs($admin)->put("/admin/sections/{$segunda->id}", [
+            'content' => [...$segunda->content, 'anchor' => 'retiro'],
+        ])->assertSessionHasErrors('content.anchor');
+
+        // Guardar la misma sección con su propia ancla no se choca consigo misma.
+        $this->actingAs($admin)->put("/admin/sections/{$primera->id}", [
+            'content' => [...$primera->content, 'anchor' => 'retiro'],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        // Y en otra página el mismo ancla es válido.
+        $otra = Section::whereHas('page', fn ($query) => $query->where('slug', 'clases-semanales'))
+            ->where('key', 'clase-principal')
+            ->firstOrFail();
+
+        $this->actingAs($admin)->put("/admin/sections/{$otra->id}", [
+            'content' => [...$otra->content, 'anchor' => 'retiro'],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->assertSame('retiro', $otra->fresh()->content['anchor']);
+    }
+
     public function test_class_card_can_name_one_or_more_teachers(): void
     {
         $admin = $this->admin();

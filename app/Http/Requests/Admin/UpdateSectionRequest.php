@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Section;
 use App\Support\SectionRegistry;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class UpdateSectionRequest extends FormRequest
 {
@@ -15,6 +17,33 @@ class UpdateSectionRequest extends FormRequest
     public function rules(): array
     {
         return SectionRegistry::rules($this->route('section')->type);
+    }
+
+    /**
+     * El ancla tiene que ser única dentro de la página: si se repite, el navegador
+     * salta a la primera que encuentra y la otra queda inalcanzable, sin avisar.
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator) {
+                $anchor = $this->input('content.anchor');
+                $section = $this->route('section');
+
+                if (blank($anchor)) {
+                    return;
+                }
+
+                $taken = Section::where('page_id', $section->page_id)
+                    ->whereKeyNot($section->id)
+                    ->get()
+                    ->contains(fn (Section $other) => ($other->content['anchor'] ?? null) === $anchor);
+
+                if ($taken) {
+                    $validator->errors()->add('content.anchor', "Ya hay otra sección de esta página usando el ancla “{$anchor}”. Poné otra.");
+                }
+            },
+        ];
     }
 
     /**

@@ -102,6 +102,14 @@ class SectionRegistry
                 ['key' => 'cta_url', 'type' => 'url', 'label' => 'URL del botón'],
                 ['key' => 'image', 'type' => 'image', 'label' => 'Imagen'],
                 ['key' => 'cycle', 'type' => 'textarea', 'label' => 'Clases del ciclo'],
+                [
+                    'key' => 'anchor',
+                    'type' => 'text',
+                    'label' => 'Ancla para enlazar (opcional)',
+                    // Va en una URL después del #, así que sin espacios, acentos ni
+                    // signos. Empieza con letra o número; los números sueltos valen.
+                    'rules' => ['nullable', 'string', 'max:60', 'regex:/^[A-Za-z0-9][A-Za-z0-9_-]*$/'],
+                ],
             ],
         ],
         'person' => [
@@ -232,6 +240,14 @@ class SectionRegistry
 
         foreach (self::fields($type) as $field) {
             $key = $field['key'];
+
+            // Un campo puede traer sus propias reglas cuando el tipo no alcanza (el
+            // ancla, por ejemplo, es texto pero tiene que servir dentro de una URL).
+            if (isset($field['rules'])) {
+                $rules["content.$key"] = $field['rules'];
+
+                continue;
+            }
 
             match ($field['type']) {
                 'text' => $rules["content.$key"] = ['nullable', 'string', 'max:255'],

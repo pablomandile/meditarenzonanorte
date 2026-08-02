@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import SectionRenderer from '@/components/public/SectionRenderer.vue';
+import { useHashScroll } from '@/composables/useHashScroll';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { type CalendarData } from '@/lib/calendar';
 import { type EventData, type FaqItem, type SectionData } from '@/lib/site';
 import { Head } from '@inertiajs/vue3';
+
+// Para que /la-pagina#el-ancla lleve a la ficha, acá y no en cada sección.
+useHashScroll();
 
 defineProps<{
     page: { slug: string; title: string; meta_description: string | null };
