@@ -11,12 +11,14 @@ defineProps<{ section: SectionData }>();
         <div class="mx-auto max-w-6xl px-4">
             <div class="overflow-hidden rounded-xl bg-brand-cream">
                 <div class="grid items-center gap-0 md:grid-cols-2">
-                    <div v-if="section.content.image" class="h-full">
-                        <img
-                            :src="img(section.content.image)"
-                            :alt="section.content.heading ?? ''"
-                            class="h-full w-full object-cover"
-                        />
+                    <!--
+                        La imagen manda su propio alto (h-auto, sin object-cover): los
+                        afiches suelen ser verticales 4:5 y estirarlos al alto de la
+                        columna de texto los recortaba. Si el texto queda más alto que
+                        el afiche, items-center lo centra sobre el fondo crema.
+                    -->
+                    <div v-if="section.content.image">
+                        <img :src="img(section.content.image)" :alt="section.content.heading ?? ''" class="h-auto w-full" />
                     </div>
 
                     <div class="p-8 md:p-10" :class="{ 'md:col-span-2': !section.content.image }">
