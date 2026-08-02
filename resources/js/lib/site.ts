@@ -36,6 +36,14 @@ export function img(path?: string | null): string | undefined {
     return path ? `/storage/${path}` : undefined;
 }
 
+/**
+ * Búsqueda en Google Maps para una dirección escrita a mano (el campo "lugar"
+ * de las clases y los eventos es texto libre, no una coordenada).
+ */
+export function mapsUrl(query?: string | null): string | undefined {
+    return query ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}` : undefined;
+}
+
 /** Splits a plain-text body into paragraphs (blank-line separated). */
 export function paragraphs(text?: string | null): string[] {
     if (!text) return [];

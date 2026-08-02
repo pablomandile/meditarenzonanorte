@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { img, paragraphs, type EventData, type SectionData } from '@/lib/site';
+import { img, mapsUrl, paragraphs, type EventData, type SectionData } from '@/lib/site';
 import { Calendar, Clock, MapPin, Ticket } from 'lucide-vue-next';
 import { computed } from 'vue';
 
@@ -11,10 +11,7 @@ const list = computed(() => props.events ?? []);
 <template>
     <section class="py-12 md:py-16">
         <div class="mx-auto max-w-6xl space-y-14 px-4">
-            <h2
-                v-if="section.content.heading"
-                class="text-center font-heading text-3xl font-light text-brand-sky md:text-[35px]"
-            >
+            <h2 v-if="section.content.heading" class="text-center font-heading text-3xl font-light text-brand-sky md:text-[35px]">
                 {{ section.content.heading }}
             </h2>
 
@@ -22,17 +19,9 @@ const list = computed(() => props.events ?? []);
                 {{ section.content.empty_text ?? 'próximamente' }}
             </p>
 
-            <article
-                v-for="(event, index) in list"
-                :key="event.id"
-                class="grid items-center gap-8 md:grid-cols-2"
-            >
+            <article v-for="(event, index) in list" :key="event.id" class="grid items-center gap-8 md:grid-cols-2">
                 <div v-if="event.image_path" :class="{ 'md:order-2': index % 2 === 1 }">
-                    <img
-                        :src="img(event.image_path)"
-                        :alt="event.title"
-                        class="mx-auto w-full max-w-lg rounded-lg object-cover shadow-sm"
-                    />
+                    <img :src="img(event.image_path)" :alt="event.title" class="mx-auto w-full max-w-lg rounded-lg object-cover shadow-sm" />
                 </div>
 
                 <div :class="{ 'md:order-1': index % 2 === 1, 'md:col-span-2': !event.image_path }">
@@ -51,7 +40,15 @@ const list = computed(() => props.events ?? []);
                         </li>
                         <li v-if="event.location" class="flex items-start gap-3">
                             <MapPin class="mt-0.5 h-5 w-5 shrink-0 text-brand-sky" />
-                            <span>{{ event.location }}</span>
+                            <a
+                                :href="mapsUrl(event.location)"
+                                target="_blank"
+                                rel="noopener"
+                                title="Ver en Google Maps"
+                                class="underline decoration-brand-muted/60 underline-offset-2 transition hover:text-brand-sky hover:decoration-brand-sky"
+                            >
+                                {{ event.location }}
+                            </a>
                         </li>
                         <li v-if="event.price" class="flex items-start gap-3">
                             <Ticket class="mt-0.5 h-5 w-5 shrink-0 text-brand-sky" />

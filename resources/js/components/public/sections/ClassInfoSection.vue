@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { img, isInternal, paragraphs, type SectionData } from '@/lib/site';
+import { img, isInternal, mapsUrl, paragraphs, type SectionData } from '@/lib/site';
 import { Link } from '@inertiajs/vue3';
 import { ChevronDown, Clock, MapPin, Ticket } from 'lucide-vue-next';
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
@@ -103,7 +103,15 @@ watch(expanded, () => nextTick(measure));
                             </li>
                             <li v-if="section.content.location" class="flex items-start gap-3">
                                 <MapPin class="mt-0.5 h-5 w-5 shrink-0 text-brand-orange" />
-                                <span>{{ section.content.location }}</span>
+                                <a
+                                    :href="mapsUrl(section.content.location)"
+                                    target="_blank"
+                                    rel="noopener"
+                                    title="Ver en Google Maps"
+                                    class="underline decoration-brand-muted/60 underline-offset-2 transition hover:text-brand-sky hover:decoration-brand-sky"
+                                >
+                                    {{ section.content.location }}
+                                </a>
                             </li>
                             <li v-if="section.content.price" class="flex items-start gap-3">
                                 <Ticket class="mt-0.5 h-5 w-5 shrink-0 text-brand-orange" />
