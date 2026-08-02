@@ -17,7 +17,6 @@ const events = computed(() => props.homeEvents ?? []);
             >
                 {{ section.content.heading }}
             </h2>
-            <p class="mt-1 text-center font-display text-xl uppercase tracking-wide text-brand-orange">próximamente</p>
 
             <div
                 v-if="events.length"
