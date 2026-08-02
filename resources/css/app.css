@@ -9,6 +9,13 @@ html {
 
 @layer base {
     :root {
+        /**
+         * Les avisa al navegador en qué modo está el sitio, para que dibuje los
+         * controles nativos a tono: sin esto, el ícono del calendario de los
+         * <input type="date"> se pinta negro sobre el fondo oscuro y no se ve.
+         * También arregla el selector de hora, los <select> y las barras de scroll.
+         */
+        color-scheme: light;
         --background: 0 0% 100%;
         --foreground: 0 0% 3.9%;
         --card: 0 0% 100%;
@@ -45,6 +52,7 @@ html {
     }
 
     .dark {
+        color-scheme: dark;
         --background: 0 0% 3.9%;
         --foreground: 0 0% 98%;
         --card: 0 0% 3.9%;

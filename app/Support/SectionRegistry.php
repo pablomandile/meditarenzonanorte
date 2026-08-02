@@ -93,7 +93,7 @@ class SectionRegistry
             'fields' => [
                 ['key' => 'heading', 'type' => 'text', 'label' => 'Título'],
                 ['key' => 'body', 'type' => 'textarea', 'label' => 'Descripción'],
-                ['key' => 'schedule', 'type' => 'text', 'label' => 'Horario'],
+                ['key' => 'schedule', 'type' => 'text', 'label' => 'Horario (opcional, se arma solo)'],
                 ['key' => 'occurrences', 'type' => 'occurrences', 'label' => 'Fechas para el calendario'],
                 ['key' => 'location', 'type' => 'text', 'label' => 'Lugar'],
                 ['key' => 'price', 'type' => 'text', 'label' => 'Precio'],

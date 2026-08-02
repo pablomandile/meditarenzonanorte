@@ -18,21 +18,24 @@ use Carbon\CarbonImmutable;
 class Occurrences
 {
     /**
-     * En plural, porque describen una repetición ("sábados de 10 a 13 hs"). Los
-     * singulares y los meses viven en SpanishDate.
+     * Las fechas escritas como las escribiría una persona, para publicar como
+     * "Horario" de la ficha y para el listado del panel:
      *
-     * @var array<int, string>
-     */
-    private const WEEKDAYS = [1 => 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados', 'domingos'];
-
-    /**
-     * Las fechas en una línea legible, para el listado del panel: el dueño tiene
-     * que poder ver de un vistazo qué va a publicar cada ficha sin abrirla.
+     *   Miércoles de 19 a 20.15 hs
+     *   Martes y jueves de 18 a 18.30 hs
+     *   Miércoles de 19 a 20.30 hs (hasta el 31 de agosto)
+     *   Sábado 8 de agosto de 16 a 19 hs
+     *   Del 28 al 30 de agosto de 10 a 17.30 hs
+     *
+     * Los días con el mismo horario se agrupan en una sola frase, que es como se
+     * dice: "martes y jueves de 18 a 18.30", no "martes de 18 a 18.30 y jueves de
+     * 18 a 18.30". Devuelve null si no hay ninguna fecha usable.
      *
      * @param  array<int, array<string, mixed>>  $rows
      */
-    public static function describe(array $rows): string
+    public static function schedule(array $rows): ?string
     {
+        $groups = [];
         $parts = [];
 
         foreach ($rows as $row) {
@@ -40,23 +43,14 @@ class Occurrences
                 continue;
             }
 
-            $start = self::time($row['start'] ?? null);
-            $end = self::time($row['end'] ?? null);
-            $hours = $start ? ' de '.$start.($end ? ' a '.$end : '').' hs' : '';
+            $hours = SpanishDate::hourRange(self::time($row['start'] ?? null), self::time($row['end'] ?? null));
 
             if (($row['type'] ?? 'weekly') === 'date') {
-                $date = self::date($row['date'] ?? null);
+                $phrase = self::datePhrase($row, $hours);
 
-                if (! $date) {
-                    continue;
+                if ($phrase !== null) {
+                    $parts[] = $phrase;
                 }
-
-                $until = self::date($row['until'] ?? null);
-                $when = $until && $until->greaterThan($date)
-                    ? 'del '.$date->day.' al '.$until->day.' de '.SpanishDate::month($until->month)
-                    : $date->day.' de '.SpanishDate::month($date->month);
-
-                $parts[] = $when.$hours;
 
                 continue;
             }
@@ -67,11 +61,88 @@ class Occurrences
                 continue;
             }
 
-            $until = self::date($row['until'] ?? null);
-            $parts[] = self::WEEKDAYS[$weekday].$hours.($until ? ' (hasta el '.$until->day.' de '.SpanishDate::month($until->month).')' : '');
+            // Se agrupa por horario y vigencia; el orden de aparición se conserva.
+            $key = implode('|', [$hours ?? '', $row['from'] ?? '', $row['until'] ?? '']);
+            $groups[$key] ??= ['hours' => $hours, 'row' => $row, 'weekdays' => []];
+            $groups[$key]['weekdays'][] = $weekday;
         }
 
-        return implode(' · ', $parts);
+        foreach ($groups as $group) {
+            $days = array_unique($group['weekdays']);
+            sort($days);
+
+            $names = array_map(fn ($day) => SpanishDate::weekday($day), $days);
+            $phrase = self::join($names);
+
+            if ($group['hours']) {
+                $phrase .= ' '.$group['hours'];
+            }
+
+            $parts[] = $phrase.self::validity($group['row']);
+        }
+
+        // Cada frase es una afirmación aparte, así que va con mayúscula propia.
+        return $parts === [] ? null : implode(' · ', array_map('ucfirst', $parts));
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     */
+    private static function datePhrase(array $row, ?string $hours): ?string
+    {
+        $date = self::date($row['date'] ?? null);
+
+        if (! $date) {
+            return null;
+        }
+
+        $until = self::date($row['until'] ?? null);
+
+        $when = $until && $until->greaterThan($date)
+            ? ($date->month === $until->month
+                ? 'del '.$date->day.' al '.$until->day.' de '.SpanishDate::month($until->month)
+                : 'del '.$date->day.' de '.SpanishDate::month($date->month).' al '.$until->day.' de '.SpanishDate::month($until->month))
+            : SpanishDate::weekday($date->dayOfWeekIso).' '.$date->day.' de '.SpanishDate::month($date->month);
+
+        return $hours ? $when.' '.$hours : $when;
+    }
+
+    /** " (hasta el 31 de agosto)" y sus variantes, para las reglas semanales. */
+    private static function validity(array $row): string
+    {
+        $from = self::date($row['from'] ?? null);
+        $until = self::date($row['until'] ?? null);
+
+        if ($from && $until) {
+            // Dentro del mismo mes el mes se nombra una sola vez.
+            return $from->month === $until->month
+                ? ' (del '.$from->day.' al '.$until->day.' de '.SpanishDate::month($until->month).')'
+                : ' (del '.$from->day.' de '.SpanishDate::month($from->month).' al '.$until->day.' de '.SpanishDate::month($until->month).')';
+        }
+
+        if ($until) {
+            return ' (hasta el '.$until->day.' de '.SpanishDate::month($until->month).')';
+        }
+
+        if ($from) {
+            return ' (desde el '.$from->day.' de '.SpanishDate::month($from->month).')';
+        }
+
+        return '';
+    }
+
+    /**
+     * @param  array<int, string>  $items
+     */
+    private static function join(array $items): string
+    {
+        if (count($items) <= 1) {
+            return $items[0] ?? '';
+        }
+
+        $last = array_pop($items);
+
+        return implode(', ', $items).' y '.$last;
     }
 
     /**

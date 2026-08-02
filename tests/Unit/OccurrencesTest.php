@@ -131,40 +131,71 @@ class OccurrencesTest extends TestCase
         $this->assertNull($withBlank[0]['label']);
     }
 
-    public function test_describe_reads_the_dates_back_in_spanish(): void
+    public function test_schedule_writes_the_dates_the_way_a_person_would(): void
     {
-        $this->assertSame(
-            'miércoles de 19:00 a 20:15 hs',
-            Occurrences::describe([$this->weekly(3)]),
-        );
+        // Una regla semanal, en el formato de horas del sitio (19, 20.15).
+        $this->assertSame('Miércoles de 19 a 20.15 hs', Occurrences::schedule([$this->weekly(3)]));
 
+        // Dos días con el mismo horario van en una sola frase.
         $this->assertSame(
-            'martes de 18:00 a 18:30 hs · jueves de 18:00 a 18:30 hs',
-            Occurrences::describe([
+            'Martes y jueves de 18 a 18.30 hs',
+            Occurrences::schedule([
                 $this->weekly(2, ['start' => '18:00', 'end' => '18:30']),
                 $this->weekly(4, ['start' => '18:00', 'end' => '18:30']),
             ]),
         );
 
+        // Tres o más, con comas y una "y" al final, y ordenados de lunes a domingo.
         $this->assertSame(
-            'lunes de 19:00 a 20:15 hs (hasta el 31 de agosto)',
-            Occurrences::describe([$this->weekly(1, ['until' => '2026-08-31'])]),
+            'Lunes, miércoles y viernes de 18 a 18.30 hs',
+            Occurrences::schedule([
+                $this->weekly(5, ['start' => '18:00', 'end' => '18:30']),
+                $this->weekly(1, ['start' => '18:00', 'end' => '18:30']),
+                $this->weekly(3, ['start' => '18:00', 'end' => '18:30']),
+            ]),
         );
 
+        // Horarios distintos no se agrupan.
         $this->assertSame(
-            '8 de agosto de 16:00 a 19:00 hs',
-            Occurrences::describe([['type' => 'date', 'date' => '2026-08-08', 'start' => '16:00', 'end' => '19:00']]),
+            'Miércoles de 19 a 20.15 hs · Sábado de 10 a 13 hs',
+            Occurrences::schedule([$this->weekly(3), $this->weekly(6, ['start' => '10:00', 'end' => '13:00'])]),
         );
 
+        // Vigencias.
         $this->assertSame(
-            'del 28 al 30 de agosto de 10:00 a 17:30 hs',
-            Occurrences::describe([['type' => 'date', 'date' => '2026-08-28', 'until' => '2026-08-30', 'start' => '10:00', 'end' => '17:30']]),
+            'Lunes de 19 a 20.15 hs (hasta el 31 de agosto)',
+            Occurrences::schedule([$this->weekly(1, ['until' => '2026-08-31'])]),
+        );
+        $this->assertSame(
+            'Lunes de 19 a 20.15 hs (desde el 1 de septiembre)',
+            Occurrences::schedule([$this->weekly(1, ['from' => '2026-09-01'])]),
+        );
+        $this->assertSame(
+            'Lunes de 19 a 20.15 hs (del 1 al 30 de septiembre)',
+            Occurrences::schedule([$this->weekly(1, ['from' => '2026-09-01', 'until' => '2026-09-30'])]),
         );
 
-        // Sin hora se describe igual, y una fila inservible no aporta ruido.
-        $this->assertSame('sábados', Occurrences::describe([$this->weekly(6, ['start' => null, 'end' => null])]));
-        $this->assertSame('', Occurrences::describe([$this->weekly(9), ['type' => 'date', 'date' => 'ayer']]));
-        $this->assertSame('', Occurrences::describe([]));
+        // Fechas fijas: con día de la semana si es una sola, y como rango si dura.
+        $this->assertSame(
+            'Sábado 8 de agosto de 16 a 19 hs',
+            Occurrences::schedule([['type' => 'date', 'date' => '2026-08-08', 'start' => '16:00', 'end' => '19:00']]),
+        );
+        $this->assertSame(
+            'Del 28 al 30 de agosto de 10 a 17.30 hs',
+            Occurrences::schedule([['type' => 'date', 'date' => '2026-08-28', 'until' => '2026-08-30', 'start' => '10:00', 'end' => '17:30']]),
+        );
+        $this->assertSame(
+            'Del 30 de agosto al 1 de septiembre',
+            Occurrences::schedule([['type' => 'date', 'date' => '2026-08-30', 'until' => '2026-09-01']]),
+        );
+
+        // Sólo hora de inicio, y sin hora ninguna.
+        $this->assertSame('Miércoles a las 19 hs', Occurrences::schedule([$this->weekly(3, ['end' => null])]));
+        $this->assertSame('Sábado', Occurrences::schedule([$this->weekly(6, ['start' => null, 'end' => null])]));
+
+        // Una fila inservible no aporta ruido, y sin fechas no hay texto.
+        $this->assertNull(Occurrences::schedule([$this->weekly(9), ['type' => 'date', 'date' => 'ayer']]));
+        $this->assertNull(Occurrences::schedule([]));
     }
 
     public function test_empty_rows_and_a_broken_window_yield_nothing(): void

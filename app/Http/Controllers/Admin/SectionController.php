@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\UpdateSectionRequest;
 use App\Models\Faq;
 use App\Models\Section;
 use App\Support\ImageStorage;
+use App\Support\Occurrences;
 use App\Support\SectionRegistry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,6 +38,20 @@ class SectionController extends Controller
 
         if ($section->type === 'faq') {
             $props['faqPool'] = Faq::ordered()->get(['id', 'question', 'visible']);
+        }
+
+        // Aclaraciones por campo, debajo del input. Hoy sólo el horario, que se
+        // arma con las fechas del calendario si se deja vacío.
+        if ($section->type === 'class_info') {
+            $auto = Occurrences::schedule($section->content['occurrences'] ?? []);
+
+            $props['hints'] = [
+                // Las llaves son necesarias: sin ellas PHP toma la comilla de cierre
+                // como parte del nombre de la variable (UTF-8 vale en identificadores).
+                'schedule' => $auto
+                    ? "Vacío se publica “{$auto}”, armado con las fechas de abajo. Escribí algo sólo si querés otro texto."
+                    : 'Cargá las “Fechas para el calendario” de abajo y el horario se arma solo.',
+            ];
         }
 
         return Inertia::render('Admin/Sections/Edit', $props);

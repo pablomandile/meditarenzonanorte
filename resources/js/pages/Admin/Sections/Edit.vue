@@ -18,6 +18,7 @@ const props = defineProps<{
     fields: FieldDef[];
     page: { id: number; title: string; slug: string };
     faqPool?: { id: number; question: string; visible: boolean }[];
+    hints?: Record<string, string>;
 }>();
 
 const breadcrumbs = [
@@ -66,6 +67,7 @@ function submit() {
                             v-model:files="form.files"
                             :errors="form.errors as Record<string, string>"
                             :faq-pool="faqPool"
+                            :hints="hints"
                         />
                     </CardContent>
                 </Card>

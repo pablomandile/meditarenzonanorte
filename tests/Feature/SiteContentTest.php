@@ -1096,7 +1096,7 @@ class SiteContentTest extends TestCase
 
         // Y las fechas vienen resumidas para leerlas sin abrir la ficha.
         $clase = $cards->firstWhere('title', 'Clases semanales');
-        $this->assertSame('miércoles de 19:00 a 20:15 hs', $clase['dates']);
+        $this->assertSame('Miércoles de 19 a 20.15 hs', $clase['dates']);
         $this->assertTrue($clase['show_on_calendar']);
 
         // Una ficha sin fechas se lista igual, pero avisando que no puede aparecer.
@@ -1242,6 +1242,81 @@ class SiteContentTest extends TestCase
             'start_time' => '17:00',
             'end_time' => '10:00',
         ])->assertSessionHasErrors('end_time');
+    }
+
+    public function test_class_schedule_is_built_from_the_calendar_dates_when_it_is_empty(): void
+    {
+        $admin = $this->admin();
+        $section = Section::whereHas('page', fn ($query) => $query->where('slug', 'clases-semanales'))
+            ->where('key', 'clase-principal')
+            ->firstOrFail();
+
+        /** El horario que recibe la vista pública de esa ficha. */
+        $published = function () {
+            $text = null;
+
+            $this->get('/clases-semanales')->assertOk()->assertInertia(function (AssertableInertia $page) use (&$text) {
+                $text = collect($page->toArray()['props']['sections'])->firstWhere('key', 'clase-principal')['content']['schedule'];
+            });
+
+            return $text;
+        };
+
+        // Con texto a mano, se publica ese.
+        $this->assertSame('Miércoles de 19 a 20.15 hs', $published());
+
+        // Vaciándolo, se arma con las fechas del calendario (miércoles 19:00-20:15).
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => [...$section->content, 'schedule' => ''],
+        ])->assertRedirect();
+
+        $this->assertNull($section->fresh()->content['schedule']);
+        $this->assertSame('Miércoles de 19 a 20.15 hs', $published());
+
+        // Y dos días con el mismo horario se dicen en una sola frase.
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => [
+                ...$section->content,
+                'schedule' => '',
+                'occurrences' => [
+                    ['type' => 'weekly', 'weekday' => 2, 'start' => '18:00', 'end' => '18:30'],
+                    ['type' => 'weekly', 'weekday' => 4, 'start' => '18:00', 'end' => '18:30'],
+                ],
+            ],
+        ])->assertRedirect();
+
+        $this->assertSame('Martes y jueves de 18 a 18.30 hs', $published());
+
+        // Sin fechas ni texto no se inventa nada.
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => [...$section->content, 'schedule' => '', 'occurrences' => []],
+        ])->assertRedirect();
+
+        $this->assertNull($published());
+    }
+
+    public function test_the_section_form_shows_the_schedule_that_would_be_published(): void
+    {
+        $admin = $this->admin();
+        $section = Section::whereHas('page', fn ($query) => $query->where('slug', 'cursos-y-retiros'))
+            ->where('key', 'curso')
+            ->firstOrFail();
+
+        // La plantilla de cursos no tiene fechas cargadas: la pista lo dice.
+        $hints = $this->actingAs($admin)->get("/admin/sections/{$section->id}/edit")
+            ->assertOk()->viewData('page')['props']['hints'];
+
+        $this->assertStringContainsString('Fechas para el calendario', $hints['schedule']);
+
+        // Con una fecha fija cargada, la pista muestra el texto exacto.
+        $section->update(['content' => [...$section->content, 'occurrences' => [
+            ['type' => 'date', 'weekday' => null, 'date' => '2026-08-08', 'from' => null, 'until' => null, 'start' => '16:00', 'end' => '19:00', 'label' => null],
+        ]]]);
+
+        $hints = $this->actingAs($admin)->get("/admin/sections/{$section->id}/edit")
+            ->viewData('page')['props']['hints'];
+
+        $this->assertStringContainsString('Sábado 8 de agosto de 16 a 19 hs', $hints['schedule']);
     }
 
     public function test_class_card_can_carry_the_classes_of_the_cycle(): void

@@ -22,6 +22,8 @@ const props = defineProps<{
     fields: FieldDef[];
     errors: Record<string, string>;
     faqPool?: { id: number; question: string; visible: boolean }[];
+    /** Aclaraciones por clave de campo, que el servidor calcula (ej. el horario). */
+    hints?: Record<string, string>;
 }>();
 
 /**
@@ -51,6 +53,7 @@ const files = defineModel<Record<string, any>>('files', { required: true });
                 v-if="field.type === 'text' || field.type === 'url'"
                 v-model="content[field.key]"
                 :label="field.label"
+                :hint="hints?.[field.key]"
                 :error="fieldError(field.key)"
             />
 

@@ -47,7 +47,7 @@ class CalendarController extends Controller
                 'id' => $section->id,
                 'page' => $section->page->menu_label ?? $section->page->title,
                 'title' => $this->cardTitle($section),
-                'dates' => Occurrences::describe($section->content['occurrences'] ?? []),
+                'dates' => Occurrences::schedule($section->content['occurrences'] ?? []) ?? '',
                 'show_on_calendar' => $section->show_on_calendar,
                 'edit_url' => "/admin/sections/{$section->id}/edit",
             ])

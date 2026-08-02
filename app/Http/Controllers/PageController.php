@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Event;
 use App\Models\Faq;
 use App\Models\Page;
+use App\Models\Section;
 use App\Support\EventCalendar;
+use App\Support\Occurrences;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -43,7 +45,7 @@ class PageController extends Controller
                 'id' => $section->id,
                 'type' => $section->type,
                 'key' => $section->key,
-                'content' => $section->content ?? [],
+                'content' => self::content($section),
             ])->values(),
         ];
 
@@ -71,5 +73,24 @@ class PageController extends Controller
         }
 
         return Inertia::render('Public/Page', $props);
+    }
+
+    /**
+     * El contenido que recibe la vista. En las fichas de clase, el "Horario" se
+     * arma con las "Fechas para el calendario" cuando está vacío: así no hay que
+     * escribir la misma cosa dos veces. Lo guardado no se toca — sólo se completa
+     * lo que se publica.
+     *
+     * @return array<string, mixed>
+     */
+    private static function content(Section $section): array
+    {
+        $content = $section->content ?? [];
+
+        if ($section->type === 'class_info' && blank($content['schedule'] ?? null)) {
+            $content['schedule'] = Occurrences::schedule($content['occurrences'] ?? []);
+        }
+
+        return $content;
     }
 }
