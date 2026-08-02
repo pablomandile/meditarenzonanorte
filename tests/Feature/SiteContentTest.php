@@ -475,6 +475,34 @@ class SiteContentTest extends TestCase
         $this->assertNull($section->fresh()->content['image']);
     }
 
+    public function test_template_section_is_seeded_hidden_so_the_public_page_ignores_it(): void
+    {
+        $page = Page::where('slug', 'cursos-y-retiros')->firstOrFail();
+        $page->sections()->where('key', 'curso')->delete();
+
+        (new ContentSeeder())->seedMissingSection('cursos-y-retiros', 'curso', visible: false);
+
+        $ficha = $page->sections()->where('key', 'curso')->firstOrFail();
+        $banner = $page->sections()->where('key', 'banner')->firstOrFail();
+
+        $this->assertSame('class_info', $ficha->type);
+        $this->assertFalse($ficha->visible, 'la plantilla entra oculta');
+        $this->assertSame($banner->position + 1, $ficha->position);
+
+        // Tiene los mismos campos que una ficha de clase.
+        foreach (['heading', 'body', 'schedule', 'location', 'price', 'cta_label', 'cta_url'] as $field) {
+            $this->assertArrayHasKey($field, $ficha->content);
+        }
+
+        // Y por estar oculta, la página pública no la renderiza.
+        $keys = [];
+        $this->get('/cursos-y-retiros')->assertOk()->assertInertia(function (AssertableInertia $p) use (&$keys) {
+            $keys = collect($p->toArray()['props']['sections'])->pluck('key')->all();
+        });
+
+        $this->assertNotContains('curso', $keys);
+    }
+
     public function test_admin_requires_authentication(): void
     {
         $this->get('/admin/pages')->assertRedirect('/login');

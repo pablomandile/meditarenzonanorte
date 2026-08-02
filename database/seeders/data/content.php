@@ -809,6 +809,23 @@ return [
                 ],
             ],
             [
+                // Plantilla de ficha, con la misma estructura que una clase. La
+                // siembra CursosYRetirosFichaSeeder y entra oculta: el contenido
+                // es de relleno y lo completa el dueño antes de publicarla.
+                'type' => 'class_info',
+                'key' => 'curso',
+                'content' => [
+                    'heading' => "Nombre del curso o retiro\nCon quién lo dicta",
+                    'body' => "Contá de qué se trata: a quién está dirigido, qué se practica y con qué se va quien participa.\n\n*No hace falta experiencia previa ni inscripción.\n\n¡TODO EL MUNDO ES BIENVENIDO!",
+                    'schedule' => 'Día y horario',
+                    'location' => 'Dirección donde se dicta',
+                    'price' => 'Precio o bono',
+                    'cta_label' => 'INSCRIPCIÓN',
+                    'cta_url' => 'https://meditarenargentina.org/tarjeta-kadampa/',
+                    'image' => null,
+                ],
+            ],
+            [
                 'type' => 'event_list',
                 'key' => 'eventos',
                 'content' => [

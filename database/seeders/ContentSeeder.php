@@ -126,8 +126,12 @@ class ContentSeeder extends Seeder
      * Unlike seedSinglePage() it never rewrites what the owner already edited:
      * the block is inserted right below the section that precedes it in the data
      * file, the rest shifts down, and running it again does nothing.
+     *
+     * $visible = false para plantillas: el bloque entra oculto y la página
+     * pública no lo muestra hasta que el dueño termina de completarlo, igual que
+     * hace el clonado de secciones del panel.
      */
-    public function seedMissingSection(string $slug, string $key): void
+    public function seedMissingSection(string $slug, string $key, bool $visible = true): void
     {
         $pages = require database_path('seeders/data/content.php');
         $page = Page::where('slug', $slug)->first();
@@ -158,7 +162,7 @@ class ContentSeeder extends Seeder
             Faq::orderBy('position')->pluck('id')->values()->all(),
         );
 
-        DB::transaction(function () use ($page, $sections, $index, $key, $position, $content) {
+        DB::transaction(function () use ($page, $sections, $index, $key, $position, $content, $visible) {
             Section::where('page_id', $page->id)
                 ->where('position', '>=', $position)
                 ->increment('position');
@@ -168,7 +172,7 @@ class ContentSeeder extends Seeder
                 'type' => $sections[$index]['type'],
                 'key' => $key,
                 'position' => $position,
-                'visible' => true,
+                'visible' => $visible,
                 'content' => $content,
             ]);
         });

@@ -112,6 +112,7 @@ El botón "Continuar con Google" aparece en el login **solo si `GOOGLE_CLIENT_ID
   php artisan db:seed --class=ProgramaFundamentalSeeder --force
   php artisan db:seed --class=CursosYRetirosSeeder --force
   php artisan db:seed --class=ClasesSemanalesPortadaSeeder --force
+  php artisan db:seed --class=CursosYRetirosFichaSeeder --force
   ```
 
 Hay dos primitivos, y la diferencia importa en producción:
@@ -119,7 +120,7 @@ Hay dos primitivos, y la diferencia importa en producción:
 | Primitivo | Qué hace | Cuándo |
 |---|---|---|
 | `ContentSeeder::seedSinglePage($slug)` | Upsert de la página **y de todas sus secciones** desde el archivo de datos: reescribe contenido, vuelve a poner `visible = true` y renumera posiciones. **Pisa lo editado desde el panel en esa página.** | Publicar una página nueva, o resetear una a su estado sembrado. Lo usan los 4 primeros seeders. |
-| `ContentSeeder::seedMissingSection($slug, $key)` | Inserta **una sola sección** si esa página todavía no la tiene, justo debajo de la que la precede en el archivo de datos; el resto solo corre una posición. Repetible y no toca nada más. | Agregar un bloque a una página que el dueño ya editó. Lo usa `ClasesSemanalesPortadaSeeder`. |
+| `ContentSeeder::seedMissingSection($slug, $key, $visible)` | Inserta **una sola sección** si esa página todavía no la tiene, justo debajo de la que la precede en el archivo de datos; el resto solo corre una posición. Repetible y no toca nada más. Con `visible: false` entra oculta, para plantillas que hay que completar antes de publicar. | Agregar un bloque a una página que el dueño ya editó. Lo usan `ClasesSemanalesPortadaSeeder` y `CursosYRetirosFichaSeeder`. |
 
 ## Deploy a producción (Hostinger)
 
