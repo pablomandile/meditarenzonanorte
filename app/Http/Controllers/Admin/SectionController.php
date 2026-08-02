@@ -113,6 +113,26 @@ class SectionController extends Controller
                 case 'faq_picker':
                     $content[$key] = array_values(array_map('intval', $content[$key] ?? []));
                     break;
+
+                case 'occurrences':
+                    $content[$key] = array_values(array_map(fn ($row) => [
+                        'type' => ($row['type'] ?? null) === 'date' ? 'date' : 'weekly',
+                        // El formulario manda el día como "3"; guardarlo entero deja
+                        // el JSON estable y comparable.
+                        'weekday' => is_numeric($row['weekday'] ?? null) ? (int) $row['weekday'] : null,
+                        'date' => self::blankToNull($row['date'] ?? null),
+                        'from' => self::blankToNull($row['from'] ?? null),
+                        'until' => self::blankToNull($row['until'] ?? null),
+                        'start' => self::blankToNull($row['start'] ?? null),
+                        'end' => self::blankToNull($row['end'] ?? null),
+                        'label' => self::blankToNull($row['label'] ?? null),
+                    ], array_filter(
+                        $content[$key] ?? [],
+                        fn ($row) => ($row['type'] ?? null) === 'date'
+                            ? trim((string) ($row['date'] ?? '')) !== ''
+                            : trim((string) ($row['weekday'] ?? '')) !== '',
+                    )));
+                    break;
             }
         }
 
@@ -133,6 +153,12 @@ class SectionController extends Controller
     private static function replacedPath(?string $submitted, array $owned): ?string
     {
         return in_array($submitted, $owned, true) ? $submitted : null;
+    }
+
+    /** Los campos vacíos del formulario llegan como '' y se guardan como null. */
+    private static function blankToNull(mixed $value): ?string
+    {
+        return is_string($value) && trim($value) !== '' ? trim($value) : null;
     }
 
     /**

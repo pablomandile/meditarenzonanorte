@@ -14,6 +14,10 @@ namespace App\Support;
  *  - items: repeater of plain strings.
  *  - images: repeater of storage paths; files arrive under files[key][i].
  *  - faq_picker: ordered array of faq ids stored under content[faq_ids].
+ *  - occurrences: repeater de reglas de fecha para el calendario
+ *    {type: weekly|date, weekday 1..7, date, from, until, start, end, label};
+ *    las resuelve App\Support\Occurrences. El horario que se lee en la tarjeta
+ *    sigue siendo el texto libre de `schedule`.
  */
 class SectionRegistry
 {
@@ -90,6 +94,7 @@ class SectionRegistry
                 ['key' => 'heading', 'type' => 'text', 'label' => 'Título'],
                 ['key' => 'body', 'type' => 'textarea', 'label' => 'Descripción'],
                 ['key' => 'schedule', 'type' => 'text', 'label' => 'Horario'],
+                ['key' => 'occurrences', 'type' => 'occurrences', 'label' => 'Fechas para el calendario'],
                 ['key' => 'location', 'type' => 'text', 'label' => 'Lugar'],
                 ['key' => 'price', 'type' => 'text', 'label' => 'Precio'],
                 ['key' => 'cta_label', 'type' => 'text', 'label' => 'Texto del botón'],
@@ -138,6 +143,14 @@ class SectionRegistry
             'fields' => [
                 ['key' => 'heading', 'type' => 'text', 'label' => 'Título'],
                 ['key' => 'empty_text', 'type' => 'text', 'label' => 'Texto si no hay eventos'],
+            ],
+        ],
+        'event_calendar' => [
+            'label' => 'Calendario mensual',
+            'fields' => [
+                ['key' => 'heading', 'type' => 'text', 'label' => 'Título'],
+                ['key' => 'intro', 'type' => 'textarea', 'label' => 'Introducción'],
+                ['key' => 'empty_text', 'type' => 'text', 'label' => 'Texto si el mes no tiene actividades'],
             ],
         ],
         'map' => [
@@ -261,6 +274,19 @@ class SectionRegistry
                 'faq_picker' => [
                     $rules["content.$key"] = ['nullable', 'array'],
                     $rules["content.$key.*"] = ['integer', 'exists:faqs,id'],
+                ],
+                // Las ocho claves tienen que estar: Laravel excluye de validated()
+                // las sub-claves sin regla, así que la que falte se borraría al guardar.
+                'occurrences' => [
+                    $rules["content.$key"] = ['nullable', 'array', 'max:24'],
+                    $rules["content.$key.*.type"] = ['nullable', 'string', 'in:weekly,date'],
+                    $rules["content.$key.*.weekday"] = ['nullable', 'integer', 'between:1,7', "required_if:content.$key.*.type,weekly"],
+                    $rules["content.$key.*.date"] = ['nullable', 'date_format:Y-m-d', "required_if:content.$key.*.type,date"],
+                    $rules["content.$key.*.from"] = ['nullable', 'date_format:Y-m-d'],
+                    $rules["content.$key.*.until"] = ['nullable', 'date_format:Y-m-d'],
+                    $rules["content.$key.*.start"] = ['nullable', 'date_format:H:i'],
+                    $rules["content.$key.*.end"] = ['nullable', 'date_format:H:i'],
+                    $rules["content.$key.*.label"] = ['nullable', 'string', 'max:120'],
                 ],
                 default => null,
             };

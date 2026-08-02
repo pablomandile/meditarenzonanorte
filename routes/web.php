@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CalendarController;
 use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\FaqController;
 use App\Http\Controllers\Admin\GalleryController;
@@ -32,6 +33,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::resource('events', EventController::class)->except(['show']);
     Route::patch('events/{event}/toggle', [EventController::class, 'toggle'])->name('events.toggle');
     Route::patch('events/{event}/toggle-home', [EventController::class, 'toggleHome'])->name('events.toggle-home');
+
+    Route::get('calendar', [CalendarController::class, 'index'])->name('calendar.index');
+    Route::patch('calendar', [CalendarController::class, 'bulk'])->name('calendar.bulk');
+    Route::patch('calendar/{event}', [CalendarController::class, 'toggle'])->name('calendar.toggle');
 
     Route::get('faqs', [FaqController::class, 'index'])->name('faqs.index');
     Route::post('faqs', [FaqController::class, 'store'])->name('faqs.store');

@@ -1,0 +1,332 @@
+<?php
+
+namespace App\Support;
+
+use App\Models\Event;
+use App\Models\Page;
+use App\Models\Section;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
+
+/**
+ * Arma la grilla mensual del calendario público a partir de las secciones
+ * visibles: las fichas de clase (class_info) con sus "Fechas para el calendario"
+ * y los eventos que el panel marcó para el calendario.
+ */
+class EventCalendar
+{
+    /**
+     * Rosario / Buenos Aires. config('app.timezone') es UTC y así se queda: el mes
+     * y el "hoy" del calendario se calculan acá, que es donde importan. A las 21 hs
+     * de un 31 de agosto en Argentina ya es 1 de septiembre en UTC, y el calendario
+     * abriría en el mes siguiente.
+     */
+    public const TIMEZONE = 'America/Argentina/Buenos_Aires';
+
+    /** @var array<int, string> */
+    private const MONTHS = [
+        1 => 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+    ];
+
+    /**
+     * Los nombres van a mano en lugar de Carbon->locale('es'): APP_LOCALE es 'en'
+     * y nadie fija el locale, así que translatedFormat() devolvería inglés; y el
+     * catálogo 'es' de Carbon abrevia con minúscula y punto ('ago.'), que igual
+     * habría que retocar. Con 19 palabras fijas, CI y producción imprimen lo mismo.
+     *
+     * @var array<int, array{short: string, long: string}>
+     */
+    private const WEEKDAYS = [
+        ['short' => 'Lun', 'long' => 'lunes'],
+        ['short' => 'Mar', 'long' => 'martes'],
+        ['short' => 'Mié', 'long' => 'miércoles'],
+        ['short' => 'Jue', 'long' => 'jueves'],
+        ['short' => 'Vie', 'long' => 'viernes'],
+        ['short' => 'Sáb', 'long' => 'sábado'],
+        ['short' => 'Dom', 'long' => 'domingo'],
+    ];
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function forMonth(?string $month): array
+    {
+        $today = CarbonImmutable::today(self::TIMEZONE);
+        $first = self::parseMonth($month, $today);
+
+        $gridStart = $first->startOfWeek(CarbonInterface::MONDAY);
+        $gridEnd = $first->endOfMonth()->endOfWeek(CarbonInterface::SUNDAY);
+
+        $activities = self::activities($gridStart, $gridEnd);
+
+        $weeks = [];
+        $cursor = $gridStart;
+
+        while ($cursor->lessThanOrEqualTo($gridEnd)) {
+            $days = [];
+
+            for ($i = 0; $i < 7; $i++) {
+                $date = $cursor->toDateString();
+
+                $days[] = [
+                    'date' => $date,
+                    'day' => $cursor->day,
+                    'label' => self::dayLabel($cursor),
+                    'in_month' => $cursor->month === $first->month,
+                    'is_today' => $date === $today->toDateString(),
+                    'activities' => $activities[$date] ?? [],
+                ];
+
+                $cursor = $cursor->addDay();
+            }
+
+            $weeks[] = ['label' => self::weekLabel($days[0]['date'], $days[6]['date']), 'days' => $days];
+        }
+
+        return [
+            'month' => $first->format('Y-m'),
+            'label' => self::MONTHS[$first->month].' de '.$first->year,
+            'today' => $today->toDateString(),
+            'prev' => $first->subMonth()->format('Y-m'),
+            'next' => $first->addMonth()->format('Y-m'),
+            'weekdays' => array_column(self::WEEKDAYS, 'short'),
+            'sources' => self::sources(),
+            'weeks' => $weeks,
+        ];
+    }
+
+    /**
+     * Un ?mes= inservible abre el mes actual: es una página pública por GET, no
+     * puede responder 422 porque alguien tocó la URL.
+     */
+    private static function parseMonth(?string $month, CarbonImmutable $today): CarbonImmutable
+    {
+        if (is_string($month) && preg_match('/^(\d{4})-(0[1-9]|1[0-2])$/', $month, $parts)) {
+            return CarbonImmutable::create((int) $parts[1], (int) $parts[2], 1)->startOfDay();
+        }
+
+        return $today->startOfMonth();
+    }
+
+    /**
+     * Las actividades de la ventana, indexadas por día.
+     *
+     * @return array<string, array<int, array<string, mixed>>>
+     */
+    private static function activities(CarbonImmutable $gridStart, CarbonImmutable $gridEnd): array
+    {
+        $days = [];
+        $seen = [];
+
+        foreach ([...self::classActivities($gridStart, $gridEnd), ...self::eventActivities($gridStart, $gridEnd)] as $activity) {
+            $date = $activity['date'];
+            unset($activity['date']);
+
+            // Una misma actividad puede estar cargada en dos páginas (o quedar
+            // duplicada al clonar una sección): en el día va una sola vez.
+            $fingerprint = implode('|', [$date, $activity['title'], $activity['start'] ?? '', $activity['end'] ?? '', $activity['location'] ?? '']);
+
+            if (isset($seen[$fingerprint])) {
+                continue;
+            }
+
+            $seen[$fingerprint] = true;
+            $days[$date][] = $activity;
+        }
+
+        foreach ($days as $date => $items) {
+            usort($items, fn ($a, $b) => [$a['start'] === null, $a['start'] ?? '', $a['title']] <=> [$b['start'] === null, $b['start'] ?? '', $b['title']]);
+            $days[$date] = $items;
+        }
+
+        return $days;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private static function classActivities(CarbonImmutable $gridStart, CarbonImmutable $gridEnd): array
+    {
+        $sections = Section::query()
+            ->where('type', 'class_info')
+            ->visible()
+            ->whereHas('page', fn ($query) => $query->visible())
+            ->with('page')
+            ->orderBy('page_id')
+            ->orderBy('position')
+            ->get();
+
+        $activities = [];
+
+        foreach ($sections as $section) {
+            $content = $section->content ?? [];
+            $dates = Occurrences::expand($content['occurrences'] ?? [], $gridStart->toDateString(), $gridEnd->toDateString());
+
+            foreach ($dates as $occurrence) {
+                $activities[] = [
+                    'date' => $occurrence['date'],
+                    'key' => "cls-{$section->id}-{$occurrence['date']}-".($occurrence['start'] ?? 'x'),
+                    'kind' => 'clase',
+                    'title' => $occurrence['label'] ?? self::firstLine($content['heading'] ?? null) ?? $section->page->title,
+                    'start' => $occurrence['start'],
+                    'end' => $occurrence['end'],
+                    'time_text' => self::blank($content['schedule'] ?? null),
+                    'location' => self::blank($content['location'] ?? null),
+                    'price' => self::blank($content['price'] ?? null),
+                    'cta_label' => self::blank($content['cta_label'] ?? null),
+                    'cta_url' => self::blank($content['cta_url'] ?? null),
+                    'image_path' => self::blank($content['image'] ?? null),
+                    'source' => self::source($section->page),
+                ];
+            }
+        }
+
+        return $activities;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private static function eventActivities(CarbonImmutable $gridStart, CarbonImmutable $gridEnd): array
+    {
+        // whereDate() es el único predicado seguro en los dos motores: un cast
+        // 'date' se guarda como 'Y-m-d H:i:s' en SQLite y como 'Y-m-d' en MySQL,
+        // así que comparar la columna con un string de fecha da distinto en cada uno.
+        $events = Event::visible()
+            ->onCalendar()
+            ->whereNotNull('starts_at')
+            ->whereDate('starts_at', '<=', $gridEnd->toDateString())
+            ->ordered()
+            ->get();
+
+        $page = self::eventsPage();
+        $activities = [];
+
+        foreach ($events as $event) {
+            $start = CarbonImmutable::parse($event->starts_at)->startOfDay();
+            $end = $event->ends_at ? CarbonImmutable::parse($event->ends_at)->startOfDay() : $start;
+
+            if ($end->lessThan($start)) {
+                $end = $start;
+            }
+
+            if ($end->lessThan($gridStart)) {
+                continue;
+            }
+
+            $cursor = $start->greaterThan($gridStart) ? $start : $gridStart;
+            $last = $end->lessThan($gridEnd) ? $end : $gridEnd;
+
+            while ($cursor->lessThanOrEqualTo($last)) {
+                $activities[] = [
+                    'date' => $cursor->toDateString(),
+                    'key' => "ev-{$event->id}-{$cursor->toDateString()}",
+                    'kind' => 'evento',
+                    'title' => $event->title,
+                    'start' => $event->start_time,
+                    'end' => $event->end_time,
+                    'time_text' => $event->date_text,
+                    'location' => $event->location,
+                    'price' => $event->price,
+                    'cta_label' => $event->cta_label,
+                    'cta_url' => $event->cta_url,
+                    'image_path' => $event->image_path,
+                    'source' => $page ? self::source($page) : ['slug' => 'eventos', 'title' => 'Eventos', 'url' => null],
+                ];
+
+                $cursor = $cursor->addDay();
+            }
+        }
+
+        return $activities;
+    }
+
+    /**
+     * Las fuentes que alimentan el calendario, en el orden del menú. Van fuera de
+     * la grilla y no dependen del mes: así el color de cada una no cambia al
+     * navegar de un mes a otro.
+     *
+     * @return array<int, array<string, ?string>>
+     */
+    private static function sources(): array
+    {
+        $sources = [];
+
+        $pages = Page::inMenu()
+            ->whereHas('sections', fn ($query) => $query->where('type', 'class_info')->visible())
+            ->get();
+
+        foreach ($pages as $page) {
+            $hasDates = $page->sections()
+                ->where('type', 'class_info')
+                ->visible()
+                ->get()
+                ->contains(fn ($section) => ! empty($section->content['occurrences'] ?? []));
+
+            if ($hasDates) {
+                $sources[] = self::source($page);
+            }
+        }
+
+        if (Event::visible()->onCalendar()->whereNotNull('starts_at')->exists()) {
+            $page = self::eventsPage();
+
+            $sources[] = $page ? self::source($page) : ['slug' => 'eventos', 'title' => 'Eventos', 'url' => null];
+        }
+
+        return $sources;
+    }
+
+    /**
+     * Un evento no pertenece a una página: se usa la primera del menú que los
+     * liste, para que la ficha del calendario pueda enlazar a algún lado.
+     */
+    private static function eventsPage(): ?Page
+    {
+        return Page::inMenu()
+            ->whereHas('sections', fn ($query) => $query->where('type', 'event_list')->visible())
+            ->first();
+    }
+
+    /**
+     * @return array<string, ?string>
+     */
+    private static function source(Page $page): array
+    {
+        return [
+            'slug' => $page->slug,
+            'title' => $page->menu_label ?? $page->title,
+            'url' => '/'.$page->slug,
+        ];
+    }
+
+    private static function dayLabel(CarbonImmutable $date): string
+    {
+        return self::WEEKDAYS[$date->dayOfWeekIso - 1]['long'].' '.$date->day.' de '.self::MONTHS[$date->month];
+    }
+
+    private static function weekLabel(string $from, string $to): string
+    {
+        $start = CarbonImmutable::createFromFormat('Y-m-d', $from);
+        $end = CarbonImmutable::createFromFormat('Y-m-d', $to);
+
+        if ($start->month === $end->month) {
+            return $start->day.' al '.$end->day.' de '.self::MONTHS[$end->month];
+        }
+
+        return $start->day.' de '.self::MONTHS[$start->month].' al '.$end->day.' de '.self::MONTHS[$end->month];
+    }
+
+    private static function firstLine(mixed $value): ?string
+    {
+        $value = self::blank($value);
+
+        return $value === null ? null : trim(explode("\n", $value)[0]);
+    }
+
+    private static function blank(mixed $value): ?string
+    {
+        return is_string($value) && trim($value) !== '' ? $value : null;
+    }
+}

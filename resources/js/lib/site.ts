@@ -11,6 +11,9 @@ export type EventData = {
     description: string | null;
     date_text: string | null;
     starts_at: string | null;
+    ends_at: string | null;
+    start_time: string | null;
+    end_time: string | null;
     location: string | null;
     price: string | null;
     cta_label: string | null;
@@ -18,6 +21,7 @@ export type EventData = {
     image_path: string | null;
     visible: boolean;
     show_on_home: boolean;
+    show_on_calendar: boolean;
 };
 
 export type FaqItem = { question: string; answer: string };

@@ -17,6 +17,9 @@ const form = useForm<Record<string, any>>({
     description: props.event?.description ?? null,
     date_text: props.event?.date_text ?? null,
     starts_at: props.event?.starts_at ? props.event.starts_at.substring(0, 10) : null,
+    ends_at: props.event?.ends_at ? props.event.ends_at.substring(0, 10) : null,
+    start_time: props.event?.start_time ?? null,
+    end_time: props.event?.end_time ?? null,
     location: props.event?.location ?? null,
     price: props.event?.price ?? null,
     cta_label: props.event?.cta_label ?? null,
@@ -25,12 +28,21 @@ const form = useForm<Record<string, any>>({
     image: null as File | null,
     visible: props.event?.visible ?? true,
     show_on_home: props.event?.show_on_home ?? false,
+    show_on_calendar: props.event?.show_on_calendar ?? false,
 });
 
 function submit() {
     const url = props.event ? route('admin.events.update', props.event.id) : route('admin.events.store');
 
-    form.transform((data) => ({ ...data, starts_at: data.starts_at || null })).post(url, {
+    // Los campos de fecha/hora vacíos llegan como '' desde los inputs nativos y
+    // date_format los rechazaría; van como null.
+    form.transform((data) => ({
+        ...data,
+        starts_at: data.starts_at || null,
+        ends_at: data.ends_at || null,
+        start_time: data.start_time || null,
+        end_time: data.end_time || null,
+    })).post(url, {
         forceFormData: true,
         preserveScroll: true,
     });
@@ -49,16 +61,38 @@ function submit() {
 
                 <TextareaField v-model="form.description" label="Descripción" :error="form.errors.description" />
 
+                <div class="grid gap-2">
+                    <Label>Fecha y horario (texto que se muestra)</Label>
+                    <Input v-model="form.date_text" placeholder="Sábado 8 de agosto de 17 a 19 hs" />
+                    <p v-if="form.errors.date_text" class="text-sm text-red-600">{{ form.errors.date_text }}</p>
+                </div>
+
+                <!--
+                    Estos cuatro campos son los que ubican el evento en el calendario
+                    del sitio: el texto de arriba es lo que se lee en las tarjetas.
+                -->
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div class="grid gap-2">
-                        <Label>Fecha y horario (texto que se muestra)</Label>
-                        <Input v-model="form.date_text" placeholder="Sábado 8 de agosto de 17 a 19 hs" />
-                        <p v-if="form.errors.date_text" class="text-sm text-red-600">{{ form.errors.date_text }}</p>
+                        <Label>Fecha de inicio</Label>
+                        <Input v-model="form.starts_at" type="date" />
+                        <p class="text-xs text-muted-foreground">Ordena los eventos y lo ubica en el calendario.</p>
+                        <p v-if="form.errors.starts_at" class="text-sm text-red-600">{{ form.errors.starts_at }}</p>
                     </div>
                     <div class="grid gap-2">
-                        <Label>Fecha (para ordenar)</Label>
-                        <Input v-model="form.starts_at" type="date" />
-                        <p v-if="form.errors.starts_at" class="text-sm text-red-600">{{ form.errors.starts_at }}</p>
+                        <Label>Fecha de fin (si dura varios días)</Label>
+                        <Input v-model="form.ends_at" type="date" />
+                        <p class="text-xs text-muted-foreground">Vacía si empieza y termina el mismo día.</p>
+                        <p v-if="form.errors.ends_at" class="text-sm text-red-600">{{ form.errors.ends_at }}</p>
+                    </div>
+                    <div class="grid gap-2">
+                        <Label>Hora de inicio</Label>
+                        <Input v-model="form.start_time" type="time" />
+                        <p v-if="form.errors.start_time" class="text-sm text-red-600">{{ form.errors.start_time }}</p>
+                    </div>
+                    <div class="grid gap-2">
+                        <Label>Hora de fin</Label>
+                        <Input v-model="form.end_time" type="time" />
+                        <p v-if="form.errors.end_time" class="text-sm text-red-600">{{ form.errors.end_time }}</p>
                     </div>
                 </div>
 
@@ -100,6 +134,10 @@ function submit() {
                     <label class="flex items-center gap-2 text-sm">
                         <input v-model="form.show_on_home" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
                         Destacar en la página de inicio
+                    </label>
+                    <label class="flex items-center gap-2 text-sm">
+                        <input v-model="form.show_on_calendar" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
+                        Mostrar en el calendario
                     </label>
                 </div>
             </CardContent>

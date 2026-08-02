@@ -184,6 +184,10 @@ return [
                     'heading' => "Clases semanales\nLibertad emocional con Kelsang Panchen",
                     'body' => "Todos los miércoles, nos encontramos a mirar juntos en video las clases que Kelsang Panchen dicta en el Centro de Meditación Kadampa de Buenos Aires. En junio y julio veremos claves para vínculos más sanos.\n\n*No es necesario experiencia ni inscripción previa.\n\n¡TODO EL MUNDO ES BIENVENIDO!",
                     'schedule' => 'Miércoles de 19 a 20.15 hs',
+                    // La lectura de 'schedule' en clave de calendario: 3 = miércoles (ISO).
+                    'occurrences' => [
+                        ['type' => 'weekly', 'weekday' => 3, 'date' => null, 'from' => null, 'until' => null, 'start' => '19:00', 'end' => '20:15', 'label' => null],
+                    ],
                     'location' => 'Psj. Cajaraville 173, Barrio Martin, Rosario',
                     'price' => '$5.000 (Bono 4 clases $15.000)',
                     'cta_label' => 'INSCRIPCIÓN TARJETAS KADAMPA',
@@ -233,6 +237,10 @@ return [
                     'heading' => "Meditaciones guiadas\nen 30 minutos",
                     'body' => null,
                     'schedule' => "Martes y jueves\n18 a 18.30hs",
+                    'occurrences' => [
+                        ['type' => 'weekly', 'weekday' => 2, 'date' => null, 'from' => null, 'until' => null, 'start' => '18:00', 'end' => '18:30', 'label' => null],
+                        ['type' => 'weekly', 'weekday' => 4, 'date' => null, 'from' => null, 'until' => null, 'start' => '18:00', 'end' => '18:30', 'label' => null],
+                    ],
                     'location' => 'Psj. Cajaraville 173, Barrio Martin, Rosario',
                     'price' => 'GRATUITAS',
                     'cta_label' => 'MÁS INFORMACIÓN',
@@ -395,6 +403,10 @@ return [
                     'heading' => "Meditaciones guiadas\nen 30 minutos",
                     'body' => null,
                     'schedule' => "Miércoles y jueves\n18 a 18.30hs",
+                    'occurrences' => [
+                        ['type' => 'weekly', 'weekday' => 3, 'date' => null, 'from' => null, 'until' => null, 'start' => '18:00', 'end' => '18:30', 'label' => null],
+                        ['type' => 'weekly', 'weekday' => 4, 'date' => null, 'from' => null, 'until' => null, 'start' => '18:00', 'end' => '18:30', 'label' => null],
+                    ],
                     'location' => 'Psj. Cajaraville 173, Barrio Martin, Rosario',
                     'price' => 'GRATUITAS',
                     'cta_label' => null,
@@ -409,6 +421,11 @@ return [
                     'heading' => "Meditaciones guiadas\nen 30 minutos",
                     'body' => null,
                     'schedule' => "Martes y jueves\n18 a 18.30hs",
+                    // Sin fechas a propósito: es la misma actividad que
+                    // 'meditaciones-gratuitas' de clases-semanales (mismo horario,
+                    // mismo lugar), así que cargarla acá también la duplicaría en
+                    // el calendario. El dueño decide desde qué ficha se publica.
+                    'occurrences' => [],
                     'location' => 'Psj. Cajaraville 173, Barrio Martin, Rosario',
                     'price' => 'GRATUITAS',
                     'cta_label' => null,
@@ -818,6 +835,9 @@ return [
                     'heading' => "Nombre del curso o retiro\nCon quién lo dicta",
                     'body' => "Contá de qué se trata: a quién está dirigido, qué se practica y con qué se va quien participa.\n\n*No hace falta experiencia previa ni inscripción.\n\n¡TODO EL MUNDO ES BIENVENIDO!",
                     'schedule' => 'Día y horario',
+                    // Vacías a propósito: una fecha de ejemplo terminaría publicada
+                    // en el calendario si se muestra la ficha sin completarla.
+                    'occurrences' => [],
                     'location' => 'Dirección donde se dicta',
                     'price' => 'Precio o bono',
                     'cta_label' => 'INSCRIPCIÓN',
@@ -918,6 +938,36 @@ return [
                 'content' => [
                     'heading' => 'Preguntas frecuententes',
                     'faq_refs' => [0, 1, 2, 3, 4, 5],
+                ],
+            ],
+        ],
+    ],
+
+    // Las actividades no se cargan acá: la grilla las junta de las fichas de clase
+    // visibles (con sus "Fechas para el calendario") y de los eventos marcados en
+    // el panel → Calendario.
+    'calendario' => [
+        'title' => 'Calendario',
+        'menu_label' => 'Calendario',
+        'menu_order' => 9,
+        'meta_description' => 'Calendario mensual de las clases semanales, los cursos y retiros y las actividades gratuitas del centro.',
+        'sections' => [
+            [
+                'type' => 'page_header',
+                'key' => 'titulo',
+                'content' => [
+                    'heading' => 'CALENDARIO',
+                    'intro' => null,
+                    'style' => 'sky',
+                ],
+            ],
+            [
+                'type' => 'event_calendar',
+                'key' => 'calendario',
+                'content' => [
+                    'heading' => null,
+                    'intro' => 'Las clases semanales, los cursos y retiros y las actividades gratuitas, mes por mes.',
+                    'empty_text' => 'este mes no tiene actividades cargadas',
                 ],
             ],
         ],

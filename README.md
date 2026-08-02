@@ -27,13 +27,15 @@ npm run dev            # o npm run build para producción
 
 Con Laragon el sitio queda disponible en `http://meditazn.test`. Alternativa: `php artisan serve`.
 
-`migrate:fresh --seed` deja el sitio **completo con contenido e imágenes reales**: **9 páginas** con sus secciones, 3 eventos, ~6 FAQs, los ajustes de contacto y un usuario admin. Todo el copy vive en `database/seeders/data/*.php` y las imágenes en `database/seeders/images/`.
+`migrate:fresh --seed` deja el sitio **completo con contenido e imágenes reales**: **10 páginas** con sus secciones, 3 eventos, ~6 FAQs, los ajustes de contacto y un usuario admin. Todo el copy vive en `database/seeders/data/*.php` y las imágenes en `database/seeders/images/`.
 
 ### Páginas
 
-`/` (home), `/clases-semanales`, `/eventos-especiales`, `/gratis`, `/quienes-somos` (incluye los maestros), `/voluntariado`, `/abonos`, `/programa-fundamental` y `/cursos-y-retiros`.
+`/` (home), `/clases-semanales`, `/eventos-especiales`, `/gratis`, `/quienes-somos` (incluye los maestros), `/voluntariado`, `/abonos`, `/programa-fundamental`, `/cursos-y-retiros` y `/calendario`.
 
 `cursos-y-retiros` nació como clon de `eventos-especiales` (mismas secciones, mismo orden y mismo copy; solo cambian el título de la página y el encabezado del `page_header`).
+
+`/calendario` muestra una **grilla mensual** armada sola: no se cargan actividades ahí. Ver [Calendario](#calendario).
 
 Desde `/admin/pages` se **ocultan/muestran** las páginas y se **reordenan con flechas**: ese orden es el que adopta la barra de navegación, y una página oculta sale del menú y su URL pasa a responder 404. La página de inicio queda fuera de ambas acciones (es la raíz del sitio y no figura en el menú); el guard también está en el servidor, no solo en los botones.
 
@@ -47,6 +49,7 @@ El título, el slug y la etiqueta del menú siguen definidos en `database/seeder
 - Al guardar una sección o los ajustes, la **vista previa de las imágenes se refresca automáticamente** (sin recargar la página).
 - **Ordenar tarjetas**: en las secciones `card_grid`, cada tarjeta tiene flechas para subirla o bajarla. El orden del array `content.cards` es el que renderiza `CardGridSection.vue`, así que es directamente el orden en la web. Al mover una tarjeta, su archivo pendiente de subida se mueve con ella (el mapa `files` va indexado por posición), y el guardado resuelve **qué archivo reemplaza cada imagen por la ruta de la tarjeta y no por su índice** — si no, reordenar y subir en el mismo guardado borra el archivo de otra tarjeta.
 - **Elegir de galería**: además de subir un archivo, todo campo de imagen de una sección (incluidas las de tarjetas y galerías) puede reusar una foto ya cargada al sitio. El listado sale de `GET /admin/media` (`MediaController`) y junta `sections/`, `events/`, `settings/` y `seed/`, colapsando los archivos de bytes idénticos en una sola entrada. Al elegir una, el guardado **se queda con una copia propia** (`ImageStorage::adopt()`): sin eso, reemplazar la imagen en una sección borraría el archivo que otra sigue usando. Las sembradas (`seed/…`) se comparten tal cual, porque nunca se borran. El logo y el afiche de eventos no tienen el botón: usan el mismo componente pero su guardado todavía no se apropia de la copia.
+- **Fechas para el calendario**: las fichas de clase (`class_info`) tienen, debajo del "Horario", un repetidor de fechas que es lo que ubica la actividad en `/calendario` (ver [Calendario](#calendario)). Cada fila es semanal (día + hora, con vigencia opcional) o una fecha puntual. Si falta el día o la hora es inválida, el guardado se rechaza con un mensaje en castellano en lugar de descartar la fila en silencio; para descartarla está el tacho.
 - **Clonar una sección** copia su contenido a una sección nueva del mismo tipo, ubicada justo debajo del original y **oculta** (para que la página pública no muestre el bloque duplicado hasta terminar de editarla). La key de la copia es `<key>-copia`, `<key>-copia-2`… y las imágenes subidas desde el panel se duplican en disco, así reemplazar la foto de la copia no afecta al original. Las imágenes sembradas (`seed/…`) se comparten, como ya hace el resto del sitio.
 
 Qué se puede administrar:
@@ -54,10 +57,31 @@ Qué se puede administrar:
 | Sección del panel | Permite |
 |---|---|
 | **Páginas** | Listado de las 9 páginas: **ocultar/mostrar** cada una (sale del menú y su URL da 404) y **reordenarlas con flechas** (ese es el orden de la barra nav). Entrando a una página: editar cada sección (textos, imágenes, enlaces, planes, personas…), ocultar/mostrar secciones, reordenarlas con flechas y **clonarlas**. La home no se oculta ni se reordena. |
-| **Eventos** | CRUD de eventos especiales, con afiche, fecha, precio y enlace de inscripción. Toggle "destacar en inicio" (strip *próximamente* de la home) y visible/oculto. Si hay un solo evento destacado se muestra grande y centrado. |
+| **Eventos** | CRUD de eventos especiales, con afiche, fecha, precio y enlace de inscripción. **Fecha de inicio y de fin, hora de inicio y de fin** (la fecha de fin ubica un retiro en todos sus días del calendario; el texto libre "Fecha y horario" sigue siendo lo que se lee en las tarjetas). Toggles "destacar en inicio" (strip *próximamente* de la home), "mostrar en el calendario" y visible/oculto. Si hay un solo evento destacado se muestra grande y centrado. |
+| **Calendario** | Elige **qué eventos aparecen en el calendario** del sitio: lista los eventos visibles con un tilde cada uno y un tilde maestro en el encabezado que marca o desmarca todos de una. Se guarda al instante. Los eventos sin fecha de inicio se listan pero no se pueden tildar (no hay día donde ubicarlos). Las clases **no** pasan por acá: entran solas con sus "Fechas para el calendario". |
 | **Galería** | Grilla con **todas** las imágenes del disco (`sections/`, `events/`, `settings/`, `seed/`) y **dónde se usa cada una**. Permite borrar solo las que no usa nadie: si está en uso muestra el lugar y bloquea el botón, y las sembradas (`seed/…`) tampoco se borran porque el seeder las restaura. El servidor vuelve a comprobarlo al borrar, por si la vista quedó vieja. A diferencia del selector, no colapsa las copias de bytes idénticos: acá se administran archivos. |
 | **Preguntas frecuentes** | Pool global de FAQs compartido entre páginas: editar una vez, se actualiza en todas. Cada sección FAQ elige qué preguntas muestra. |
 | **Ajustes del sitio** | **Logo del menú** y **logo del pie** por separado (`logo_path` y `footer_logo_path`): pueden ser archivos distintos, y si el del pie está vacío el pie usa el del menú. Teléfono, WhatsApp, email, Instagram, dirección y los recursos (libros) del pie de página. |
+
+### Calendario
+
+`/calendario` (sección `event_calendar`) arma la grilla del mes sola, juntando dos fuentes. **No se cargan actividades en la página del calendario**: se cargan donde ya viven.
+
+| Fuente | Cómo entra | Dónde se edita |
+|---|---|---|
+| **Clases** (`class_info`) | Por el campo **“Fechas para el calendario”** de cada ficha: día de la semana + hora de inicio/fin (o una fecha puntual, con fecha de fin si dura varios días), y una vigencia opcional *desde/hasta* para las temporadas. Una ficha sin fechas no aparece. | Páginas → la página → la sección de la clase |
+| **Eventos** | Sólo los que estén **tildados en el panel → Calendario** y tengan fecha de inicio. Con fecha de fin ocupan todos los días del rango. | Eventos (o el tilde masivo en Calendario) |
+
+El campo **“Horario”** de la ficha de clase (`'Miércoles de 19 a 20.15 hs'`) sigue siendo texto libre y es lo que se lee en la tarjeta; las “Fechas para el calendario” son la versión que entiende el código. Son dos cosas separadas a propósito: el texto admite cualquier redacción (“a partir de septiembre, los miércoles”) y adivinarla sería frágil.
+
+Qué se respeta solo:
+
+- **Ocultar** una ficha de clase, o su página, la saca del calendario. Misma regla que el resto del sitio: lo que no se ve, no está.
+- Una actividad cargada dos veces (misma fecha, título, hora y lugar) **aparece una sola vez por día** — pasa con las meditaciones que están tanto en Clases semanales como en Gratis, y al clonar una sección.
+- El mes se navega con `?mes=AAAA-MM` (enlace compartible, y el botón atrás del navegador camina los meses). Cualquier valor raro abre el mes actual.
+- El “hoy” y el mes se calculan en **hora de Argentina**, no en UTC: `config/app.php` sigue en UTC y la zona vive en `EventCalendar::TIMEZONE`. Sin eso, a las 21 del 31 de agosto el calendario ya abriría en septiembre.
+- Los nombres de meses y días están escritos a mano en `EventCalendar` (`APP_LOCALE` es `en`, así que Carbon devolvería inglés).
+- En **escritorio** es la grilla del mes con píldoras por día (hasta 2, después “+N más”) y el detalle del día en un modal; en **celular** es una semana por vez con las actividades desplegadas, y al pasarse del borde salta al mes vecino. El color y el ícono de cada píldora identifican de qué página sale la actividad (hay una referencia debajo).
 
 ### Login con Google (opcional)
 
@@ -77,7 +101,7 @@ El botón "Continuar con Google" aparece en el login **solo si `GOOGLE_CLIENT_ID
 
 ## Arquitectura de contenido
 
-- Cada página se compone de **secciones tipadas** (`sections.type` + `content` JSON). Los **16 tipos** están definidos en `app/Support/SectionRegistry.php` — la única fuente de verdad para los formularios del admin y la validación:
+- Cada página se compone de **secciones tipadas** (`sections.type` + `content` JSON). Los **17 tipos** están definidos en `app/Support/SectionRegistry.php` — la única fuente de verdad para los formularios del admin y la validación:
 
   | Tipo | Uso |
   |---|---|
@@ -95,6 +119,7 @@ El botón "Continuar con Google" aparece en el login **solo si `GOOGLE_CLIENT_ID
   | `pricing` | Planes / abonos (tarjetas de precios) |
   | `event_strip` | Eventos destacados en la home |
   | `event_list` | Listado de eventos |
+  | `event_calendar` | Grilla mensual (mes en escritorio, semana en celular) |
   | `map` | Mapa embebido de Google Maps |
   | `faq` | Preguntas frecuentes (elige del pool global) |
 
@@ -113,14 +138,20 @@ El botón "Continuar con Google" aparece en el login **solo si `GOOGLE_CLIENT_ID
   php artisan db:seed --class=CursosYRetirosSeeder --force
   php artisan db:seed --class=ClasesSemanalesPortadaSeeder --force
   php artisan db:seed --class=CursosYRetirosFichaSeeder --force
+  php artisan db:seed --class=CalendarioSeeder --force
+  php artisan db:seed --class=CalendarioFechasSeeder --force   # una sola vez, ver abajo
   ```
 
 Hay dos primitivos, y la diferencia importa en producción:
 
 | Primitivo | Qué hace | Cuándo |
 |---|---|---|
-| `ContentSeeder::seedSinglePage($slug)` | Upsert de la página **y de todas sus secciones** desde el archivo de datos: reescribe contenido, vuelve a poner `visible = true` y renumera posiciones. **Pisa lo editado desde el panel en esa página.** | Publicar una página nueva, o resetear una a su estado sembrado. Lo usan los 4 primeros seeders. |
+| `ContentSeeder::seedSinglePage($slug)` | Upsert de la página **y de todas sus secciones** desde el archivo de datos: reescribe contenido, vuelve a poner `visible = true` y renumera posiciones. **Pisa lo editado desde el panel en esa página.** | Publicar una página nueva, o resetear una a su estado sembrado. Lo usan los 4 primeros seeders y `CalendarioSeeder`. |
 | `ContentSeeder::seedMissingSection($slug, $key, $visible)` | Inserta **una sola sección** si esa página todavía no la tiene, justo debajo de la que la precede en el archivo de datos; el resto solo corre una posición. Repetible y no toca nada más. Con `visible: false` entra oculta, para plantillas que hay que completar antes de publicar. | Agregar un bloque a una página que el dueño ya editó. Lo usan `ClasesSemanalesPortadaSeeder` y `CursosYRetirosFichaSeeder`. |
+
+`CalendarioSeeder` **no** siembra las “Fechas para el calendario” de las clases: en producción los horarios ya están editados y no coinciden con el archivo de datos, así que sembrarlas desde ahí publicaría clases en días equivocados. Una ficha sin fechas no aparece en el calendario, así que no hay estado intermedio roto.
+
+De eso se ocupó `CalendarioFechasSeeder`, **una sola vez**: tiene los valores de las 9 fichas que había en producción al estrenar el calendario, escritos a partir del horario que cada una ya mostraba (el comentario de cada línea es el texto del que sale). Sólo completa las fichas con el campo vacío, así que no pisa lo que se cargue a mano, y es repetible. **No es el camino para cargar fechas nuevas** — eso se hace desde el panel; queda en el repo como registro de la carga inicial.
 
 ## Deploy a producción (Hostinger)
 
@@ -128,7 +159,7 @@ Hosting compartido de Hostinger con acceso SSH. Notas clave:
 
 - **PHP 8.4** (el `composer.lock` lo requiere): usar `/opt/alt/php84/usr/bin/php` para `composer` y `artisan`.
 - **Document root del subdominio → carpeta `public`**: como Hostinger no deja cambiar el docroot, se resuelve con un **symlink** dentro de `.../pablomandile/public/<subdominio> → ../../<carpeta-app>/public`.
-- Flujo por actualización: compilar assets local (`npm run build`), subir la app por `scp` (sin `node_modules`, `vendor`, `.env` ni `bootstrap/cache`), en el server `composer install --no-dev --optimize-autoloader`, correr las migraciones/seeders puntuales que correspondan y `php artisan optimize`.
+- Flujo por actualización: compilar assets local (`npm run build`), subir la app por `scp` (sin `node_modules`, `vendor`, `.env` ni `bootstrap/cache`), en el server `composer install --no-dev --optimize-autoloader`, `php artisan migrate --force`, correr los seeders puntuales que correspondan y `php artisan optimize` (precedido de `optimize:clear`: con la config cacheada, `env()` devuelve vacío).
 - El `.env` de producción (con `APP_KEY`, DB y claves de Google) **no** está versionado.
 
 ## Tests
@@ -137,4 +168,6 @@ Hosting compartido de Hostinger con acceso SSH. Notas clave:
 php artisan test
 ```
 
-Incluye `tests/Feature/SiteContentTest.php`: render público, ocultar secciones/páginas, permisos del admin, edición de secciones con reemplazo de imagen, validaciones, eventos en la home y FAQs compartidas.
+Incluye `tests/Feature/SiteContentTest.php`: render público, ocultar secciones/páginas, permisos del admin, edición de secciones con reemplazo de imagen, validaciones, eventos en la home, FAQs compartidas y el calendario (clases semanales en todos sus días, eventos de varios días, `?mes=`, el día argentino y no UTC, el tilde masivo del panel). En `tests/Unit/OccurrencesTest.php` está la expansión de las reglas de fecha a días concretos, con sus casos borde.
+
+Las aserciones sobre el HTML usan **fragmentos sin acentos**: Inertia serializa los props con escapes unicode, así que `assertSee('tradición')` nunca coincide. Y el `<title>` depende de `APP_NAME`, que en CI es distinto.

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import SectionRenderer from '@/components/public/SectionRenderer.vue';
 import PublicLayout from '@/layouts/PublicLayout.vue';
+import { type CalendarData } from '@/lib/calendar';
 import { type EventData, type FaqItem, type SectionData } from '@/lib/site';
 import { Head } from '@inertiajs/vue3';
 
@@ -10,6 +11,7 @@ defineProps<{
     events?: EventData[];
     homeEvents?: EventData[];
     faqs?: Record<number, FaqItem>;
+    calendar?: CalendarData;
 }>();
 </script>
 
@@ -26,6 +28,7 @@ defineProps<{
             :events="events"
             :home-events="homeEvents"
             :faqs="faqs"
+            :calendar="calendar"
         />
     </PublicLayout>
 </template>

@@ -8,6 +8,10 @@ use App\Models\Page;
 use App\Models\Section;
 use App\Models\Setting;
 use App\Models\User;
+use App\Support\EventCalendar;
+use Carbon\Carbon;
+use Database\Seeders\CalendarioFechasSeeder;
+use Database\Seeders\CalendarioSeeder;
 use Database\Seeders\ContentSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -38,7 +42,7 @@ class SiteContentTest extends TestCase
         // los acentos en el JSON y el <title> depende de APP_NAME (distinto en CI).
         $this->get('/')->assertOk()->assertSee('Actividades semanales');
 
-        foreach (['clases-semanales', 'eventos-especiales', 'gratis', 'quienes-somos', 'voluntariado'] as $slug) {
+        foreach (['clases-semanales', 'eventos-especiales', 'gratis', 'quienes-somos', 'voluntariado', 'calendario'] as $slug) {
             $this->get("/$slug")->assertOk();
         }
 
@@ -164,7 +168,7 @@ class SiteContentTest extends TestCase
             'position' => 7,
         ]);
 
-        (new ContentSeeder())->seedMissingSection('clases-semanales', 'banner');
+        (new ContentSeeder)->seedMissingSection('clases-semanales', 'banner');
 
         $banner = $page->sections()->where('key', 'banner')->firstOrFail();
         $titulo = $page->sections()->where('key', 'titulo')->firstOrFail();
@@ -181,7 +185,7 @@ class SiteContentTest extends TestCase
         $this->assertSame(8, $edited->position);
 
         // Repetible: no duplica ni reordena de nuevo.
-        (new ContentSeeder())->seedMissingSection('clases-semanales', 'banner');
+        (new ContentSeeder)->seedMissingSection('clases-semanales', 'banner');
 
         $this->assertSame(1, $page->sections()->where('key', 'banner')->count());
         $this->assertSame(8, $edited->fresh()->position);
@@ -480,7 +484,7 @@ class SiteContentTest extends TestCase
         $page = Page::where('slug', 'cursos-y-retiros')->firstOrFail();
         $page->sections()->where('key', 'curso')->delete();
 
-        (new ContentSeeder())->seedMissingSection('cursos-y-retiros', 'curso', visible: false);
+        (new ContentSeeder)->seedMissingSection('cursos-y-retiros', 'curso', visible: false);
 
         $ficha = $page->sections()->where('key', 'curso')->firstOrFail();
         $banner = $page->sections()->where('key', 'banner')->firstOrFail();
@@ -728,5 +732,531 @@ class SiteContentTest extends TestCase
         });
 
         return $logo;
+    }
+
+    // ---------------------------------------------------------------- calendario
+
+    /** El prop del calendario, tal como lo recibe EventCalendarSection.vue. */
+    private function calendar(?string $mes = null): array
+    {
+        $data = [];
+        $url = '/calendario'.($mes === null ? '' : '?mes='.$mes);
+
+        $this->get($url)->assertOk()->assertInertia(function (AssertableInertia $page) use (&$data) {
+            $data = $page->toArray()['props']['calendar'];
+        });
+
+        return $data;
+    }
+
+    /**
+     * Los títulos de cada día del mes, indexados por fecha (sólo los que tienen algo).
+     *
+     * @return array<string, array<int, string>>
+     */
+    private function calendarDays(?string $mes = null): array
+    {
+        $days = [];
+
+        foreach ($this->calendar($mes)['weeks'] as $week) {
+            foreach ($week['days'] as $day) {
+                if ($day['activities']) {
+                    $days[$day['date']] = array_column($day['activities'], 'title');
+                }
+            }
+        }
+
+        return $days;
+    }
+
+    public function test_calendar_page_renders_a_monday_first_month_grid_in_spanish(): void
+    {
+        $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
+
+        $calendar = $this->calendar();
+
+        $this->assertSame('2026-08', $calendar['month']);
+        $this->assertSame('agosto de 2026', $calendar['label']);
+        $this->assertSame('2026-08-15', $calendar['today']);
+        $this->assertSame('Lun', $calendar['weekdays'][0]);
+        $this->assertSame('Dom', $calendar['weekdays'][6]);
+
+        // La grilla arranca el lunes de la semana del 1 y termina un domingo.
+        $first = $calendar['weeks'][0]['days'];
+        $this->assertSame('2026-07-27', $first[0]['date']);
+        $this->assertFalse($first[0]['in_month']);
+        $this->assertSame('lunes 27 de julio', $first[0]['label']);
+        $this->assertSame('27 de julio al 2 de agosto', $calendar['weeks'][0]['label']);
+
+        foreach ($calendar['weeks'] as $week) {
+            $this->assertCount(7, $week['days']);
+        }
+
+        // El día de hoy queda marcado una sola vez en todo el mes.
+        $todays = collect($calendar['weeks'])->flatMap(fn ($week) => $week['days'])->where('is_today', true);
+        $this->assertCount(1, $todays);
+        $this->assertSame('2026-08-15', $todays->first()['date']);
+    }
+
+    public function test_weekly_class_lands_on_every_matching_day_of_the_month(): void
+    {
+        $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
+
+        $days = $this->calendarDays();
+
+        // 'Miércoles de 19 a 20.15 hs' → todos los miércoles de agosto.
+        foreach (['2026-08-05', '2026-08-12', '2026-08-19', '2026-08-26'] as $date) {
+            $this->assertContains('Clases semanales', $days[$date] ?? [], "Falta la clase del $date");
+        }
+
+        // Y en ningún otro día.
+        foreach ($days as $date => $titles) {
+            if (! in_array($date, ['2026-07-29', '2026-08-05', '2026-08-12', '2026-08-19', '2026-08-26', '2026-09-02'], true)) {
+                $this->assertNotContains('Clases semanales', $titles, "Sobra la clase del $date");
+            }
+        }
+
+        // Con la hora estructurada, no el texto libre.
+        $wednesday = collect($this->calendar()['weeks'])
+            ->flatMap(fn ($week) => $week['days'])
+            ->firstWhere('date', '2026-08-05');
+        $class = collect($wednesday['activities'])->firstWhere('title', 'Clases semanales');
+
+        $this->assertSame('19:00', $class['start']);
+        $this->assertSame('20:15', $class['end']);
+        $this->assertSame('clase', $class['kind']);
+        $this->assertSame('clases-semanales', $class['source']['slug']);
+    }
+
+    public function test_hidden_class_section_disappears_from_the_calendar(): void
+    {
+        $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
+
+        $this->assertContains('Clases semanales', $this->calendarDays()['2026-08-05']);
+
+        Section::whereHas('page', fn ($query) => $query->where('slug', 'clases-semanales'))
+            ->where('key', 'clase-principal')
+            ->firstOrFail()
+            ->update(['visible' => false]);
+
+        $days = $this->calendarDays();
+
+        $this->assertNotContains('Clases semanales', $days['2026-08-05'] ?? []);
+        // Las meditaciones de los martes siguen: se ocultó una ficha, no la página.
+        $this->assertContains('Meditaciones guiadas', $days['2026-08-04'] ?? []);
+    }
+
+    public function test_hidden_page_disappears_from_the_calendar(): void
+    {
+        $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
+
+        $this->assertContains('gratis', array_column($this->calendar()['sources'], 'slug'));
+
+        Page::where('slug', 'gratis')->firstOrFail()->update(['visible' => false]);
+
+        $calendar = $this->calendar();
+
+        $this->assertNotContains('gratis', array_column($calendar['sources'], 'slug'));
+        $this->assertContains('clases-semanales', array_column($calendar['sources'], 'slug'));
+    }
+
+    public function test_event_only_reaches_the_calendar_when_it_is_marked_for_it(): void
+    {
+        $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
+
+        $event = Event::create([
+            'title' => 'Charla abierta',
+            'starts_at' => '2026-08-20',
+            'start_time' => '17:00',
+            'end_time' => '19:00',
+            'location' => 'Rosario',
+            'visible' => true,
+            'show_on_calendar' => false,
+        ]);
+
+        $this->assertNotContains('Charla abierta', $this->calendarDays()['2026-08-20'] ?? []);
+
+        $event->update(['show_on_calendar' => true]);
+
+        $days = $this->calendarDays();
+        $this->assertContains('Charla abierta', $days['2026-08-20']);
+
+        $activity = collect($this->calendar()['weeks'])
+            ->flatMap(fn ($week) => $week['days'])
+            ->firstWhere('date', '2026-08-20')['activities'];
+        $charla = collect($activity)->firstWhere('title', 'Charla abierta');
+
+        $this->assertSame('evento', $charla['kind']);
+        $this->assertSame('17:00', $charla['start']);
+        $this->assertSame('19:00', $charla['end']);
+    }
+
+    public function test_multi_day_event_occupies_every_day_between_its_dates(): void
+    {
+        $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
+
+        Event::create([
+            'title' => 'Retiro de fin de semana',
+            'starts_at' => '2026-08-28',
+            'ends_at' => '2026-08-30',
+            'visible' => true,
+            'show_on_calendar' => true,
+        ]);
+
+        $days = $this->calendarDays();
+
+        foreach (['2026-08-28', '2026-08-29', '2026-08-30'] as $date) {
+            $this->assertContains('Retiro de fin de semana', $days[$date] ?? [], "Falta el retiro del $date");
+        }
+
+        $this->assertNotContains('Retiro de fin de semana', $days['2026-08-27'] ?? []);
+        $this->assertNotContains('Retiro de fin de semana', $days['2026-08-31'] ?? []);
+    }
+
+    public function test_month_navigation_uses_the_query_string_and_ignores_garbage(): void
+    {
+        $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
+
+        $september = $this->calendar('2026-09');
+
+        $this->assertSame('2026-09', $september['month']);
+        $this->assertSame('septiembre de 2026', $september['label']);
+        $this->assertSame('2026-08', $september['prev']);
+        $this->assertSame('2026-10', $september['next']);
+
+        // Un mes cualquiera del pasado también responde: las reglas semanales no caducan.
+        $this->assertSame('2025-03', $this->calendar('2025-03')['month']);
+
+        // Y cualquier cosa rara abre el mes actual, sin 422 ni redirección.
+        foreach (['basura', '2026-13', '2026-00', '', '2026-9', '99999-01'] as $mes) {
+            $this->assertSame('2026-08', $this->calendar($mes)['month'], "?mes=$mes debería caer en agosto");
+        }
+    }
+
+    public function test_calendar_uses_the_argentine_day_and_not_utc(): void
+    {
+        // 31/8 a las 22 en Argentina ya es 1/9 en UTC: el calendario abriría en
+        // septiembre si el mes se calculara con la zona de la aplicación.
+        $this->travelTo(Carbon::parse('2026-08-31 22:00', EventCalendar::TIMEZONE));
+
+        $calendar = $this->calendar();
+
+        $this->assertSame('2026-08', $calendar['month']);
+        $this->assertSame('2026-08-31', $calendar['today']);
+
+        $todays = collect($calendar['weeks'])->flatMap(fn ($week) => $week['days'])->where('is_today', true);
+        $this->assertSame(['2026-08-31'], $todays->pluck('date')->all());
+    }
+
+    public function test_admin_can_save_the_calendar_dates_of_a_class_and_they_reach_the_public_page(): void
+    {
+        $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
+
+        $admin = $this->admin();
+        $section = Section::whereHas('page', fn ($query) => $query->where('slug', 'clases-semanales'))
+            ->where('key', 'clase-principal')
+            ->firstOrFail();
+
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => [
+                ...$section->content,
+                'occurrences' => [
+                    // El día llega como texto desde el formulario.
+                    ['type' => 'weekly', 'weekday' => '1', 'start' => '19:00', 'end' => '20:15'],
+                    // Fila del todo vacía (un payload viejo o sembrado): se descarta.
+                    [],
+                ],
+            ],
+        ])->assertRedirect()->assertSessionHas('success');
+
+        $stored = $section->fresh()->content['occurrences'];
+
+        $this->assertCount(1, $stored);
+        $this->assertSame(1, $stored[0]['weekday']);
+        $this->assertSame('19:00', $stored[0]['start']);
+        $this->assertNull($stored[0]['date']);
+
+        // Y el horario que se lee en la tarjeta no se tocó.
+        $this->assertSame('Miércoles de 19 a 20.15 hs', $section->fresh()->content['schedule']);
+
+        // Ahora la clase cae los lunes.
+        $days = $this->calendarDays();
+        $this->assertContains('Clases semanales', $days['2026-08-03'] ?? []);
+        $this->assertNotContains('Clases semanales', $days['2026-08-05'] ?? []);
+    }
+
+    public function test_admin_can_save_a_one_off_date_for_a_course(): void
+    {
+        $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
+
+        $admin = $this->admin();
+        $section = Section::whereHas('page', fn ($query) => $query->where('slug', 'cursos-y-retiros'))
+            ->where('key', 'curso')
+            ->firstOrFail();
+
+        $section->update(['visible' => true]);
+
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => [
+                ...$section->content,
+                'occurrences' => [
+                    ['type' => 'date', 'date' => '2026-08-22', 'until' => '2026-08-23', 'start' => '10:00', 'end' => '17:00', 'label' => 'Retiro de agosto'],
+                ],
+            ],
+        ])->assertRedirect();
+
+        $days = $this->calendarDays();
+
+        // El label manda sobre el título de la ficha, y el rango ocupa los dos días.
+        $this->assertContains('Retiro de agosto', $days['2026-08-22'] ?? []);
+        $this->assertContains('Retiro de agosto', $days['2026-08-23'] ?? []);
+        $this->assertNotContains('Retiro de agosto', $days['2026-08-24'] ?? []);
+    }
+
+    public function test_calendar_dates_are_validated(): void
+    {
+        $admin = $this->admin();
+        $section = Section::whereHas('page', fn ($query) => $query->where('slug', 'clases-semanales'))
+            ->where('key', 'clase-principal')
+            ->firstOrFail();
+
+        $put = fn (array $row) => $this->actingAs($admin)
+            ->put("/admin/sections/{$section->id}", ['content' => [...$section->content, 'occurrences' => [$row]]]);
+
+        $put(['type' => 'weekly', 'weekday' => 9])->assertSessionHasErrors('content.occurrences.0.weekday');
+        $put(['type' => 'weekly', 'weekday' => 3, 'start' => '25:00'])->assertSessionHasErrors('content.occurrences.0.start');
+        $put(['type' => 'date'])->assertSessionHasErrors('content.occurrences.0.date');
+        $put(['type' => 'date', 'date' => '22/08/2026'])->assertSessionHasErrors('content.occurrences.0.date');
+        $put(['type' => 'cada rato', 'weekday' => 3])->assertSessionHasErrors('content.occurrences.0.type');
+
+        // Una fila a medio llenar se rechaza con un mensaje en castellano, en lugar
+        // de desaparecer sin avisar (el formulario tiene un tacho para descartarla).
+        $put(['type' => 'weekly', 'start' => '19:00'])
+            ->assertSessionHasErrors(['content.occurrences.0.weekday' => 'Elegí el día de la semana en cada fecha del calendario.']);
+
+        $this->assertCount(1, $section->fresh()->content['occurrences']);
+    }
+
+    public function test_hidden_template_card_keeps_the_calendar_clean(): void
+    {
+        $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
+
+        // La plantilla de cursos-y-retiros se siembra sin fechas justamente para
+        // que no publique un horario de relleno.
+        $section = Section::whereHas('page', fn ($query) => $query->where('slug', 'cursos-y-retiros'))
+            ->where('key', 'curso')
+            ->firstOrFail();
+
+        $this->assertSame([], $section->content['occurrences']);
+        $this->assertNotContains('cursos-y-retiros', array_column($this->calendar()['sources'], 'slug'));
+    }
+
+    public function test_the_same_activity_loaded_twice_appears_once_per_day(): void
+    {
+        $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
+
+        // 'gratis' repite las meditaciones de los jueves que ya tiene
+        // clases-semanales, con el mismo horario y lugar.
+        $thursday = $this->calendarDays()['2026-08-06'] ?? [];
+
+        $this->assertSame(['Meditaciones guiadas'], $thursday);
+    }
+
+    public function test_admin_calendar_screen_lists_visible_events_and_toggles_them(): void
+    {
+        $admin = $this->admin();
+
+        $listed = Event::create(['title' => 'Charla abierta', 'starts_at' => '2026-08-20', 'visible' => true]);
+        $hidden = Event::create(['title' => 'Evento oculto', 'starts_at' => '2026-08-21', 'visible' => false, 'show_on_calendar' => true]);
+        $undated = Event::create(['title' => 'Sin fecha', 'visible' => true]);
+
+        $titles = collect($this->actingAs($admin)->get('/admin/calendar')->assertOk()->viewData('page')['props']['events'])
+            ->pluck('title');
+
+        $this->assertContains('Charla abierta', $titles);
+        $this->assertContains('Sin fecha', $titles);
+        $this->assertNotContains('Evento oculto', $titles);
+
+        $this->actingAs($admin)->patch("/admin/calendar/{$listed->id}", ['show' => true])->assertRedirect();
+        $this->assertTrue($listed->fresh()->show_on_calendar);
+
+        $this->actingAs($admin)->patch("/admin/calendar/{$listed->id}", ['show' => false])->assertRedirect();
+        $this->assertFalse($listed->fresh()->show_on_calendar);
+
+        // Marcar todos alcanza a los visibles con fecha y no toca a los demás.
+        $this->actingAs($admin)->patch('/admin/calendar', ['show' => true])->assertRedirect()->assertSessionHas('success');
+
+        $this->assertTrue($listed->fresh()->show_on_calendar);
+        $this->assertFalse($undated->fresh()->show_on_calendar);
+        $this->assertTrue($hidden->fresh()->show_on_calendar);
+
+        // Y destildar todos tampoco le pisa la marca al oculto.
+        $this->actingAs($admin)->patch('/admin/calendar', ['show' => false])->assertRedirect();
+
+        $this->assertFalse($listed->fresh()->show_on_calendar);
+        $this->assertTrue($hidden->fresh()->show_on_calendar);
+    }
+
+    public function test_admin_calendar_screen_needs_a_session(): void
+    {
+        $event = Event::create(['title' => 'Charla abierta', 'starts_at' => '2026-08-20', 'visible' => true]);
+
+        $this->get('/admin/calendar')->assertRedirect('/login');
+        $this->patch('/admin/calendar', ['show' => true])->assertRedirect('/login');
+        $this->patch("/admin/calendar/{$event->id}", ['show' => true])->assertRedirect('/login');
+
+        $this->assertFalse($event->fresh()->show_on_calendar);
+    }
+
+    public function test_event_form_stores_the_new_calendar_fields_and_rejects_an_inverted_range(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->post('/admin/events', [
+            'title' => 'Retiro de primavera',
+            'starts_at' => '2026-09-25',
+            'ends_at' => '2026-09-27',
+            'start_time' => '10:00',
+            'end_time' => '17:00',
+            'visible' => true,
+            'show_on_calendar' => true,
+        ])->assertRedirect();
+
+        $event = Event::where('title', 'Retiro de primavera')->firstOrFail();
+
+        $this->assertSame('2026-09-27', $event->ends_at->toDateString());
+        $this->assertSame('10:00', $event->start_time);
+        $this->assertSame('17:00', $event->end_time);
+        $this->assertTrue($event->show_on_calendar);
+
+        $this->actingAs($admin)->put("/admin/events/{$event->id}", [
+            'title' => 'Retiro de primavera',
+            'starts_at' => '2026-09-25',
+            'ends_at' => '2026-09-20',
+        ])->assertSessionHasErrors('ends_at');
+
+        $this->actingAs($admin)->put("/admin/events/{$event->id}", [
+            'title' => 'Retiro de primavera',
+            'starts_at' => '2026-09-25',
+            'start_time' => '17:00',
+            'end_time' => '10:00',
+        ])->assertSessionHasErrors('end_time');
+    }
+
+    public function test_calendario_seeder_publishes_the_page_without_touching_the_classes(): void
+    {
+        Page::where('slug', 'calendario')->firstOrFail()->delete();
+
+        // Producción: las fichas están editadas y con horarios propios, así que el
+        // seeder no puede cargarles fechas del archivo de datos (serían otras).
+        $clase = Section::whereHas('page', fn ($query) => $query->where('slug', 'clases-semanales'))
+            ->where('key', 'clase-principal')
+            ->firstOrFail();
+
+        $clase->update([
+            'content' => [...$clase->content, 'occurrences' => [], 'schedule' => 'Lunes de agosto de 19:00 a 20:30 hs'],
+            'visible' => false,
+            'position' => 9,
+        ]);
+
+        $this->assertNotContains('calendario', $this->navSlugs());
+
+        $this->seed(CalendarioSeeder::class);
+
+        $page = Page::where('slug', 'calendario')->firstOrFail();
+
+        $this->assertContains('calendario', $this->navSlugs());
+        $this->assertSame(['titulo', 'calendario'], $page->sections()->orderBy('position')->pluck('key')->all());
+        $this->assertSame('event_calendar', $page->sections()->where('key', 'calendario')->firstOrFail()->type);
+
+        // La ficha editada quedó intacta: mismo horario, sin fechas inventadas,
+        // y conserva su visibilidad y su posición.
+        $fresh = $clase->fresh();
+        $this->assertSame([], $fresh->content['occurrences']);
+        $this->assertSame('Lunes de agosto de 19:00 a 20:30 hs', $fresh->content['schedule']);
+        $this->assertFalse($fresh->visible);
+        $this->assertSame(9, $fresh->position);
+    }
+
+    public function test_production_dates_seeder_fills_only_the_empty_cards(): void
+    {
+        $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
+
+        $clase = Section::whereHas('page', fn ($query) => $query->where('slug', 'clases-semanales'))
+            ->where('key', 'clase-principal')
+            ->firstOrFail();
+
+        // Estado de producción: el horario es otro y el campo está vacío.
+        $clase->update(['content' => [
+            ...$clase->content,
+            'schedule' => 'Lunes de agosto de 19:00 a 20:30 hs',
+            'occurrences' => [],
+        ]]);
+
+        // Y una ficha que el dueño ya completó a mano, que no se debe pisar.
+        $gratuitas = Section::whereHas('page', fn ($query) => $query->where('slug', 'clases-semanales'))
+            ->where('key', 'meditaciones-gratuitas')
+            ->firstOrFail();
+        $gratuitas->update(['content' => [...$gratuitas->content, 'occurrences' => [
+            ['type' => 'weekly', 'weekday' => 6, 'date' => null, 'from' => null, 'until' => null, 'start' => '09:00', 'end' => '10:00', 'label' => null],
+        ]]]);
+
+        $this->seed(CalendarioFechasSeeder::class);
+
+        $fresh = $clase->fresh()->content;
+
+        $this->assertCount(1, $fresh['occurrences']);
+        $this->assertSame(1, $fresh['occurrences'][0]['weekday']);
+        $this->assertSame('19:00', $fresh['occurrences'][0]['start']);
+        $this->assertSame('20:30', $fresh['occurrences'][0]['end']);
+        $this->assertSame('2026-08-31', $fresh['occurrences'][0]['until']);
+        // El texto de la tarjeta sigue intacto.
+        $this->assertSame('Lunes de agosto de 19:00 a 20:30 hs', $fresh['schedule']);
+
+        // La ficha ya cargada quedó como estaba.
+        $this->assertSame(6, $gratuitas->fresh()->content['occurrences'][0]['weekday']);
+
+        // La clase cae los lunes de agosto y no en septiembre, por la vigencia.
+        $days = $this->calendarDays();
+        $this->assertContains('Clases semanales', $days['2026-08-03'] ?? []);
+        $this->assertContains('Clases semanales', $days['2026-08-24'] ?? []);
+        $this->assertNotContains('Clases semanales', $this->calendarDays('2026-09')['2026-09-07'] ?? []);
+
+        // Repetirlo no cambia nada.
+        $this->seed(CalendarioFechasSeeder::class);
+        $this->assertCount(1, $clase->fresh()->content['occurrences']);
+        $this->assertSame(6, $gratuitas->fresh()->content['occurrences'][0]['weekday']);
+    }
+
+    public function test_production_dates_seeder_skips_cards_that_do_not_exist(): void
+    {
+        // Las fichas clonadas (curso-copia…) existen en producción pero no en el
+        // seed, así que el seeder tiene que saltearlas sin romperse.
+        Section::whereHas('page', fn ($query) => $query->where('slug', 'cursos-y-retiros'))
+            ->where('key', 'curso')
+            ->firstOrFail()
+            ->delete();
+
+        $this->seed(CalendarioFechasSeeder::class);
+
+        $this->assertSame(0, Section::whereHas('page', fn ($query) => $query->where('slug', 'cursos-y-retiros'))
+            ->where('key', 'curso-copia')->count());
+    }
+
+    public function test_a_class_without_calendar_dates_simply_does_not_show_up(): void
+    {
+        $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
+
+        Section::where('type', 'class_info')->get()->each(
+            fn ($section) => $section->update(['content' => [...$section->content, 'occurrences' => []]]),
+        );
+
+        $calendar = $this->calendar();
+
+        $this->assertSame([], $calendar['sources']);
+        $this->assertSame([], $this->calendarDays());
+        // La grilla sigue ahí, con su mes y su aviso de vacío.
+        $this->assertSame('agosto de 2026', $calendar['label']);
+        $this->assertCount(6, $calendar['weeks']);
     }
 }

@@ -5,17 +5,20 @@ namespace App\Http\Controllers;
 use App\Models\Event;
 use App\Models\Faq;
 use App\Models\Page;
+use App\Support\EventCalendar;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PageController extends Controller
 {
-    public function home(): Response
+    public function home(Request $request): Response
     {
-        return $this->render(Page::where('slug', 'home')->firstOrFail());
+        return $this->render(Page::where('slug', 'home')->firstOrFail(), $request);
     }
 
-    public function show(Page $page): Response|\Illuminate\Http\RedirectResponse
+    public function show(Request $request, Page $page): Response|RedirectResponse
     {
         abort_unless($page->visible, 404);
 
@@ -23,10 +26,10 @@ class PageController extends Controller
             return redirect()->route('home');
         }
 
-        return $this->render($page);
+        return $this->render($page, $request);
     }
 
-    private function render(Page $page): Response
+    private function render(Page $page, Request $request): Response
     {
         $sections = $page->sections()->visible()->orderBy('position')->get();
         $types = $sections->pluck('type');
@@ -51,6 +54,10 @@ class PageController extends Controller
 
         if ($types->contains('event_list')) {
             $props['events'] = Event::visible()->ordered()->get();
+        }
+
+        if ($types->contains('event_calendar')) {
+            $props['calendar'] = EventCalendar::forMonth($request->query('mes'));
         }
 
         $faqIds = $sections->where('type', 'faq')
