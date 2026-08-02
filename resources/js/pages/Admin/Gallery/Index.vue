@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useConfirm } from '@/composables/useConfirm';
 import { useMediaLibrary } from '@/composables/useMediaLibrary';
@@ -41,6 +42,9 @@ const filtered = computed(() => {
 });
 
 const inUse = computed(() => props.images.filter((image) => image.used_by.length).length);
+
+// Click en la miniatura: se ve en grande en un modal, sin salir de la página.
+const preview = ref<GalleryImage | null>(null);
 
 async function remove(image: GalleryImage) {
     const accepted = await confirm({
@@ -92,9 +96,9 @@ function kb(size: number) {
 
                     <div v-else class="grid auto-rows-min grid-cols-2 content-start gap-4 sm:grid-cols-3 lg:grid-cols-4">
                         <div v-for="image in filtered" :key="image.path" class="overflow-hidden rounded-md border">
-                            <a :href="image.url" target="_blank" rel="noopener" :title="image.path">
+                            <button type="button" class="block w-full" :title="`Ver «${image.name}» en grande`" @click="preview = image">
                                 <img :src="image.url" :alt="image.name" loading="lazy" class="h-40 w-full bg-muted object-cover" />
-                            </a>
+                            </button>
 
                             <div class="space-y-1 p-2">
                                 <p class="truncate text-xs font-medium" :title="image.name">{{ image.name }}</p>
@@ -130,5 +134,22 @@ function kb(size: number) {
                 </CardContent>
             </Card>
         </div>
+
+        <Dialog :open="!!preview" @update:open="(open) => !open && (preview = null)">
+            <DialogContent v-if="preview" class="max-w-4xl">
+                <DialogHeader>
+                    <DialogTitle class="truncate">{{ preview.name }}</DialogTitle>
+                    <DialogDescription>
+                        {{ preview.seeded ? 'Del sitio' : 'Subida' }} · {{ kb(preview.size) }} ·
+                        <span v-if="preview.used_by.length">en uso: {{ preview.used_by.join(' · ') }}</span>
+                        <span v-else>sin usar en ninguna parte</span>
+                    </DialogDescription>
+                </DialogHeader>
+
+                <img :src="preview.url" :alt="preview.name" class="max-h-[70vh] w-full rounded-md bg-muted object-contain" />
+
+                <p class="truncate text-xs text-muted-foreground" :title="preview.path">{{ preview.path }}</p>
+            </DialogContent>
+        </Dialog>
     </AdminLayout>
 </template>
