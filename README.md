@@ -39,7 +39,15 @@ Con Laragon el sitio queda disponible en `http://meditazn.test`. Alternativa: `p
 
 Desde `/admin/pages` se **ocultan/muestran** las páginas y se **reordenan con flechas**: ese orden es el que adopta la barra de navegación, y una página oculta sale del menú y su URL pasa a responder 404. La página de inicio queda fuera de ambas acciones (es la raíz del sitio y no figura en el menú); el guard también está en el servidor, no solo en los botones.
 
-El título, el slug y la etiqueta del menú siguen definidos en `database/seeders/data/content.php` — el panel no crea ni renombra páginas.
+Entrando a una página se edita su **descripción para buscadores** (`meta_description`): es el texto que se lee debajo del título en Google y en la vista previa de WhatsApp. El formulario muestra un contador con los 160 caracteres que recomiendan los buscadores (el máximo real es 500, el de la columna) y una vista previa con el título y la URL que la acompañan.
+
+El título, el slug y la etiqueta del menú siguen definidos en `database/seeders/data/content.php` — el panel no crea ni renombra páginas. Ojo: `seedSinglePage()` reescribe la descripción junto con el resto de la página.
+
+### Vista previa al compartir un enlace
+
+WhatsApp, Facebook y los buscadores **no ejecutan JavaScript**: leen el HTML tal como sale del servidor. El `<Head>` de Inertia arma el título y la descripción en el navegador, así que no les llega. Por eso `resources/views/app.blade.php` emite las etiquetas desde el servidor, página por página, con lo que resuelve `App\Support\SiteMeta`: `title`, `meta description`, `og:type`, `og:site_name`, `og:title`, `og:url`, `og:locale`, `og:description`, `og:image` y `twitter:card`. La imagen es la **portada de la página** y si no tiene, el logo del menú, siempre en URL absoluta.
+
+El nombre del sitio sale del ajuste **Nombre del sitio** del panel, no de `APP_NAME`. Antes había tres fuentes que podían discrepar —y discrepaban—: `APP_NAME` del `.env` del servidor (el título que veían WhatsApp y Google), `VITE_APP_NAME` **horneado en el bundle al compilar** (el título de la pestaña) y el ajuste del panel (el pie). Ahora manda el del panel en los tres lugares y las dos variables de entorno quedan de respaldo.
 
 ## Panel de administración
 

@@ -723,6 +723,54 @@ class SiteContentTest extends TestCase
         $this->assertSame($menu, $this->footerLogo());
     }
 
+    public function test_admin_can_edit_the_search_description_of_a_page(): void
+    {
+        $admin = $this->admin();
+        $page = Page::where('slug', 'voluntariado')->firstOrFail();
+
+        // Viene con la descripción raspada del sitio original.
+        $props = $this->actingAs($admin)->get("/admin/pages/{$page->id}")->assertOk()->viewData('page')['props'];
+
+        $this->assertSame($page->meta_description, $props['page']['meta_description']);
+        $this->assertStringContainsString('Voluntariado - ', $props['page']['preview_title']);
+        $this->assertSame(url('/voluntariado'), $props['page']['url']);
+
+        $nueva = 'Sumate como voluntario al centro de meditación kadampa de Zona Norte.';
+
+        $this->actingAs($admin)->patch("/admin/pages/{$page->id}/meta", ['meta_description' => $nueva])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertSame($nueva, $page->fresh()->meta_description);
+
+        // Y sale publicada en el <head>, que es para lo que se edita.
+        $html = $this->get('/voluntariado')->assertOk()->getContent();
+        $this->assertStringContainsString('<meta name="description" content="'.e($nueva).'">', $html);
+        $this->assertStringContainsString('<meta property="og:description" content="'.e($nueva).'">', $html);
+
+        // Vaciarla la deja en null y el <head> no emite descripción.
+        $this->actingAs($admin)->patch("/admin/pages/{$page->id}/meta", ['meta_description' => ''])->assertRedirect();
+
+        $this->assertNull($page->fresh()->meta_description);
+        $this->assertStringNotContainsString('name="description"', $this->get('/voluntariado')->getContent());
+
+        // Más largo que la columna se rechaza, y no toca lo guardado.
+        $this->actingAs($admin)->patch("/admin/pages/{$page->id}/meta", ['meta_description' => str_repeat('a', 501)])
+            ->assertSessionHasErrors('meta_description');
+
+        $this->assertNull($page->fresh()->meta_description);
+    }
+
+    public function test_editing_the_description_needs_a_session(): void
+    {
+        $page = Page::where('slug', 'voluntariado')->firstOrFail();
+        $original = $page->meta_description;
+
+        $this->patch("/admin/pages/{$page->id}/meta", ['meta_description' => 'colado'])->assertRedirect('/login');
+
+        $this->assertSame($original, $page->fresh()->meta_description);
+    }
+
     public function test_the_head_carries_the_link_preview_tags_rendered_by_the_server(): void
     {
         // WhatsApp y las redes no ejecutan JavaScript, así que estas etiquetas tienen

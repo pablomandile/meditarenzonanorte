@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Page;
 use App\Support\SectionRegistry;
+use App\Support\SiteMeta;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -35,6 +36,11 @@ class PageController extends Controller
                 'id' => $page->id,
                 'slug' => $page->slug,
                 'title' => $page->title,
+                'meta_description' => $page->meta_description,
+                // El título tal como se ve en Google y al compartir el enlace, para
+                // que se entienda qué acompaña la descripción de abajo.
+                'preview_title' => $page->title.' - '.SiteMeta::siteName(),
+                'url' => $page->slug === 'home' ? url('/') : url('/'.$page->slug),
             ],
             'sections' => $page->sections->map(fn ($section) => [
                 'id' => $section->id,
@@ -49,6 +55,23 @@ class PageController extends Controller
                 'visible' => $section->visible,
             ])->values(),
         ]);
+    }
+
+    /**
+     * La descripción que se ve en Google y en la vista previa de WhatsApp. Es lo
+     * único de la página que se edita desde el panel: el título, el slug y la
+     * etiqueta del menú siguen viniendo del archivo de datos.
+     *
+     * El límite de 500 es el de la columna; el consejo de 160 vive en el formulario,
+     * porque es una recomendación de los buscadores y no una restricción.
+     */
+    public function updateMeta(Request $request, Page $page): RedirectResponse
+    {
+        $page->update($request->validate([
+            'meta_description' => ['nullable', 'string', 'max:500'],
+        ]));
+
+        return back()->with('success', 'Descripción guardada.');
     }
 
     /**
