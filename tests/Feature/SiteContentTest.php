@@ -9,6 +9,7 @@ use App\Models\Section;
 use App\Models\Setting;
 use App\Models\User;
 use App\Support\EventCalendar;
+use App\Support\SiteMeta;
 use Carbon\Carbon;
 use Database\Seeders\CalendarioFechasSeeder;
 use Database\Seeders\CalendarioSeeder;
@@ -720,6 +721,70 @@ class SiteContentTest extends TestCase
         Storage::disk('public')->assertMissing($footer);
         Storage::disk('public')->assertExists($menu);
         $this->assertSame($menu, $this->footerLogo());
+    }
+
+    public function test_the_head_carries_the_link_preview_tags_rendered_by_the_server(): void
+    {
+        // WhatsApp y las redes no ejecutan JavaScript, así que estas etiquetas tienen
+        // que estar en el HTML del servidor, no en el <Head> de Inertia.
+        Setting::set('site_name', 'Meditación Kadampa en Zona Norte');
+
+        $html = $this->get('/voluntariado')->assertOk()->getContent();
+
+        $this->assertStringContainsString(
+            '<title inertia>Voluntariado - Meditación Kadampa en Zona Norte</title>',
+            $html,
+        );
+        $this->assertStringContainsString('<meta property="og:site_name" content="Meditación Kadampa en Zona Norte">', $html);
+        $this->assertStringContainsString('<meta property="og:title" content="Voluntariado - Meditación Kadampa en Zona Norte">', $html);
+        $this->assertStringContainsString('<meta property="og:url" content="'.url('/voluntariado').'">', $html);
+        $this->assertStringContainsString('<meta property="og:type" content="website">', $html);
+
+        // La descripción de la página, que antes sólo viajaba en los props.
+        $description = Page::where('slug', 'voluntariado')->firstOrFail()->meta_description;
+        $this->assertStringContainsString('<meta name="description" content="'.e($description).'">', $html);
+        $this->assertStringContainsString('<meta property="og:description" content="'.e($description).'">', $html);
+
+        // La imagen es la portada de la página, en URL absoluta.
+        $hero = Section::whereHas('page', fn ($query) => $query->where('slug', 'voluntariado'))
+            ->where('type', 'hero')->firstOrFail()->content['image'];
+
+        $this->assertStringContainsString('<meta property="og:image" content="'.url('/storage/'.$hero).'">', $html);
+        $this->assertStringContainsString('<meta name="twitter:card" content="summary_large_image">', $html);
+    }
+
+    public function test_the_site_name_comes_from_the_panel_and_not_from_app_name(): void
+    {
+        config(['app.name' => 'Nombre viejo del .env']);
+
+        Setting::set('site_name', 'Nombre nuevo del panel');
+        $this->assertSame('Nombre nuevo del panel', SiteMeta::siteName());
+        $this->assertStringContainsString('Nombre nuevo del panel', $this->get('/')->getContent());
+        $this->assertStringNotContainsString('Nombre viejo del .env', $this->get('/')->getContent());
+
+        // Y llega al cliente por el prop compartido, que es de donde app.ts lo toma.
+        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page->where('name', 'Nombre nuevo del panel'));
+
+        // Sin el ajuste cargado, APP_NAME queda como respaldo.
+        Setting::set('site_name', null);
+        $this->assertSame('Nombre viejo del .env', SiteMeta::siteName());
+    }
+
+    public function test_a_page_without_a_cover_falls_back_to_the_logo_for_the_preview(): void
+    {
+        Section::whereHas('page', fn ($query) => $query->where('slug', 'gratis'))
+            ->where('type', 'hero')->delete();
+
+        $html = $this->get('/gratis')->assertOk()->getContent();
+
+        $this->assertStringContainsString('<meta property="og:image" content="'.url('/storage/'.Setting::get('logo_path')).'">', $html);
+
+        // Y sin logo tampoco se inventa una imagen.
+        Setting::set('logo_path', null);
+        $html = $this->get('/gratis')->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('og:image', $html);
+        $this->assertStringContainsString('<meta name="twitter:card" content="summary">', $html);
     }
 
     public function test_the_favicon_is_the_footer_logo_and_falls_back_to_the_menu_one(): void

@@ -27,12 +27,21 @@ declare module 'vite/client' {
     }
 }
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+/**
+ * El nombre del sitio sale del prop compartido `name`, que a su vez viene del ajuste
+ * "Nombre del sitio" del panel. VITE_APP_NAME queda sólo como red de seguridad: se
+ * hornea en el bundle al compilar, así que quien compile decide el nombre y no el
+ * dueño del sitio — que es cómo el título terminó mostrando el nombre viejo.
+ */
+let siteName = import.meta.env.VITE_APP_NAME || '';
 
 createInertiaApp({
-    title: (title) => `${title} - ${appName}`,
+    title: (title) => [title, siteName].filter(Boolean).join(' - '),
     resolve: (name) => resolvePageComponent(`./pages/${name}.vue`, import.meta.glob<DefineComponent>('./pages/**/*.vue')),
     setup({ el, App, props, plugin }) {
+        // Antes de montar, así ningún <Head> se renderiza con el nombre viejo.
+        siteName = (props.initialPage.props as { name?: string }).name || siteName;
+
         createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(ZiggyVue)
