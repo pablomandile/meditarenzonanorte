@@ -14,7 +14,7 @@ const open = ref(false);
 
 <template>
     <header class="sticky top-0 z-40 border-b border-brand-line/60 bg-white/95 backdrop-blur">
-        <div class="mx-auto flex h-20 max-w-6xl items-center justify-between gap-4 px-4">
+        <div class="mx-auto flex h-20 items-center justify-between gap-4 px-4 lg:px-6">
             <!--
                 El logo toma el alto completo de la barra: h-full en el enlace (el
                 contenedor tiene alto fijo) y h-full w-auto en la imagen, así el
@@ -25,7 +25,7 @@ const open = ref(false);
                 <span v-else class="font-display text-xl text-brand-ink">{{ settings.site_name }}</span>
             </Link>
 
-            <nav class="hidden items-center gap-6 lg:flex">
+            <nav class="hidden items-center gap-6 xl:flex">
                 <Link
                     v-for="item in nav"
                     :key="item.slug"
@@ -49,7 +49,7 @@ const open = ref(false);
 
                 <button
                     type="button"
-                    class="rounded-md p-2 text-brand-ink hover:bg-brand-light lg:hidden"
+                    class="rounded-md p-2 text-brand-ink hover:bg-brand-light xl:hidden"
                     :aria-expanded="open"
                     aria-label="Abrir menú"
                     @click="open = !open"
@@ -60,7 +60,7 @@ const open = ref(false);
             </div>
         </div>
 
-        <nav v-if="open" class="border-t border-brand-line/60 bg-white px-4 pb-4 lg:hidden">
+        <nav v-if="open" class="border-t border-brand-line/60 bg-white px-4 pb-4 xl:hidden">
             <Link
                 v-for="item in nav"
                 :key="item.slug"
