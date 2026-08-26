@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Support\EventCalendar;
 use App\Support\SiteMeta;
 use Carbon\Carbon;
+use Database\Seeders\AppKadampaSeeder;
 use Database\Seeders\CalendarioFechasSeeder;
 use Database\Seeders\CalendarioSeeder;
 use Database\Seeders\ContentSeeder;
@@ -1473,6 +1474,49 @@ class SiteContentTest extends TestCase
         });
 
         $this->assertSame(['titulo', 'banner'], array_slice($keys, 0, 2));
+    }
+
+    public function test_footer_gets_the_app_card_without_touching_the_other_resources(): void
+    {
+        // Estado "produccion": las tres tarjetas de siempre, con una editada a mano.
+        $previas = collect(json_decode(Setting::get('footer_resources', '[]'), true))
+            ->reject(fn ($card) => $card['url'] === 'https://kadampa.org/app')
+            ->values()
+            ->all();
+
+        $previas[1]['text'] = 'lo cambio el dueno';
+        Setting::set('footer_resources', json_encode($previas, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
+        $this->seed(AppKadampaSeeder::class);
+
+        $cards = json_decode(Setting::get('footer_resources', '[]'), true);
+
+        $this->assertCount(4, $cards);
+        $this->assertSame(['EL BUDISMO KADAMPA', 'COMO TRANSFORMAR TU VIDA', 'BUDISMO MODERNO'], [
+            $cards[0]['title'],
+            str_replace('Ó', 'O', $cards[1]['title']),
+            $cards[2]['title'],
+        ]);
+        $this->assertSame('lo cambio el dueno', $cards[1]['text']);
+
+        // La nueva va al final, con la imagen copiada a storage.
+        $this->assertSame('https://kadampa.org/app', $cards[3]['url']);
+        $this->assertSame('seed/shared/logo-qr-app.webp', $cards[3]['image']);
+        $this->assertStringContainsString('APP DE MEDITACI', $cards[3]['title']);
+        $this->assertTrue(Storage::disk('public')->exists('seed/shared/logo-qr-app.webp'));
+
+        // Repetible: no la duplica ni pisa lo editado.
+        $this->seed(AppKadampaSeeder::class);
+
+        $repetido = json_decode(Setting::get('footer_resources', '[]'), true);
+
+        $this->assertCount(4, $repetido);
+        $this->assertSame('lo cambio el dueno', $repetido[1]['text']);
+
+        // Y el pie de cualquier pagina la recibe.
+        $this->get('/')->assertOk()->assertInertia(
+            fn (AssertableInertia $page) => $page->where('settings.footer_resources.3.url', 'https://kadampa.org/app'),
+        );
     }
 
     public function test_class_schedule_is_built_from_the_calendar_dates_when_it_is_empty(): void

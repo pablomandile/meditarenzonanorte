@@ -179,6 +179,40 @@ class ContentSeeder extends Seeder
     }
 
     /**
+     * Agrega al pie una tarjeta de recursos del archivo de datos que todavía no esté.
+     *
+     * Los recursos del pie no son una sección sino el ajuste footer_resources, así
+     * que seedMissingSection() no sirve para esto. Igual que aquel, nunca reescribe
+     * lo que el dueño ya editó: si ya hay una tarjeta con esa url no hace nada, las
+     * que están quedan como están y la nueva va al final.
+     */
+    public function seedMissingFooterResource(string $url): void
+    {
+        $cards = json_decode(Setting::get('footer_resources', '[]'), true) ?: [];
+
+        foreach ($cards as $card) {
+            if (($card['url'] ?? null) === $url) {
+                return;
+            }
+        }
+
+        $pages = require database_path('seeders/data/content.php');
+        $recursos = collect($pages['home']['sections'])->firstWhere('key', 'recursos');
+        $nueva = collect($recursos['content']['cards'] ?? [])->firstWhere('url', $url);
+
+        if (! $nueva) {
+            return;
+        }
+
+        $this->copyImages();
+
+        $this->saveFooterResources([
+            ...$cards,
+            [...$nueva, 'image' => $this->seedImagePath($nueva['image'] ?? null)],
+        ]);
+    }
+
+    /**
      * @param  array<int, int>  $faqIds
      */
     private function upsertPage(string $slug, array $pageData, array $faqIds): void
@@ -220,11 +254,15 @@ class ContentSeeder extends Seeder
 
     private function seedFooterResources(array $cards): void
     {
-        $cards = array_map(fn ($card) => [
+        $this->saveFooterResources(array_map(fn ($card) => [
             ...$card,
             'image' => $this->seedImagePath($card['image'] ?? null),
-        ], $cards);
+        ], $cards));
+    }
 
+    /** Espera las tarjetas con la imagen ya resuelta a su ruta de storage. */
+    private function saveFooterResources(array $cards): void
+    {
         Setting::set('footer_resources', json_encode($cards, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 

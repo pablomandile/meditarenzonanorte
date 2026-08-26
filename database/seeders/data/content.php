@@ -146,6 +146,15 @@ return [
                             'text' => 'descargalo gratis aquí',
                             'url' => 'https://budismomoderno.com',
                         ],
+                        [
+                            // La imagen trae el QR que lleva a esta misma dirección,
+                            // para quien mira el sitio en la compu y abre la app en el
+                            // teléfono.
+                            'image' => 'shared/logo-qr-app.webp',
+                            'title' => '¡NUEVA APP DE MEDITACIÓN KADAMPA!',
+                            'text' => 'enseñanzas, meditaciones guiadas, podcasts & libros para llevar a dónde vayas',
+                            'url' => 'https://kadampa.org/app',
+                        ],
                     ],
                 ],
             ],

@@ -158,13 +158,15 @@ El botón "Continuar con Google" aparece en el login **solo si `GOOGLE_CLIENT_ID
   php artisan db:seed --class=VoluntariadoPortadaSeeder --force
   php artisan db:seed --class=CalendarioSeeder --force
   php artisan db:seed --class=CalendarioFechasSeeder --force   # una sola vez, ver abajo
+  php artisan db:seed --class=AppKadampaSeeder --force          # tarjeta del pie, no una página
   ```
 
-Hay dos primitivos, y la diferencia importa en producción:
+Hay tres primitivos, y la diferencia importa en producción:
 
 | Primitivo | Qué hace | Cuándo |
 |---|---|---|
 | `ContentSeeder::seedSinglePage($slug)` | Upsert de la página **y de todas sus secciones** desde el archivo de datos: reescribe contenido, vuelve a poner `visible = true` y renumera posiciones. **Pisa lo editado desde el panel en esa página.** | Publicar una página nueva, o resetear una a su estado sembrado. Lo usan los 4 primeros seeders y `CalendarioSeeder`. |
+| `ContentSeeder::seedMissingFooterResource($url)` | Agrega **una tarjeta a los recursos del pie** (el ajuste `footer_resources`, no una sección) si todavía no hay ninguna con esa url. Va al final, copia su imagen a storage y no toca las que ya están. | Sumar un libro o una app al pie sin pisar lo que el dueño haya editado en las otras tarjetas. Lo usa `AppKadampaSeeder`. |
 | `ContentSeeder::seedMissingSection($slug, $key, $visible)` | Inserta **una sola sección** si esa página todavía no la tiene, justo debajo de la que la precede en el archivo de datos; el resto solo corre una posición. Repetible y no toca nada más. Con `visible: false` entra oculta, para plantillas que hay que completar antes de publicar. | Agregar un bloque a una página que el dueño ya editó. Lo usan `ClasesSemanalesPortadaSeeder`, `CursosYRetirosFichaSeeder` y `VoluntariadoPortadaSeeder`. Si se agregan **dos** secciones seguidas, el orden de las llamadas importa: cada una se ubica debajo de la que la precede en el archivo de datos, así que la de arriba tiene que insertarse primero. |
 
 `CalendarioSeeder` **no** siembra las “Fechas para el calendario” de las clases: en producción los horarios ya están editados y no coinciden con el archivo de datos, así que sembrarlas desde ahí publicaría clases en días equivocados. Una ficha sin fechas no aparece en el calendario, así que no hay estado intermedio roto.

@@ -10,12 +10,19 @@ const resources = computed(() => (settings.value.footer_resources ?? []) as Card
 
 /** El pie puede tener su propio logo; si no se cargó, usa el del menú. */
 const logo = computed(() => settings.value.footer_logo_path || settings.value.logo_path);
+
+/**
+ * Tres recursos entran justo en una fila; con cuatro se reparten en cuatro
+ * columnas en vez de dejar uno huérfano abajo. De cinco en adelante vuelve a
+ * tres, que arma filas parejas.
+ */
+const columnas = computed(() => (resources.value.length === 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'));
 </script>
 
 <template>
     <footer class="mt-16">
         <div v-if="resources.length" class="border-t border-brand-line/60 bg-brand-cream/60">
-            <div class="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:grid-cols-2" :class="columnas">
                 <a
                     v-for="(card, i) in resources"
                     :key="i"
