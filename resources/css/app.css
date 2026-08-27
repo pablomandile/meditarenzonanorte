@@ -97,3 +97,39 @@ html {
         @apply bg-background text-foreground;
     }
 }
+
+@layer components {
+    /**
+     * El aire entre las secciones del sitio público se define UNA sola vez acá,
+     * para que todas las páginas respiren igual: 64px en el celular y 80px de
+     * 768px para arriba — la distancia que ya tenían entre sí las fichas de
+     * clase, que es la que tomamos como estándar.
+     *
+     * Por eso las secciones no llevan relleno vertical propio. El que sí tienen
+     * las que pintan una banda de color a todo el ancho (el título de la página,
+     * la cita, la franja de eventos) es el aire de ADENTRO de la banda: como
+     * queda pintado, no cuenta como separación, y la banda igual se despega de
+     * la sección vecina los mismos 64/80px de blanco que el resto.
+     */
+    .site-sections {
+        --section-gap: 4rem;
+
+        padding-bottom: var(--section-gap);
+    }
+
+    @media (min-width: 768px) {
+        .site-sections {
+            --section-gap: 5rem;
+        }
+    }
+
+    .site-sections > section + section,
+    .site-sections > section:first-child:not(:is(.section-hero, .section-band)) {
+        margin-top: var(--section-gap);
+    }
+
+    /* La portada —la foto y la banda del título— va pegada, en cualquiera de los dos órdenes. */
+    .site-sections > :is(.section-hero + .section-band, .section-band + .section-hero) {
+        margin-top: 0;
+    }
+}

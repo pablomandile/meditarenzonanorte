@@ -13,7 +13,7 @@ const items = computed(() =>
 </script>
 
 <template>
-    <section v-if="items.length" class="py-12 md:py-16">
+    <section v-if="items.length">
         <div class="mx-auto max-w-3xl px-4">
             <h2
                 v-if="section.content.heading"

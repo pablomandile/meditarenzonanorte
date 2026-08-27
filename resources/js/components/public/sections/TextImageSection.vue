@@ -6,7 +6,7 @@ defineProps<{ section: SectionData }>();
 </script>
 
 <template>
-    <section class="py-12 md:py-16">
+    <section>
         <div class="mx-auto grid max-w-6xl items-center gap-10 px-4 md:grid-cols-2">
             <div :class="{ 'md:order-2': section.content.image_side !== 'left' }">
                 <img

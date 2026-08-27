@@ -12,7 +12,7 @@ const hasImage = computed(() => !!props.section.content.image);
 </script>
 
 <template>
-    <section class="py-12 md:py-16">
+    <section>
         <div class="mx-auto max-w-6xl px-4">
             <div :class="hasImage ? 'grid items-center gap-10 md:grid-cols-2' : 'mx-auto max-w-3xl text-center'">
                 <div :class="{ 'md:order-2': hasImage && section.content.image_side !== 'left' }">

@@ -8,7 +8,7 @@ const bgClass = computed(() => (props.section.content.style === 'sky' ? 'bg-bran
 </script>
 
 <template>
-    <section :class="bgClass" class="py-8 md:py-10">
+    <section :class="bgClass" class="section-band py-8 md:py-10">
         <div class="mx-auto max-w-6xl px-4 text-center">
             <h1 class="font-display text-3xl font-normal uppercase tracking-[0.02em] text-white md:text-[45px] md:leading-tight">
                 {{ section.content.heading }}

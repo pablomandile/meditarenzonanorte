@@ -5,7 +5,7 @@ defineProps<{ section: SectionData }>();
 </script>
 
 <template>
-    <section class="relative">
+    <section class="section-hero relative">
         <img
             v-if="section.content.image"
             :src="img(section.content.image)"

@@ -57,7 +57,7 @@ watch(expanded, () => nextTick(measure));
         sticky de 80px: sin eso el navegador deja la ficha justo debajo y el
         encabezado la tapa.
     -->
-    <section :id="section.content.anchor || undefined" class="scroll-mt-24 py-8 md:py-10">
+    <section :id="section.content.anchor || undefined" class="scroll-mt-24">
         <div class="mx-auto max-w-6xl px-4">
             <div class="overflow-hidden rounded-xl bg-brand-cream md:relative">
                 <div class="grid items-center gap-0 md:grid-cols-2">

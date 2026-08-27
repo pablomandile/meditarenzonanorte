@@ -10,7 +10,7 @@ const list = computed(() => props.events ?? []);
 </script>
 
 <template>
-    <section class="py-12 md:py-16">
+    <section>
         <div class="mx-auto max-w-6xl space-y-14 px-4">
             <h2 v-if="section.content.heading" class="text-center font-heading text-3xl font-light text-brand-sky md:text-[35px]">
                 {{ section.content.heading }}

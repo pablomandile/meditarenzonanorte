@@ -5,7 +5,7 @@ defineProps<{ section: SectionData }>();
 </script>
 
 <template>
-    <section v-if="section.content.image || section.content.heading" class="py-12 md:py-16">
+    <section v-if="section.content.image || section.content.heading">
         <div class="mx-auto max-w-3xl px-4 text-center">
             <h2 v-if="section.content.heading" class="font-heading text-3xl font-light text-brand-sky md:text-[35px]">
                 {{ section.content.heading }}

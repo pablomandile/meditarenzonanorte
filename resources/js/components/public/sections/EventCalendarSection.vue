@@ -46,7 +46,7 @@ function dayAriaLabel(label: string, count: number): string {
 </script>
 
 <template>
-    <section v-if="calendar" class="py-8 md:py-12">
+    <section v-if="calendar">
         <div class="mx-auto max-w-6xl px-4">
             <h2 v-if="section.content.heading" class="text-center font-heading text-3xl font-light text-brand-sky md:text-[35px]">
                 {{ section.content.heading }}

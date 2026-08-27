@@ -6,7 +6,7 @@ defineProps<{ section: SectionData }>();
 </script>
 
 <template>
-    <section class="bg-brand-light/50 py-14">
+    <section class="section-band bg-brand-light/50 py-14">
         <div class="mx-auto max-w-3xl px-4 text-center">
             <div class="mb-4 flex justify-center gap-1 text-brand-orange">
                 <Star v-for="i in 5" :key="i" class="h-5 w-5 fill-current" />

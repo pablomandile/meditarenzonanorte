@@ -9,7 +9,7 @@ const events = computed(() => props.homeEvents ?? []);
 </script>
 
 <template>
-    <section class="bg-brand-light/40 py-12 md:py-16">
+    <section class="section-band bg-brand-light/40 py-12 md:py-16">
         <div class="mx-auto max-w-6xl px-4">
             <h2
                 v-if="section.content.heading"

@@ -8,7 +8,7 @@ const images = computed(() => ((props.section.content.images ?? []) as string[])
 </script>
 
 <template>
-    <section class="py-10">
+    <section>
         <div class="mx-auto max-w-6xl px-4">
             <h2
                 v-if="section.content.heading"

@@ -12,7 +12,7 @@ const settings = computed(() => (page.props.settings ?? {}) as Record<string, an
     <div class="min-h-screen bg-white font-sans text-brand-body antialiased">
         <SiteHeader />
 
-        <main>
+        <main class="site-sections">
             <slot />
         </main>
 

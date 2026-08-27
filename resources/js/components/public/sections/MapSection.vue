@@ -13,7 +13,7 @@ const src = computed(() => {
 </script>
 
 <template>
-    <section v-if="src" class="py-12 md:py-16">
+    <section v-if="src">
         <div class="mx-auto max-w-6xl px-4">
             <h2
                 v-if="section.content.heading"

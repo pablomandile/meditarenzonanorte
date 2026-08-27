@@ -8,7 +8,7 @@ const imageRight = computed(() => props.section.content.image_side !== 'left');
 </script>
 
 <template>
-    <section class="py-10 md:py-12">
+    <section>
         <div
             class="mx-auto flex max-w-5xl flex-col gap-8 px-4 md:flex-row md:items-center md:gap-12"
             :class="{ 'md:flex-row-reverse': imageRight }"

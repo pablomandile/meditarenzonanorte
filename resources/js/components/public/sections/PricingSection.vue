@@ -26,7 +26,7 @@ function features(plan: Plan): string[] {
 </script>
 
 <template>
-    <section class="py-12 md:py-16">
+    <section>
         <div class="mx-auto max-w-6xl px-4">
             <div class="mx-auto max-w-3xl text-center">
                 <h2 v-if="section.content.heading" class="font-heading text-3xl font-light text-brand-sky md:text-[35px]">

@@ -20,7 +20,7 @@ const columnas = computed(() => (resources.value.length === 4 ? 'lg:grid-cols-4'
 </script>
 
 <template>
-    <footer class="mt-16">
+    <footer>
         <div v-if="resources.length" class="border-t border-brand-line/60 bg-brand-cream/60">
             <div class="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:grid-cols-2" :class="columnas">
                 <a

@@ -10,7 +10,7 @@ const cols = computed(() => Math.min(cards.value.length, 3));
 </script>
 
 <template>
-    <section class="py-12 md:py-16">
+    <section>
         <div class="mx-auto max-w-6xl px-4">
             <h2
                 v-if="section.content.heading"

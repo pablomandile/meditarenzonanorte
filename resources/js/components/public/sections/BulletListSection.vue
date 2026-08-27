@@ -8,7 +8,7 @@ const items = computed(() => ((props.section.content.items ?? []) as string[]).f
 </script>
 
 <template>
-    <section class="py-12 md:py-14">
+    <section>
         <div class="mx-auto max-w-3xl px-4 text-center">
             <h2 v-if="section.content.heading" class="font-heading text-3xl font-light text-brand-sky md:text-[32px]">
                 {{ section.content.heading }}
