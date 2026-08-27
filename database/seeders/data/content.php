@@ -135,13 +135,13 @@ return [
                             'url' => 'https://kadampa.org/es/kadampa-buddhism-worldwide-brochure',
                         ],
                         [
-                            'image' => 'shared/CTTV-Pack-3D-2017-web.png',
+                            'image' => 'shared/CTTV-Pack-3D-2017-web.webp',
                             'title' => 'CÓMO TRANSFORMAR TU VIDA',
                             'text' => 'descargalo gratis aquí',
                             'url' => 'https://comotransformartuvida.com',
                         ],
                         [
-                            'image' => 'shared/bm2-2.png',
+                            'image' => 'shared/bm2-2.webp',
                             'title' => 'BUDISMO MODERNO',
                             'text' => 'descargalo gratis aquí',
                             'url' => 'https://budismomoderno.com',

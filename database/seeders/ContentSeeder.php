@@ -213,6 +213,31 @@ class ContentSeeder extends Seeder
     }
 
     /**
+     * Cambia la imagen de una tarjeta del pie por otra del archivo de imágenes.
+     *
+     * Igual que seedMissingFooterResource(), no reescribe lo que el dueño ya
+     * editó: sólo toca las tarjetas que todavía apuntan a la imagen vieja.
+     */
+    public function replaceFooterResourceImage(string $from, string $to): void
+    {
+        $cards = json_decode(Setting::get('footer_resources', '[]'), true) ?: [];
+        $vieja = $this->seedImagePath($from);
+        $nueva = $this->seedImagePath($to);
+
+        $cambiadas = array_map(
+            fn ($card) => ($card['image'] ?? null) === $vieja ? [...$card, 'image' => $nueva] : $card,
+            $cards,
+        );
+
+        if ($cambiadas === $cards) {
+            return;
+        }
+
+        $this->copyImages();
+        $this->saveFooterResources($cambiadas);
+    }
+
+    /**
      * @param  array<int, int>  $faqIds
      */
     private function upsertPage(string $slug, array $pageData, array $faqIds): void
