@@ -8,9 +8,13 @@ import { Label } from '@/components/ui/label';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { type CardItem } from '@/lib/site';
 import { Head, useForm } from '@inertiajs/vue3';
-import { LoaderCircle } from 'lucide-vue-next';
+import { Check, LoaderCircle } from 'lucide-vue-next';
+import { computed } from 'vue';
 
-const props = defineProps<{ settings: Record<string, any> }>();
+/** Una fuente del catálogo del servidor. Ver App\Support\Typography. */
+type FontOption = { key: string; name: string; family: string; stack: string; url: string };
+
+const props = defineProps<{ settings: Record<string, any>; fonts: FontOption[] }>();
 
 const breadcrumbs = [{ title: 'Ajustes del sitio', href: '/admin/settings' }];
 
@@ -22,6 +26,7 @@ const form = useForm<Record<string, any>>({
     email: props.settings.email ?? '',
     instagram_url: props.settings.instagram_url ?? '',
     address: props.settings.address ?? '',
+    heading_font: (props.settings.heading_font ?? null) as string | null,
     footer_resources: JSON.parse(JSON.stringify(props.settings.footer_resources ?? [])) as CardItem[],
     logo_path: props.settings.logo_path ?? null,
     footer_logo_path: props.settings.footer_logo_path ?? null,
@@ -50,6 +55,17 @@ function submit() {
     });
 }
 
+/**
+ * Las tarjetas del selector: primero la salida para volver al aspecto de siempre
+ * —mientras esté elegida, el sitio no descarga ninguna fuente— y después las del
+ * catálogo. El ejemplo se dibuja en font-light porque es el peso que usan los
+ * títulos de sección, que es donde más se nota el cambio.
+ */
+const fontCards = computed(() => [
+    { key: null, name: 'Como está ahora', family: 'Helvetica, Arial, sans-serif', note: 'Del sistema, sin descargar nada' },
+    ...props.fonts.map((font) => ({ key: font.key, name: font.name, family: font.stack, note: 'Google Fonts' })),
+]);
+
 const textFields: { key: string; label: string; placeholder?: string }[] = [
     { key: 'site_name', label: 'Nombre del sitio' },
     { key: 'phone_display', label: 'Teléfono (como se muestra)', placeholder: '341 6 989430' },
@@ -63,7 +79,10 @@ const textFields: { key: string; label: string; placeholder?: string }[] = [
 
 <template>
     <AdminLayout :breadcrumbs="breadcrumbs">
-        <Head title="Ajustes del sitio" />
+        <!-- Las fuentes se cargan sólo acá, para la vista previa: el resto del panel no las descarga. -->
+        <Head title="Ajustes del sitio">
+            <link v-for="font in fonts" :key="font.key" rel="stylesheet" :href="font.url" />
+        </Head>
 
         <div class="mx-auto flex w-full max-w-3xl flex-col gap-4 p-4">
             <div>
@@ -88,6 +107,40 @@ const textFields: { key: string; label: string; placeholder?: string }[] = [
                                 <p v-if="form.errors[field.key]" class="text-sm text-red-600">{{ form.errors[field.key] }}</p>
                             </div>
                         </div>
+                    </CardContent>
+                </Card>
+
+                <Card class="mt-4">
+                    <CardContent class="grid gap-4 pt-6">
+                        <div class="grid gap-1">
+                            <Label>Fuente de los títulos</Label>
+                            <p class="text-xs text-muted-foreground">
+                                Cambia los títulos de sección del sitio público. Los títulos grandes de las bandas y el
+                                texto de los párrafos no se tocan.
+                            </p>
+                        </div>
+
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <button
+                                v-for="card in fontCards"
+                                :key="card.key ?? 'actual'"
+                                type="button"
+                                class="grid gap-2 rounded-lg border p-4 text-left transition hover:bg-accent"
+                                :class="form.heading_font === card.key ? 'border-primary ring-1 ring-primary' : 'border-input'"
+                                @click="form.heading_font = card.key"
+                            >
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-sm font-medium">{{ card.name }}</span>
+                                    <Check v-if="form.heading_font === card.key" class="h-4 w-4 shrink-0 text-primary" />
+                                </div>
+                                <span class="text-2xl font-light leading-tight" :style="{ fontFamily: card.family }">
+                                    Clases semanales
+                                </span>
+                                <span class="text-xs text-muted-foreground">{{ card.note }}</span>
+                            </button>
+                        </div>
+
+                        <p v-if="form.errors.heading_font" class="text-sm text-red-600">{{ form.errors.heading_font }}</p>
                     </CardContent>
                 </Card>
 

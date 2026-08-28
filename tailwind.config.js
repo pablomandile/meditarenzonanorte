@@ -14,7 +14,10 @@ export default {
             fontFamily: {
                 sans: ['Roboto', ...defaultTheme.fontFamily.sans],
                 display: ['Anton', 'sans-serif'],
-                heading: ['Helvetica', 'Arial', 'sans-serif'],
+                // Los títulos de sección salen de una variable para que la fuente se
+                // pueda elegir desde Ajustes; el valor de siempre (Helvetica) está en
+                // app.css. Ver App\Support\Typography.
+                heading: 'var(--font-heading)',
                 slab: ['"Roboto Slab"', 'serif'],
             },
             borderRadius: {

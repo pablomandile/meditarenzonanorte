@@ -16,6 +16,18 @@ html {
          * También arregla el selector de hora, los <select> y las barras de scroll.
          */
         color-scheme: light;
+
+        /**
+         * La fuente de los títulos de sección. Este es el valor de siempre; si en
+         * Ajustes se elige una de Google, app.blade.php lo pisa con un estilo en
+         * línea sobre el <html>.
+         *
+         * El valor va acá y no como respaldo dentro del var() de tailwind.config:
+         * un var(--x, respaldo) con la variable indefinida no cae en el resto de la
+         * lista, invalida la declaración entera y el título se queda sin fuente.
+         */
+        --font-heading: Helvetica, Arial, sans-serif;
+
         --background: 0 0% 100%;
         --foreground: 0 0% 3.9%;
         --card: 0 0% 100%;

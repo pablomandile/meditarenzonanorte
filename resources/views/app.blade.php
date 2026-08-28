@@ -1,5 +1,17 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+@php($fuente = \App\Support\Typography::chosen())
+{{--
+    La fuente de los títulos de sección, elegida desde Ajustes. Los títulos grandes
+    —las bandas, el hero, las fichas— siguen en Anton, que es el rasgo más
+    reconocible del sitio.
+
+    La variable va en el propio <html> a propósito: un estilo en línea le gana a
+    cualquier hoja de estilos, así que no importa si el CSS de Tailwind se carga
+    antes o después (con el servidor de Vite se inyecta por JavaScript, al final de
+    todo). Ver App\Support\Typography.
+--}}
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}"
+    @if ($fuente) style="--font-heading: {{ $fuente['stack'] }}" @endif>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -41,6 +53,13 @@
                 <link rel="icon" href="/storage/{{ $favicon['path'] }}">
             @endif
             <link rel="apple-touch-icon" href="/storage/{{ $favicon['path'] }}">
+        @endif
+
+        {{-- Si no hay fuente elegida no se emite nada y no se descarga nada. --}}
+        @if ($fuente)
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link rel="stylesheet" href="{{ $fuente['url'] }}">
         @endif
 
         @routes

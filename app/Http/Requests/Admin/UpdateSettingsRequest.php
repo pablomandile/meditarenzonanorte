@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Support\Typography;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateSettingsRequest extends FormRequest
 {
@@ -21,6 +23,9 @@ class UpdateSettingsRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255'],
             'instagram_url' => ['nullable', 'string', 'max:500'],
             'address' => ['nullable', 'string', 'max:500'],
+            // Sólo una clave del catálogo: el valor termina dentro de un font-family
+            // del HTML, así que no puede ser texto libre. Vacío = la fuente de siempre.
+            'heading_font' => ['nullable', Rule::in(array_keys(Typography::FONTS))],
             // Las rutas viajan de vuelta para poder detectar el "Quitar" del campo
             // de imagen: llegan vacías cuando se sacó el logo.
             'logo_path' => ['nullable', 'string', 'max:500'],

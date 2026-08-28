@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateSettingsRequest;
 use App\Models\Setting;
 use App\Support\ImageStorage;
+use App\Support\Typography;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,6 +21,7 @@ class SettingController extends Controller
         'email',
         'instagram_url',
         'address',
+        'heading_font',
     ];
 
     public function edit(): Response
@@ -27,7 +29,12 @@ class SettingController extends Controller
         $settings = Setting::values();
         $settings['footer_resources'] = json_decode($settings['footer_resources'] ?? '[]', true) ?: [];
 
-        return Inertia::render('Admin/Settings/Edit', ['settings' => $settings]);
+        return Inertia::render('Admin/Settings/Edit', [
+            'settings' => $settings,
+            // Las fuentes salen del catálogo y no del front, así que los nombres
+            // viven en un solo lado. Ver App\Support\Typography.
+            'fonts' => Typography::options(),
+        ]);
     }
 
     public function update(UpdateSettingsRequest $request): RedirectResponse
