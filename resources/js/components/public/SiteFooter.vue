@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { img, type CardItem } from '@/lib/site';
+import { img, instagramUrl, type CardItem } from '@/lib/site';
 import { usePage } from '@inertiajs/vue3';
 import { Instagram, Mail, Phone } from 'lucide-vue-next';
 import { computed } from 'vue';
@@ -60,7 +60,7 @@ const columnas = computed(() => (resources.value.length === 4 ? 'lg:grid-cols-4'
                     </a>
                     <a
                         v-if="settings.instagram_url"
-                        :href="settings.instagram_url"
+                        :href="instagramUrl(settings.instagram_url)"
                         target="_blank"
                         rel="noopener"
                         class="flex items-center gap-2 transition hover:text-brand-sky"

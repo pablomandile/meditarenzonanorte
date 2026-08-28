@@ -94,7 +94,7 @@ const textFields: { key: string; label: string; placeholder?: string }[] = [
     { key: 'phone_link', label: 'Enlace del teléfono', placeholder: 'tel:+543416989430' },
     { key: 'whatsapp_url', label: 'Enlace de WhatsApp', placeholder: 'https://wa.me/549341...' },
     { key: 'email', label: 'Email' },
-    { key: 'instagram_url', label: 'Instagram (URL)' },
+    { key: 'instagram_url', label: 'Instagram', placeholder: '@tu-cuenta o https://instagram.com/tu-cuenta' },
     { key: 'address', label: 'Dirección' },
 ];
 </script>

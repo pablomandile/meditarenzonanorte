@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import ConstructionArt from '@/components/public/ConstructionArt.vue';
-import { img } from '@/lib/site';
+import { img, instagramUrl } from '@/lib/site';
 import { Head, usePage } from '@inertiajs/vue3';
 import { ArrowLeft, Construction, Instagram, Mail, MapPin, Phone } from 'lucide-vue-next';
 import { computed } from 'vue';
@@ -95,7 +95,7 @@ const year = new Date().getFullYear();
 
                 <a
                     v-if="settings.instagram_url"
-                    :href="settings.instagram_url"
+                    :href="instagramUrl(settings.instagram_url)"
                     target="_blank"
                     rel="noopener"
                     aria-label="Instagram"

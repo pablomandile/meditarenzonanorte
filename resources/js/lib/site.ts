@@ -47,6 +47,29 @@ export function img(path?: string | null): string | undefined {
 }
 
 /**
+ * El enlace a Instagram a partir del ajuste del panel, que en la práctica se carga
+ * de las tres maneras: la URL entera, `instagram.com/cuenta` sin el esquema, o el
+ * usuario suelto (`@cuenta` o `cuenta`).
+ *
+ * Hace falta porque un valor sin esquema es una URL **relativa**: el navegador la
+ * resuelve contra el propio sitio y el click termina en `/cuenta` en vez de en
+ * Instagram, sin dar ningún error.
+ */
+export function instagramUrl(value?: string | null): string | undefined {
+    const raw = value?.trim();
+
+    if (!raw) return undefined;
+
+    if (/^https?:\/\//i.test(raw)) return raw;
+
+    // Tiene el dominio pero le falta el esquema.
+    if (/^(www\.)?instagram\.com\//i.test(raw)) return `https://${raw}`;
+
+    // Lo que queda es el usuario, con o sin arroba y con o sin barras sueltas.
+    return `https://www.instagram.com/${raw.replace(/^\/+|\/+$/g, '').replace(/^@/, '')}`;
+}
+
+/**
  * Búsqueda en Google Maps para una dirección escrita a mano (el campo "lugar"
  * de las clases y los eventos es texto libre, no una coordenada).
  */
