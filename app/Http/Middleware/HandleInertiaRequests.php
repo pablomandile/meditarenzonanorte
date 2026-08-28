@@ -5,8 +5,11 @@ namespace App\Http\Middleware;
 use App\Models\Page;
 use App\Models\Setting;
 use App\Support\SiteMeta;
+use Closure;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use Inertia\Support\Header;
+use Symfony\Component\HttpFoundation\Response;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -18,6 +21,39 @@ class HandleInertiaRequests extends Middleware
      * @var string
      */
     protected $rootView = 'app';
+
+    /**
+     * Una misma URL contesta dos cuerpos distintos según el header X-Inertia: el
+     * HTML de arranque para una navegación, el JSON de la página para un XHR. Lo
+     * único que se lo dice a una caché es el Vary, y el CDN de Hostinger lo borra
+     * cuando comprime con brotli, que es lo que pide cualquier navegador real. Con
+     * las dos respuestas compartiendo clave de caché, al restaurar una pestaña
+     * descartada Chrome reusa la entrada guardada y muestra el JSON crudo en
+     * pantalla; F5 lo tapa, pero vuelve.
+     */
+    public function handle(Request $request, Closure $next): Response
+    {
+        $response = parent::handle($request, $next);
+
+        // Lo pone Inertia y el CDN lo borra, pero se declara igual: es lo correcto
+        // y sirve en cualquier intermediario que sí lo respete.
+        $response->headers->set('Vary', Header::INERTIA.', Accept-Encoding');
+
+        /*
+         * no-store, no no-cache: no-cache deja guardar y solo obliga a revalidar, y
+         * una navegación de historial —restaurar una pestaña, el botón atrás— se
+         * saltea la revalidación.
+         *
+         * Y solo sobre la respuesta XHR, nunca sobre el HTML: no-store en el
+         * documento principal desactiva el back/forward cache de Chrome y convierte
+         * cada "atrás" en una ida completa a la red.
+         */
+        if ($request->header(Header::INERTIA)) {
+            $response->headers->set('Cache-Control', 'no-store, private');
+        }
+
+        return $response;
+    }
 
     /**
      * Determines the current asset version.
