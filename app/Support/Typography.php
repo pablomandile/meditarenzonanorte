@@ -7,10 +7,10 @@ use App\Models\Setting;
 /**
  * La fuente de los títulos de sección del sitio público, elegible desde el panel.
  *
- * Toca los 25 lugares con font-heading —los títulos de sección, los de las tarjetas
- * y los del calendario—, no los párrafos ni los títulos grandes: las bandas, el
- * hero y las fichas siguen en Anton, que viene con el bundle y es lo más
- * reconocible del sitio.
+ * Toca los títulos de sección (font-heading) y el título de la banda que encabeza
+ * cada página —ACTIVIDADES SEMANALES, CURSOS Y RETIROS— (font-page-title). No toca
+ * los párrafos ni lo que queda en Anton: el rótulo "Clases del ciclo" de las
+ * fichas, los precios y los avisos de "no hay actividades".
  *
  * Es el único lugar donde viven los nombres de las fuentes: lo leen la vista raíz
  * (para emitir el <link> a Google y pisar la variable CSS), el formulario de
@@ -39,10 +39,13 @@ class Typography
     /** Lo que se ve hoy, y a lo que caen los títulos si la fuente web no carga. */
     public const FALLBACK = 'Helvetica, Arial, sans-serif';
 
+    /** Lo mismo para la banda que encabeza cada página, que hoy va en Anton. */
+    public const PAGE_TITLE_FALLBACK = 'Anton, sans-serif';
+
     /**
      * La fuente elegida, o null si no hay ninguna (el sitio queda como está).
      *
-     * @return array{key: string, name: string, family: string, stack: string, url: string}|null
+     * @return array{key: string, name: string, family: string, stack: string, pageTitleStack: string, url: string}|null
      */
     public static function chosen(): ?array
     {
@@ -55,7 +58,7 @@ class Typography
     /**
      * Las tres opciones para el panel, en orden.
      *
-     * @return array<int, array{key: string, name: string, family: string, stack: string, url: string}>
+     * @return array<int, array{key: string, name: string, family: string, stack: string, pageTitleStack: string, url: string}>
      */
     public static function options(): array
     {
@@ -63,7 +66,10 @@ class Typography
     }
 
     /**
-     * @return array{key: string, name: string, family: string, stack: string, url: string}
+     * Cada pila respalda en la fuente que reemplaza, para que si la de Google no
+     * llega el título quede como estaba y no en una genérica cualquiera.
+     *
+     * @return array{key: string, name: string, family: string, stack: string, pageTitleStack: string, url: string}
      */
     private static function describe(string $key): array
     {
@@ -74,6 +80,7 @@ class Typography
             'name' => $font['name'],
             'family' => $font['family'],
             'stack' => $font['family'].', '.self::FALLBACK,
+            'pageTitleStack' => $font['family'].', '.self::PAGE_TITLE_FALLBACK,
             // display=swap: el texto se lee con la fuente del sistema mientras baja
             // la otra, en vez de quedar invisible.
             'url' => 'https://fonts.googleapis.com/css2?family='

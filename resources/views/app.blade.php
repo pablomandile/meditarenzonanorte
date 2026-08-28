@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 @php($fuente = \App\Support\Typography::chosen())
 {{--
-    La fuente de los títulos de sección, elegida desde Ajustes. Los títulos grandes
-    —las bandas, el hero, las fichas— siguen en Anton, que es el rasgo más
-    reconocible del sitio.
+    La fuente de los títulos, elegida desde Ajustes: los de sección y el de la banda
+    que encabeza cada página. Cada uno respalda en la fuente que reemplaza —Helvetica
+    y Anton— para que si la de Google no llega el título quede como estaba.
 
     La variable va en el propio <html> a propósito: un estilo en línea le gana a
     cualquier hoja de estilos, así que no importa si el CSS de Tailwind se carga
@@ -11,7 +11,7 @@
     todo). Ver App\Support\Typography.
 --}}
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}"
-    @if ($fuente) style="--font-heading: {{ $fuente['stack'] }}" @endif>
+    @if ($fuente) style="--font-heading: {{ $fuente['stack'] }}; --font-page-title: {{ $fuente['pageTitleStack'] }}" @endif>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">

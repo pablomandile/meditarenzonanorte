@@ -12,7 +12,7 @@ import { Check, LoaderCircle } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 /** Una fuente del catálogo del servidor. Ver App\Support\Typography. */
-type FontOption = { key: string; name: string; family: string; stack: string; url: string };
+type FontOption = { key: string; name: string; family: string; stack: string; pageTitleStack: string; url: string };
 
 const props = defineProps<{ settings: Record<string, any>; fonts: FontOption[] }>();
 
@@ -115,8 +115,8 @@ const textFields: { key: string; label: string; placeholder?: string }[] = [
                         <div class="grid gap-1">
                             <Label>Fuente de los títulos</Label>
                             <p class="text-xs text-muted-foreground">
-                                Cambia los títulos de sección del sitio público. Los títulos grandes de las bandas y el
-                                texto de los párrafos no se tocan.
+                                Cambia los títulos de sección del sitio público y el de la banda que encabeza cada
+                                página. El texto de los párrafos no se toca.
                             </p>
                         </div>
 

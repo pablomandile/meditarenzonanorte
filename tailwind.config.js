@@ -18,6 +18,7 @@ export default {
                 // pueda elegir desde Ajustes; el valor de siempre (Helvetica) está en
                 // app.css. Ver App\Support\Typography.
                 heading: 'var(--font-heading)',
+                'page-title': 'var(--font-page-title)',
                 slab: ['"Roboto Slab"', 'serif'],
             },
             borderRadius: {

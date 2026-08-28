@@ -28,6 +28,14 @@ html {
          */
         --font-heading: Helvetica, Arial, sans-serif;
 
+        /**
+         * El titulo de la banda de cada pagina (ACTIVIDADES SEMANALES, CURSOS Y
+         * RETIROS). Tiene su propia variable porque su valor de siempre es Anton y
+         * no Helvetica: asi la fuente elegida lo cambia sin que, cuando no hay
+         * ninguna elegida, la banda deje de verse como siempre.
+         */
+        --font-page-title: Anton, sans-serif;
+
         --background: 0 0% 100%;
         --foreground: 0 0% 3.9%;
         --card: 0 0% 100%;

@@ -23,6 +23,7 @@ class TypographyTest extends TestCase
 
         $this->assertStringNotContainsString('fonts.googleapis.com', $html);
         $this->assertStringNotContainsString('--font-heading', $html);
+        $this->assertStringNotContainsString('--font-page-title', $html);
     }
 
     public function test_la_fuente_elegida_se_carga_y_manda_sobre_la_de_siempre(): void
@@ -34,12 +35,13 @@ class TypographyTest extends TestCase
         $this->assertStringContainsString('fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600', $html);
         $this->assertStringContainsString('rel="preconnect" href="https://fonts.gstatic.com"', $html);
 
-        // La variable va como estilo en línea del <html>, así que en el HTML sale
-        // escapada; el navegador la decodifica antes de parsear el CSS.
+        // Las variables van como estilo en línea del <html>, así que en el HTML salen
+        // escapadas; el navegador las decodifica antes de parsear el CSS.
         $this->assertStringContainsString(e("--font-heading: 'Montserrat', Helvetica, Arial, sans-serif"), $html);
 
-        // Los títulos grandes siguen en Anton: la fuente elegida no los toca.
-        $this->assertStringNotContainsString('--font-display', $html);
+        // La banda de cada página respalda en Anton y no en Helvetica: si la fuente
+        // de Google no llega, el título queda como estaba.
+        $this->assertStringContainsString(e("--font-page-title: 'Montserrat', Anton, sans-serif"), $html);
     }
 
     public function test_el_panel_guarda_la_fuente_y_permite_volver_atras(): void
@@ -71,7 +73,8 @@ class TypographyTest extends TestCase
                 ->has('fonts', 3)
                 ->where('fonts.0.name', 'Montserrat')
                 ->has('fonts.0.url')
-                ->has('fonts.0.stack'));
+                ->has('fonts.0.stack')
+                ->has('fonts.0.pageTitleStack'));
     }
 
     /** El valor termina dentro de un font-family del HTML: no puede ser texto libre. */
