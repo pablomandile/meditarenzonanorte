@@ -1,11 +1,20 @@
 <script setup lang="ts">
 import SiteFooter from '@/components/public/SiteFooter.vue';
 import SiteHeader from '@/components/public/SiteHeader.vue';
-import { usePage } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
+import { Construction } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 const page = usePage();
 const settings = computed(() => (page.props.settings ?? {}) as Record<string, any>);
+
+/**
+ * Con el sitio cerrado, quien tiene sesión iniciada lo sigue viendo entero — eso lo
+ * decide App\Http\Middleware\UnderConstruction, para poder revisarlo. La contra es
+ * que desde adentro no se nota que está cerrado, así que la cinta se lo recuerda: es
+ * la red contra dejar el cartel puesto una semana sin enterarse.
+ */
+const avisoDeObra = computed(() => Boolean(page.props.auth?.user && settings.value.under_construction));
 </script>
 
 <template>
@@ -17,6 +26,15 @@ const settings = computed(() => (page.props.settings ?? {}) as Record<string, an
         </main>
 
         <SiteFooter />
+
+        <Link
+            v-if="avisoDeObra"
+            :href="route('admin.settings.edit')"
+            class="fixed bottom-5 left-5 z-50 inline-flex max-w-[calc(100%-6.5rem)] items-center gap-2 rounded-full bg-brand-orange px-4 py-2.5 text-xs font-medium text-white shadow-lg transition hover:bg-brand-orange-dark"
+        >
+            <Construction class="h-4 w-4 shrink-0" />
+            <span class="truncate">El sitio está en construcción para las visitas</span>
+        </Link>
 
         <a
             v-if="settings.whatsapp_url"

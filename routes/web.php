@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\SectionController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\PageController;
+use App\Http\Middleware\UnderConstruction;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
@@ -48,6 +49,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::get('settings', [SettingController::class, 'edit'])->name('settings.edit');
     Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
+    // El cartel tal cual lo ven las visitas: con sesión iniciada el sitio público
+    // no lo muestra, así que sin esta vista el dueño no puede revisarlo.
+    Route::get('settings/construccion', [SettingController::class, 'construction'])->name('settings.construction');
 });
 
 Route::get('dashboard', fn () => redirect()->route('admin.pages.index'))
@@ -58,5 +62,10 @@ require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
 
 // Public site — the slug catch-all must stay LAST.
-Route::get('/', [PageController::class, 'home'])->name('home');
-Route::get('/{page:slug}', [PageController::class, 'show'])->name('page.show');
+//
+// El interruptor de "En construcción" se cuelga acá y no del grupo web: tapa el
+// sitio público y nada más, así ponerlo no puede dejar al dueño afuera del panel.
+Route::middleware(UnderConstruction::class)->group(function () {
+    Route::get('/', [PageController::class, 'home'])->name('home');
+    Route::get('/{page:slug}', [PageController::class, 'show'])->name('page.show');
+});

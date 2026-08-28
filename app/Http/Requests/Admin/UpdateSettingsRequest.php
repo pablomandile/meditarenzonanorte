@@ -26,6 +26,11 @@ class UpdateSettingsRequest extends FormRequest
             // Sólo una clave del catálogo: el valor termina dentro de un font-family
             // del HTML, así que no puede ser texto libre. Vacío = la fuente de siempre.
             'heading_font' => ['nullable', Rule::in(array_keys(Typography::FONTS))],
+            // El cartel de "En construcción". Los textos vacíos no borran nada: el
+            // cartel cae en los de fábrica. Ver App\Support\Construction.
+            'under_construction' => ['nullable', 'boolean'],
+            'construction_title' => ['nullable', 'string', 'max:120'],
+            'construction_message' => ['nullable', 'string', 'max:600'],
             // Las rutas viajan de vuelta para poder detectar el "Quitar" del campo
             // de imagen: llegan vacías cuando se sacó el logo.
             'logo_path' => ['nullable', 'string', 'max:500'],

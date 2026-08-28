@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateSettingsRequest;
 use App\Models\Setting;
+use App\Support\Construction;
 use App\Support\ImageStorage;
 use App\Support\Typography;
 use Illuminate\Http\RedirectResponse;
@@ -22,6 +23,8 @@ class SettingController extends Controller
         'instagram_url',
         'address',
         'heading_font',
+        'construction_title',
+        'construction_message',
     ];
 
     public function edit(): Response
@@ -34,7 +37,17 @@ class SettingController extends Controller
             // Las fuentes salen del catálogo y no del front, así que los nombres
             // viven en un solo lado. Ver App\Support\Typography.
             'fonts' => Typography::options(),
+            // Ídem los textos de fábrica del cartel de "En construcción": el panel
+            // los pinta como marca de agua de los campos vacíos, así lo que se ve
+            // ahí es lo que va a salir publicado. Ver App\Support\Construction.
+            'construction' => Construction::defaults(),
         ]);
+    }
+
+    /** El cartel de "En construcción" tal cual lo ven las visitas. */
+    public function construction(): Response
+    {
+        return Inertia::render('Public/UnderConstruction', Construction::content() + ['preview' => true]);
     }
 
     public function update(UpdateSettingsRequest $request): RedirectResponse
@@ -45,6 +58,14 @@ class SettingController extends Controller
             if (array_key_exists($key, $data)) {
                 Setting::set($key, $data[$key]);
             }
+        }
+
+        /*
+         * El interruptor va aparte del bucle de textos: se guarda '1' o nada, para
+         * que Construction::enabled() pueda leerlo con una simple prueba de verdad.
+         */
+        if ($request->has('under_construction')) {
+            Setting::set('under_construction', $request->boolean('under_construction') ? '1' : null);
         }
 
         $resources = array_values(array_filter($data['footer_resources'] ?? [], fn ($card) => array_filter($card ?? [])));
