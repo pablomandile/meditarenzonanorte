@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Page;
 use App\Models\Setting;
 use App\Support\SiteMeta;
+use App\Support\WhatsApp;
 use Closure;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -85,6 +86,9 @@ class HandleInertiaRequests extends Middleware
             'settings' => function () {
                 $settings = Setting::values();
                 $settings['footer_resources'] = json_decode($settings['footer_resources'] ?? '[]', true) ?: [];
+                // El botón flotante recibe el link ya armado con el mensaje adentro;
+                // el número y el mensaje se editan por separado en Ajustes.
+                $settings['whatsapp_url'] = WhatsApp::link();
 
                 return $settings;
             },

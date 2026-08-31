@@ -8,6 +8,7 @@ use App\Models\Setting;
 use App\Support\Construction;
 use App\Support\ImageStorage;
 use App\Support\Typography;
+use App\Support\WhatsApp;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -18,7 +19,9 @@ class SettingController extends Controller
         'site_name',
         'phone_display',
         'phone_link',
-        'whatsapp_url',
+        // whatsapp_url no está acá: se guarda aparte, porque hay que sacarle
+        // cualquier mensaje viejo que haya quedado pegado (ver update()).
+        'whatsapp_message',
         'email',
         'instagram_url',
         'address',
@@ -31,6 +34,8 @@ class SettingController extends Controller
     {
         $settings = Setting::values();
         $settings['footer_resources'] = json_decode($settings['footer_resources'] ?? '[]', true) ?: [];
+        // Sin el ?text= pegado: eso se edita aparte, en whatsapp_message.
+        $settings['whatsapp_url'] = WhatsApp::baseUrl();
 
         return Inertia::render('Admin/Settings/Edit', [
             'settings' => $settings,
@@ -58,6 +63,13 @@ class SettingController extends Controller
             if (array_key_exists($key, $data)) {
                 Setting::set($key, $data[$key]);
             }
+        }
+
+        if (array_key_exists('whatsapp_url', $data)) {
+            // Por si queda pegado un enlace viejo con el ?text= adentro (de antes de
+            // separar el mensaje, o pegado a mano): se guarda solo la parte del
+            // número, y el mensaje vive aparte en whatsapp_message.
+            Setting::set('whatsapp_url', $data['whatsapp_url'] ? strtok($data['whatsapp_url'], '?') : null);
         }
 
         /*

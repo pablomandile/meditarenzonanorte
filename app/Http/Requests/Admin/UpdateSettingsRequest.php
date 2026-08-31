@@ -20,6 +20,10 @@ class UpdateSettingsRequest extends FormRequest
             'phone_display' => ['nullable', 'string', 'max:255'],
             'phone_link' => ['nullable', 'string', 'max:255'],
             'whatsapp_url' => ['nullable', 'string', 'max:500'],
+            // El mensaje precargado del botón de WhatsApp. Va aparte del enlace de
+            // arriba: SettingController le arma el ?text= por separado. Ver
+            // App\Support\WhatsApp.
+            'whatsapp_message' => ['nullable', 'string', 'max:1000'],
             'email' => ['nullable', 'email', 'max:255'],
             'instagram_url' => ['nullable', 'string', 'max:500'],
             'address' => ['nullable', 'string', 'max:500'],

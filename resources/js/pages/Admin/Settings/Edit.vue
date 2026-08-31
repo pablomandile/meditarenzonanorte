@@ -28,6 +28,7 @@ const form = useForm<Record<string, any>>({
     phone_display: props.settings.phone_display ?? '',
     phone_link: props.settings.phone_link ?? '',
     whatsapp_url: props.settings.whatsapp_url ?? '',
+    whatsapp_message: props.settings.whatsapp_message ?? '',
     email: props.settings.email ?? '',
     instagram_url: props.settings.instagram_url ?? '',
     address: props.settings.address ?? '',
@@ -88,11 +89,22 @@ const estados = [
 /** Lo que está publicado ahora mismo, que no es lo mismo que lo elegido sin guardar. */
 const cerrado = computed(() => props.settings.under_construction === '1');
 
-const textFields: { key: string; label: string; placeholder?: string }[] = [
+const textFields: { key: string; label: string; placeholder?: string; hint?: string }[] = [
     { key: 'site_name', label: 'Nombre del sitio' },
     { key: 'phone_display', label: 'Teléfono (como se muestra)', placeholder: '341 6 989430' },
     { key: 'phone_link', label: 'Enlace del teléfono', placeholder: 'tel:+543416989430' },
-    { key: 'whatsapp_url', label: 'Enlace de WhatsApp', placeholder: 'https://wa.me/549341...' },
+    {
+        key: 'whatsapp_url',
+        label: 'Enlace de WhatsApp',
+        placeholder: 'https://wa.me/549341...',
+        hint: 'Solo el número: el mensaje se escribe en el campo de al lado.',
+    },
+    {
+        key: 'whatsapp_message',
+        label: 'Mensaje de WhatsApp',
+        placeholder: 'Hola me gustaría recibir info sobre las actividades.',
+        hint: 'Con qué texto arranca el chat. Vacío, arranca sin ningún mensaje escrito.',
+    },
     { key: 'email', label: 'Email' },
     { key: 'instagram_url', label: 'Instagram', placeholder: '@tu-cuenta o https://instagram.com/tu-cuenta' },
     { key: 'address', label: 'Dirección' },
@@ -142,6 +154,7 @@ const textFields: { key: string; label: string; placeholder?: string }[] = [
                             <div v-for="field in textFields" :key="field.key" class="grid gap-2">
                                 <Label>{{ field.label }}</Label>
                                 <Input v-model="form[field.key]" :placeholder="field.placeholder" />
+                                <p v-if="field.hint" class="text-xs text-muted-foreground">{{ field.hint }}</p>
                                 <p v-if="form.errors[field.key]" class="text-sm text-red-600">{{ form.errors[field.key] }}</p>
                             </div>
                         </div>
