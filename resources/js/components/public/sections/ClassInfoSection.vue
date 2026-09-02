@@ -143,7 +143,7 @@ watch(expanded, () => nextTick(measure));
                         al flujo y la tarjeta crece.
                     -->
                     <div
-                        class="flex flex-col justify-center p-8 md:p-10"
+                        class="flex flex-col justify-center px-8 py-4 md:px-10 md:py-5"
                         :class="[
                             !section.content.image ? 'md:col-span-2' : '',
                             section.content.image && !expanded ? 'md:absolute md:inset-y-0 md:right-0 md:w-1/2 md:overflow-hidden' : '',
@@ -162,9 +162,8 @@ watch(expanded, () => nextTick(measure));
                                 texto) leería "Libertad emocionalcon Kelsang Panchen",
                                 y "con" no debe quedar solo al final de un renglón.
                             -->
-                            {{ section.content.heading }}<span
-                                v-if="teachers"
-                                class="ml-0.5 whitespace-normal text-lg font-normal text-brand-orange md:text-xl"
+                            {{ section.content.heading
+                            }}<span v-if="teachers" class="ml-0.5 whitespace-normal text-base font-normal text-brand-orange md:text-lg"
                                 >&nbsp;con {{ teachers }}</span
                             >
                         </h2>
