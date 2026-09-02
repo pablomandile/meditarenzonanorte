@@ -130,7 +130,8 @@ async function destroy(section: { id: number; title: string | null; type_label: 
                 los enlaces— y el orden del menú se cambia con las flechas del listado.
             -->
             <Card>
-                <CardContent class="grid gap-4 p-4">
+                <!-- [&>*]:min-w-0: sin esto, la vista previa con el enlace largo (truncate) desborda en mobile. -->
+                <CardContent class="grid gap-4 p-4 [&>*]:min-w-0">
                     <div class="grid gap-1.5">
                         <Label for="title">Título de la página</Label>
                         <p class="text-sm text-muted-foreground">El nombre que se ve en la pestaña del navegador y como título en Google.</p>
@@ -190,86 +191,98 @@ async function destroy(section: { id: number; title: string | null; type_label: 
             </Card>
 
             <Card>
-                <CardContent class="p-0">
-                    <div class="divide-y">
+                <!--
+                    En mobile cada sección es una ficha: el nombre arriba y los botones
+                    debajo. De lg para arriba vuelve a ser una fila de la lista.
+                -->
+                <CardContent class="p-3 lg:p-0">
+                    <div class="flex flex-col gap-3 lg:block lg:divide-y">
                         <div
                             v-for="(section, index) in sections"
                             :key="section.id"
-                            class="flex items-center gap-3 overflow-hidden px-4 py-3"
-                            :class="{ 'opacity-50': !section.visible }"
+                            class="flex flex-col gap-3 rounded-lg border p-3 lg:flex-row lg:items-center lg:rounded-none lg:border-0 lg:px-4 lg:py-3"
+                            :class="{ 'opacity-60': !section.visible }"
                         >
-                            <div class="flex flex-col">
-                                <button
-                                    class="rounded p-0.5 text-muted-foreground hover:bg-muted disabled:opacity-30"
-                                    :disabled="index === 0"
-                                    title="Subir"
-                                    @click="move(section.id, 'up')"
-                                >
-                                    <ArrowUp class="h-4 w-4" />
-                                </button>
-                                <button
-                                    class="rounded p-0.5 text-muted-foreground hover:bg-muted disabled:opacity-30"
-                                    :disabled="index === sections.length - 1"
-                                    title="Bajar"
-                                    @click="move(section.id, 'down')"
-                                >
-                                    <ArrowDown class="h-4 w-4" />
-                                </button>
-                            </div>
-
-                            <div class="min-w-0 flex-1">
-                                <p class="flex items-center gap-2 truncate font-medium">
-                                    <span class="truncate">{{ section.title || section.type_label }}</span>
-                                    <span
-                                        v-if="section.is_template"
-                                        class="inline-flex shrink-0 items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+                            <div class="flex min-w-0 flex-1 items-center gap-3">
+                                <div class="flex shrink-0 flex-col">
+                                    <button
+                                        class="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"
+                                        :disabled="index === 0"
+                                        title="Subir"
+                                        @click="move(section.id, 'up')"
                                     >
-                                        <Lock class="h-3 w-3" /> Plantilla
-                                    </span>
-                                </p>
-                                <p class="text-xs text-muted-foreground">{{ section.type_label }}</p>
+                                        <ArrowUp class="h-4 w-4" />
+                                    </button>
+                                    <button
+                                        class="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"
+                                        :disabled="index === sections.length - 1"
+                                        title="Bajar"
+                                        @click="move(section.id, 'down')"
+                                    >
+                                        <ArrowDown class="h-4 w-4" />
+                                    </button>
+                                </div>
+
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate font-medium">{{ section.title || section.type_label }}</p>
+                                    <p class="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                        {{ section.type_label }}
+                                        <span
+                                            v-if="section.is_template"
+                                            class="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 font-medium"
+                                        >
+                                            <Lock class="h-3 w-3" /> Plantilla
+                                        </span>
+                                    </p>
+                                </div>
                             </div>
 
-                            <!-- La plantilla no se muestra ni se elimina: es solo el molde para clonar. -->
-                            <span
-                                v-if="section.is_template"
-                                class="hidden text-xs text-muted-foreground sm:inline"
-                                title="La plantilla queda siempre oculta"
-                            >
-                                Oculta
-                            </span>
-                            <Button
-                                v-else
-                                variant="ghost"
-                                size="sm"
-                                :title="section.visible ? 'Ocultar sección' : 'Mostrar sección'"
-                                @click="toggle(section.id)"
-                            >
-                                <Eye v-if="section.visible" class="h-4 w-4" />
-                                <EyeOff v-else class="h-4 w-4 text-red-500" />
-                                <span class="ml-1.5 hidden sm:inline">{{ section.visible ? 'Visible' : 'Oculta' }}</span>
-                            </Button>
+                            <!--
+                                En mobile los botones bajan de línea si no entran; en desktop
+                                van a la derecha en una sola fila.
+                            -->
+                            <div class="flex flex-wrap items-center gap-2 border-t pt-3 lg:shrink-0 lg:border-0 lg:pt-0">
+                                <!-- La plantilla no se muestra ni se elimina: es solo el molde para clonar. -->
+                                <span
+                                    v-if="section.is_template"
+                                    class="inline-flex items-center gap-1.5 px-2 text-xs text-muted-foreground"
+                                    title="La plantilla queda siempre oculta"
+                                >
+                                    <EyeOff class="h-4 w-4" /> Siempre oculta
+                                </span>
+                                <Button
+                                    v-else
+                                    variant="ghost"
+                                    size="sm"
+                                    :title="section.visible ? 'Ocultar sección' : 'Mostrar sección'"
+                                    @click="toggle(section.id)"
+                                >
+                                    <Eye v-if="section.visible" class="h-4 w-4" />
+                                    <EyeOff v-else class="h-4 w-4 text-red-500" />
+                                    <span class="ml-1.5">{{ section.visible ? 'Visible' : 'Oculta' }}</span>
+                                </Button>
 
-                            <Button variant="ghost" size="sm" title="Clonar sección" @click="duplicate(section)">
-                                <Copy class="h-4 w-4" />
-                                <span class="ml-1.5 hidden sm:inline">Clonar</span>
-                            </Button>
+                                <Button variant="ghost" size="sm" title="Clonar sección" @click="duplicate(section)">
+                                    <Copy class="h-4 w-4" />
+                                    <span class="ml-1.5">Clonar</span>
+                                </Button>
 
-                            <Button as-child size="sm" variant="outline">
-                                <Link :href="`/admin/sections/${section.id}/edit`"> <Pencil class="mr-1 h-4 w-4" /> Editar </Link>
-                            </Button>
+                                <Button as-child size="sm" variant="outline">
+                                    <Link :href="`/admin/sections/${section.id}/edit`"> <Pencil class="mr-1 h-4 w-4" /> Editar </Link>
+                                </Button>
 
-                            <Button
-                                v-if="!section.is_template"
-                                variant="ghost"
-                                size="sm"
-                                class="text-red-600 hover:bg-red-50 hover:text-red-700"
-                                title="Eliminar sección"
-                                @click="destroy(section)"
-                            >
-                                <Trash2 class="h-4 w-4" />
-                                <span class="ml-1.5 hidden sm:inline">Eliminar</span>
-                            </Button>
+                                <Button
+                                    v-if="!section.is_template"
+                                    variant="ghost"
+                                    size="sm"
+                                    class="text-red-600 hover:bg-red-50 hover:text-red-700"
+                                    title="Eliminar sección"
+                                    @click="destroy(section)"
+                                >
+                                    <Trash2 class="h-4 w-4" />
+                                    <span class="ml-1.5">Eliminar</span>
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </CardContent>
