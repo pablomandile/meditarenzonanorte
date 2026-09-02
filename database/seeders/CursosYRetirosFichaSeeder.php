@@ -5,15 +5,12 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 
 /**
- * Agrega a "Cursos y Retiros" una ficha con la misma estructura que las de las
- * clases (class_info: título, descripción, horario, lugar, precio, botón e
- * imagen), justo debajo de la portada.
+ * Agrega a "Cursos y Retiros" la ficha **plantilla**: una "Información de clase"
+ * oculta y no eliminable (columna is_template) de la que el dueño clona la ficha
+ * de cada curso o retiro. Va justo debajo de la portada.
  *
- * Entra **oculta**: el contenido es una plantilla de relleno, así que la página
- * pública no la muestra hasta que se complete y se muestre desde el panel.
- *
- * Repetible y seguro en producción: si la página ya tiene la sección no hace
- * nada, y no toca ninguna otra.
+ * Repetible y seguro en producción: si la página ya tiene la plantilla no hace
+ * nada, y no toca ninguna otra sección.
  *
  *   php artisan db:seed --class=CursosYRetirosFichaSeeder --force
  */
@@ -21,6 +18,6 @@ class CursosYRetirosFichaSeeder extends Seeder
 {
     public function run(): void
     {
-        (new ContentSeeder())->seedMissingSection('cursos-y-retiros', 'curso', visible: false);
+        (new ContentSeeder)->seedMissingSection('cursos-y-retiros', 'plantilla');
     }
 }

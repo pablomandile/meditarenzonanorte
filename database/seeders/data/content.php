@@ -860,11 +860,12 @@ return [
                 ],
             ],
             [
-                // Plantilla de ficha, con la misma estructura que una clase. La
-                // siembra CursosYRetirosFichaSeeder y entra oculta: el contenido
-                // es de relleno y lo completa el dueño antes de publicarla.
+                // La ficha plantilla: 'template' => true la vuelve oculta y no
+                // eliminable (columna is_template). Es de donde el dueño clona la
+                // ficha de cada curso o retiro. La siembra CursosYRetirosFichaSeeder.
                 'type' => 'class_info',
-                'key' => 'curso',
+                'key' => 'plantilla',
+                'template' => true,
                 'content' => [
                     'heading' => 'Nombre del curso o retiro',
                     'teachers' => 'Quién lo dicta',
@@ -872,6 +873,24 @@ return [
                     'schedule' => 'Día y horario',
                     // Vacías a propósito: una fecha de ejemplo terminaría publicada
                     // en el calendario si se muestra la ficha sin completarla.
+                    'occurrences' => [],
+                    'location' => 'Dirección donde se dicta',
+                    'price' => 'Precio o bono',
+                    'cta_label' => 'INSCRIPCIÓN',
+                    'cta_url' => 'https://meditarenargentina.org/tarjeta-kadampa/',
+                    'image' => null,
+                ],
+            ],
+            [
+                // Ficha de ejemplo, ya visible: el dueño la edita con el primer
+                // curso real o la elimina. La estructura es la de una clase.
+                'type' => 'class_info',
+                'key' => 'curso',
+                'content' => [
+                    'heading' => 'Nombre del curso o retiro',
+                    'teachers' => 'Quién lo dicta',
+                    'body' => "Contá de qué se trata: a quién está dirigido, qué se practica y con qué se va quien participa.\n\n*No hace falta experiencia previa ni inscripción.\n\n¡TODO EL MUNDO ES BIENVENIDO!",
+                    'schedule' => 'Día y horario',
                     'occurrences' => [],
                     'location' => 'Dirección donde se dicta',
                     'price' => 'Precio o bono',

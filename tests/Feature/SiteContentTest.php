@@ -482,24 +482,28 @@ class SiteContentTest extends TestCase
         $this->assertNull($section->fresh()->content['image']);
     }
 
-    public function test_template_section_is_seeded_hidden_so_the_public_page_ignores_it(): void
+    public function test_the_template_card_is_seeded_hidden_locked_and_ignored_by_the_public_page(): void
     {
         $page = Page::where('slug', 'cursos-y-retiros')->firstOrFail();
-        $page->sections()->where('key', 'curso')->delete();
 
-        (new ContentSeeder)->seedMissingSection('cursos-y-retiros', 'curso', visible: false);
-
-        $ficha = $page->sections()->where('key', 'curso')->firstOrFail();
+        $plantilla = $page->sections()->where('key', 'plantilla')->firstOrFail();
         $banner = $page->sections()->where('key', 'banner')->firstOrFail();
 
-        $this->assertSame('class_info', $ficha->type);
-        $this->assertFalse($ficha->visible, 'la plantilla entra oculta');
-        $this->assertSame($banner->position + 1, $ficha->position);
+        $this->assertSame('class_info', $plantilla->type);
+        $this->assertTrue($plantilla->is_template, 'es plantilla');
+        $this->assertFalse($plantilla->visible, 'entra oculta');
+        $this->assertFalse($plantilla->show_on_calendar, 'no va al calendario');
+        $this->assertSame($banner->position + 1, $plantilla->position, 'queda justo debajo de la portada');
 
-        // Tiene los mismos campos que una ficha de clase.
+        // Tiene los mismos campos que una ficha de clase: es de donde se clona.
         foreach (['heading', 'body', 'schedule', 'location', 'price', 'cta_label', 'cta_url'] as $field) {
-            $this->assertArrayHasKey($field, $ficha->content);
+            $this->assertArrayHasKey($field, $plantilla->content);
         }
+
+        // Ni el saving() del modelo la deja publicar.
+        $plantilla->update(['visible' => true, 'show_on_calendar' => true]);
+        $this->assertFalse($plantilla->fresh()->visible);
+        $this->assertFalse($plantilla->fresh()->show_on_calendar);
 
         // Y por estar oculta, la página pública no la renderiza.
         $keys = [];
@@ -507,7 +511,15 @@ class SiteContentTest extends TestCase
             $keys = collect($p->toArray()['props']['sections'])->pluck('key')->all();
         });
 
-        $this->assertNotContains('curso', $keys);
+        $this->assertNotContains('plantilla', $keys);
+
+        // Si se borra de la base, el seeder del deploy la vuelve a poner, oculta.
+        $plantilla->delete();
+        (new ContentSeeder)->seedMissingSection('cursos-y-retiros', 'plantilla');
+
+        $repuesta = $page->sections()->where('key', 'plantilla')->firstOrFail();
+        $this->assertTrue($repuesta->is_template);
+        $this->assertFalse($repuesta->visible);
     }
 
     public function test_admin_requires_authentication(): void
@@ -620,6 +632,75 @@ class SiteContentTest extends TestCase
                 'files' => ['image' => UploadedFile::fake()->image('grande.jpg')->size(5000)],
             ])
             ->assertSessionHasErrors('files.image');
+    }
+
+    public function test_admin_can_delete_a_section_and_the_images_it_uploaded(): void
+    {
+        $admin = $this->admin();
+        $home = Page::where('slug', 'home')->firstOrFail();
+        $section = $home->sections()->where('key', 'fundador')->firstOrFail();
+
+        $this->actingAs($admin)->put("/admin/sections/{$section->id}", [
+            'content' => $section->content,
+            'files' => ['image' => UploadedFile::fake()->image('foto.jpg')],
+        ])->assertRedirect();
+
+        $image = $section->fresh()->content['image'];
+        Storage::disk('public')->assertExists($image);
+
+        $this->actingAs($admin)->delete("/admin/sections/{$section->id}")
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('sections', ['id' => $section->id]);
+        Storage::disk('public')->assertMissing($image);
+        $this->get('/')->assertOk()->assertDontSee('El fundador');
+    }
+
+    public function test_deleting_a_section_needs_a_session(): void
+    {
+        $section = Section::whereHas('page', fn ($q) => $q->where('slug', 'home'))
+            ->where('key', 'fundador')->firstOrFail();
+
+        $this->delete("/admin/sections/{$section->id}")->assertRedirect('/login');
+        $this->assertDatabaseHas('sections', ['id' => $section->id]);
+    }
+
+    public function test_the_template_card_cannot_be_deleted_or_shown(): void
+    {
+        $admin = $this->admin();
+        $plantilla = Section::whereHas('page', fn ($q) => $q->where('slug', 'cursos-y-retiros'))
+            ->where('key', 'plantilla')->firstOrFail();
+
+        $this->actingAs($admin)->delete("/admin/sections/{$plantilla->id}")->assertForbidden();
+        $this->assertDatabaseHas('sections', ['id' => $plantilla->id]);
+
+        $this->actingAs($admin)->patch("/admin/sections/{$plantilla->id}/toggle")->assertForbidden();
+        $this->assertFalse($plantilla->fresh()->visible);
+    }
+
+    public function test_cloning_the_template_gives_a_normal_hidden_card(): void
+    {
+        $admin = $this->admin();
+        $page = Page::where('slug', 'cursos-y-retiros')->firstOrFail();
+        $plantilla = $page->sections()->where('key', 'plantilla')->firstOrFail();
+
+        $this->actingAs($admin)->post("/admin/sections/{$plantilla->id}/duplicate")
+            ->assertRedirect()->assertSessionHas('success');
+
+        $copia = $page->sections()->where('key', 'plantilla-copia')->firstOrFail();
+
+        $this->assertSame('class_info', $copia->type);
+        $this->assertFalse($copia->is_template, 'la copia ya no es plantilla');
+        $this->assertFalse($copia->visible, 'entra oculta, como cualquier clon');
+        $this->assertSame($plantilla->content['heading'], $copia->content['heading']);
+
+        // Y la copia sí se puede mostrar y eliminar.
+        $this->actingAs($admin)->patch("/admin/sections/{$copia->id}/toggle")->assertRedirect();
+        $this->assertTrue($copia->fresh()->visible);
+
+        $this->actingAs($admin)->delete("/admin/sections/{$copia->id}")->assertRedirect();
+        $this->assertDatabaseMissing('sections', ['id' => $copia->id]);
     }
 
     public function test_admin_can_create_event_shown_on_home_strip(): void

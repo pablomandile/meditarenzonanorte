@@ -14,6 +14,7 @@ class Section extends Model
         'key',
         'position',
         'visible',
+        'is_template',
         'show_on_calendar',
         'content',
     ];
@@ -22,10 +23,30 @@ class Section extends Model
     {
         return [
             'visible' => 'boolean',
+            'is_template' => 'boolean',
             'show_on_calendar' => 'boolean',
             'position' => 'integer',
             'content' => 'array',
         ];
+    }
+
+    /**
+     * Una plantilla nunca se publica ni va al calendario: es solo el molde para
+     * clonar. Se fuerza acá y no en cada lugar que guarda una sección —el panel,
+     * el seeder, el "mostrar/ocultar"— para que no haya forma de dejarla visible.
+     *
+     * setAttribute() y no `$section->visible = …`: dentro de un closure con scope
+     * de la clase, `visible` toca la propiedad reservada de Eloquent (la lista de
+     * serialización), no la columna.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Section $section) {
+            if ($section->is_template) {
+                $section->setAttribute('visible', false);
+                $section->setAttribute('show_on_calendar', false);
+            }
+        });
     }
 
     public function page(): BelongsTo

@@ -259,9 +259,30 @@ class SectionController extends Controller
 
     public function toggle(Section $section): RedirectResponse
     {
+        // La plantilla nunca se publica: el modelo la volvería a ocultar igual,
+        // pero cortar acá deja claro por qué no cambió nada.
+        abort_if($section->is_template, 403, 'La plantilla no se puede mostrar.');
+
         $section->update(['visible' => ! $section->visible]);
 
         return back()->with('success', $section->visible ? 'Sección visible.' : 'Sección oculta.');
+    }
+
+    /**
+     * Borra una sección y los archivos que subió el dueño para ella. La plantilla
+     * de clonado no se puede borrar: es de donde salen las demás.
+     */
+    public function destroy(Section $section): RedirectResponse
+    {
+        abort_if($section->is_template, 403, 'La plantilla no se puede eliminar.');
+
+        foreach (SectionRegistry::imagePaths($section->type, $section->content ?? []) as $path) {
+            ImageStorage::delete($path);
+        }
+
+        $section->delete();
+
+        return back()->with('success', 'Sección eliminada.');
     }
 
     public function move(Request $request, Section $section): RedirectResponse

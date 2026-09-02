@@ -127,9 +127,10 @@ class ContentSeeder extends Seeder
      * the block is inserted right below the section that precedes it in the data
      * file, the rest shifts down, and running it again does nothing.
      *
-     * $visible = false para plantillas: el bloque entra oculto y la página
+     * $visible = false para bloques de relleno: el bloque entra oculto y la página
      * pública no lo muestra hasta que el dueño termina de completarlo, igual que
-     * hace el clonado de secciones del panel.
+     * hace el clonado de secciones del panel. Un bloque con 'template' => true en
+     * el archivo de datos entra además como plantilla (oculta y no eliminable).
      */
     public function seedMissingSection(string $slug, string $key, bool $visible = true): void
     {
@@ -162,7 +163,9 @@ class ContentSeeder extends Seeder
             Faq::orderBy('position')->pluck('id')->values()->all(),
         );
 
-        DB::transaction(function () use ($page, $sections, $index, $key, $position, $content, $visible) {
+        $isTemplate = $sections[$index]['template'] ?? false;
+
+        DB::transaction(function () use ($page, $sections, $index, $key, $position, $content, $visible, $isTemplate) {
             Section::where('page_id', $page->id)
                 ->where('position', '>=', $position)
                 ->increment('position');
@@ -172,6 +175,9 @@ class ContentSeeder extends Seeder
                 'type' => $sections[$index]['type'],
                 'key' => $key,
                 'position' => $position,
+                'is_template' => $isTemplate,
+                // El saving() del modelo ya fuerza oculta la plantilla; esto deja
+                // el resto como lo pidió el llamador.
                 'visible' => $visible,
                 'content' => $content,
             ]);
@@ -264,13 +270,16 @@ class ContentSeeder extends Seeder
             }
 
             $content = $this->prepareContent($sectionData['type'], $sectionData['content'], $faqIds);
+            $isTemplate = $sectionData['template'] ?? false;
 
             Section::updateOrCreate(
                 ['page_id' => $page->id, 'key' => $sectionData['key']],
                 [
                     'type' => $sectionData['type'],
                     'position' => ++$position,
-                    'visible' => true,
+                    'is_template' => $isTemplate,
+                    // La plantilla nunca se publica; el resto entra visible.
+                    'visible' => ! $isTemplate,
                     'content' => $content,
                 ],
             );

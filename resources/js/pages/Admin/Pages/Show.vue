@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useConfirm } from '@/composables/useConfirm';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, LoaderCircle, Pencil } from 'lucide-vue-next';
+import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, LoaderCircle, Lock, Pencil, Trash2 } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 const props = defineProps<{
@@ -27,6 +27,7 @@ const props = defineProps<{
         title: string | null;
         position: number;
         visible: boolean;
+        is_template: boolean;
     }[];
 }>();
 
@@ -90,6 +91,21 @@ async function duplicate(section: { id: number; title: string | null; type_label
 
     if (accepted) {
         router.post(route('admin.sections.duplicate', section.id), {}, { preserveScroll: true });
+    }
+}
+
+async function destroy(section: { id: number; title: string | null; type_label: string }) {
+    const name = section.title || section.type_label;
+
+    const accepted = await confirm({
+        title: 'Eliminar sección',
+        description: `Se elimina “${name}” para siempre, junto con las imágenes que hayas subido para ella. No se puede deshacer.`,
+        confirmLabel: 'Eliminar',
+        destructive: true,
+    });
+
+    if (accepted) {
+        router.delete(route('admin.sections.destroy', section.id), { preserveScroll: true });
     }
 }
 </script>
@@ -202,13 +218,28 @@ async function duplicate(section: { id: number; title: string | null; type_label
                             </div>
 
                             <div class="min-w-0 flex-1">
-                                <p class="truncate font-medium">
-                                    {{ section.title || section.type_label }}
+                                <p class="flex items-center gap-2 truncate font-medium">
+                                    <span class="truncate">{{ section.title || section.type_label }}</span>
+                                    <span
+                                        v-if="section.is_template"
+                                        class="inline-flex shrink-0 items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+                                    >
+                                        <Lock class="h-3 w-3" /> Plantilla
+                                    </span>
                                 </p>
                                 <p class="text-xs text-muted-foreground">{{ section.type_label }}</p>
                             </div>
 
+                            <!-- La plantilla no se muestra ni se elimina: es solo el molde para clonar. -->
+                            <span
+                                v-if="section.is_template"
+                                class="hidden text-xs text-muted-foreground sm:inline"
+                                title="La plantilla queda siempre oculta"
+                            >
+                                Oculta
+                            </span>
                             <Button
+                                v-else
                                 variant="ghost"
                                 size="sm"
                                 :title="section.visible ? 'Ocultar sección' : 'Mostrar sección'"
@@ -226,6 +257,18 @@ async function duplicate(section: { id: number; title: string | null; type_label
 
                             <Button as-child size="sm" variant="outline">
                                 <Link :href="`/admin/sections/${section.id}/edit`"> <Pencil class="mr-1 h-4 w-4" /> Editar </Link>
+                            </Button>
+
+                            <Button
+                                v-if="!section.is_template"
+                                variant="ghost"
+                                size="sm"
+                                class="text-red-600 hover:bg-red-50 hover:text-red-700"
+                                title="Eliminar sección"
+                                @click="destroy(section)"
+                            >
+                                <Trash2 class="h-4 w-4" />
+                                <span class="ml-1.5 hidden sm:inline">Eliminar</span>
                             </Button>
                         </div>
                     </div>

@@ -56,6 +56,7 @@ class PageController extends Controller
                 ) ?: null,
                 'position' => $section->position,
                 'visible' => $section->visible,
+                'is_template' => $section->is_template,
             ])->values(),
         ]);
     }
