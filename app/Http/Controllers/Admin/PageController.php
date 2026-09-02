@@ -36,10 +36,13 @@ class PageController extends Controller
                 'id' => $page->id,
                 'slug' => $page->slug,
                 'title' => $page->title,
+                // La home es la raíz del sitio y se llega por el logo: nunca va en
+                // el menú, así que su nombre de menú no se ofrece para editar.
+                'menu_label' => $page->slug === 'home' ? null : $page->menu_label,
                 'meta_description' => $page->meta_description,
-                // El título tal como se ve en Google y al compartir el enlace, para
-                // que se entienda qué acompaña la descripción de abajo.
-                'preview_title' => $page->title.' - '.SiteMeta::siteName(),
+                // El nombre del sitio que acompaña al título en Google y al
+                // compartir el enlace; el panel arma la vista previa con él.
+                'site_name' => SiteMeta::siteName(),
                 'url' => $page->slug === 'home' ? url('/') : url('/'.$page->slug),
             ],
             'sections' => $page->sections->map(fn ($section) => [
@@ -58,20 +61,39 @@ class PageController extends Controller
     }
 
     /**
-     * La descripción que se ve en Google y en la vista previa de WhatsApp. Es lo
-     * único de la página que se edita desde el panel: el título, el slug y la
-     * etiqueta del menú siguen viniendo del archivo de datos.
+     * Lo que el dueño edita de la página en sí: el título (el nombre que se ve en
+     * la pestaña del navegador y como título en Google), cómo aparece en el menú
+     * del sitio y la descripción para buscadores.
      *
-     * El límite de 500 es el de la columna; el consejo de 160 vive en el formulario,
-     * porque es una recomendación de los buscadores y no una restricción.
+     * El slug no se toca acá —cambiarlo rompería los enlaces— y el orden del menú
+     * se cambia con las flechas del listado. La home nunca va en el menú, así que
+     * su nombre de menú no se acepta: dejarlo pasar la metería en la barra.
+     *
+     * El límite de 500 en la descripción es el de la columna; el consejo de 160
+     * vive en el formulario, porque es de los buscadores y no una restricción.
      */
-    public function updateMeta(Request $request, Page $page): RedirectResponse
+    public function update(Request $request, Page $page): RedirectResponse
     {
-        $page->update($request->validate([
+        $rules = [
+            'title' => ['required', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
-        ]));
+        ];
 
-        return back()->with('success', 'Descripción guardada.');
+        if ($page->slug !== 'home') {
+            $rules['menu_label'] = ['nullable', 'string', 'max:255'];
+        }
+
+        $data = $request->validate($rules);
+
+        // Vacío en el formulario quiere decir "fuera del menú": la columna guarda
+        // null y Page::inMenu() filtra por menu_label no nulo.
+        if (array_key_exists('menu_label', $data)) {
+            $data['menu_label'] = filled($data['menu_label']) ? trim($data['menu_label']) : null;
+        }
+
+        $page->update($data);
+
+        return back()->with('success', 'Página guardada.');
     }
 
     /**

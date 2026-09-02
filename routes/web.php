@@ -17,7 +17,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::get('pages', [AdminPageController::class, 'index'])->name('pages.index');
     Route::get('pages/{page}', [AdminPageController::class, 'show'])->name('pages.show');
-    Route::patch('pages/{page}/meta', [AdminPageController::class, 'updateMeta'])->name('pages.meta');
+    Route::patch('pages/{page}', [AdminPageController::class, 'update'])->name('pages.update');
     Route::patch('pages/{page}/toggle', [AdminPageController::class, 'toggle'])->name('pages.toggle');
     Route::patch('pages/{page}/move', [AdminPageController::class, 'move'])->name('pages.move');
 

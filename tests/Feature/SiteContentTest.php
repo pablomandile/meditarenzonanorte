@@ -733,12 +733,13 @@ class SiteContentTest extends TestCase
         $props = $this->actingAs($admin)->get("/admin/pages/{$page->id}")->assertOk()->viewData('page')['props'];
 
         $this->assertSame($page->meta_description, $props['page']['meta_description']);
-        $this->assertStringContainsString('Voluntariado - ', $props['page']['preview_title']);
+        $this->assertSame('Voluntariado', $props['page']['title']);
+        $this->assertNotEmpty($props['page']['site_name']);
         $this->assertSame(url('/voluntariado'), $props['page']['url']);
 
         $nueva = 'Sumate como voluntario al centro de meditación kadampa de Zona Norte.';
 
-        $this->actingAs($admin)->patch("/admin/pages/{$page->id}/meta", ['meta_description' => $nueva])
+        $this->actingAs($admin)->patch("/admin/pages/{$page->id}", ['title' => $page->title, 'meta_description' => $nueva])
             ->assertRedirect()
             ->assertSessionHas('success');
 
@@ -750,26 +751,82 @@ class SiteContentTest extends TestCase
         $this->assertStringContainsString('<meta property="og:description" content="'.e($nueva).'">', $html);
 
         // Vaciarla la deja en null y el <head> no emite descripción.
-        $this->actingAs($admin)->patch("/admin/pages/{$page->id}/meta", ['meta_description' => ''])->assertRedirect();
+        $this->actingAs($admin)->patch("/admin/pages/{$page->id}", ['title' => $page->title, 'meta_description' => ''])->assertRedirect();
 
         $this->assertNull($page->fresh()->meta_description);
         $this->assertStringNotContainsString('name="description"', $this->get('/voluntariado')->getContent());
 
         // Más largo que la columna se rechaza, y no toca lo guardado.
-        $this->actingAs($admin)->patch("/admin/pages/{$page->id}/meta", ['meta_description' => str_repeat('a', 501)])
+        $this->actingAs($admin)->patch("/admin/pages/{$page->id}", ['title' => $page->title, 'meta_description' => str_repeat('a', 501)])
             ->assertSessionHasErrors('meta_description');
 
         $this->assertNull($page->fresh()->meta_description);
     }
 
-    public function test_editing_the_description_needs_a_session(): void
+    public function test_admin_can_rename_a_page_and_its_menu_label(): void
+    {
+        $admin = $this->admin();
+        $page = Page::where('slug', 'gratis')->firstOrFail();
+
+        $this->actingAs($admin)->patch("/admin/pages/{$page->id}", [
+            'title' => 'Actividades gratuitas',
+            'menu_label' => 'Gratis y abierto',
+        ])->assertRedirect()->assertSessionHas('success');
+
+        $page->refresh();
+        $this->assertSame('Actividades gratuitas', $page->title);
+        $this->assertSame('Gratis y abierto', $page->menu_label);
+        // El slug no se toca: los enlaces siguen valiendo.
+        $this->assertSame('gratis', $page->slug);
+
+        // El título sale en el <head> y el nombre nuevo, en el menú del sitio.
+        $html = $this->get('/gratis')->assertOk()->getContent();
+        $this->assertStringContainsString('<title inertia>Actividades gratuitas - ', $html);
+
+        $this->get('/')->assertInertia(fn (AssertableInertia $p) => $p->where(
+            'nav',
+            fn ($nav) => collect($nav)->firstWhere('slug', 'gratis')['label'] === 'Gratis y abierto',
+        ));
+
+        // Vaciar el nombre de menú saca la página del menú, pero su dirección sigue.
+        $this->actingAs($admin)->patch("/admin/pages/{$page->id}", [
+            'title' => 'Actividades gratuitas',
+            'menu_label' => '',
+        ])->assertRedirect();
+
+        $this->assertNull($page->fresh()->menu_label);
+        $this->assertNotContains('gratis', $this->navSlugs());
+        $this->get('/gratis')->assertOk();
+
+        // El título es obligatorio.
+        $this->actingAs($admin)->patch("/admin/pages/{$page->id}", ['title' => ''])
+            ->assertSessionHasErrors('title');
+    }
+
+    public function test_home_does_not_accept_a_menu_label(): void
+    {
+        $admin = $this->admin();
+        $home = Page::where('slug', 'home')->firstOrFail();
+
+        $this->actingAs($admin)->patch("/admin/pages/{$home->id}", [
+            'title' => 'Inicio',
+            'menu_label' => 'Inicio',
+        ])->assertRedirect();
+
+        $this->assertSame('Inicio', $home->fresh()->title);
+        $this->assertNull($home->fresh()->menu_label);
+        $this->assertNotContains('home', $this->navSlugs());
+    }
+
+    public function test_editing_a_page_needs_a_session(): void
     {
         $page = Page::where('slug', 'voluntariado')->firstOrFail();
         $original = $page->meta_description;
 
-        $this->patch("/admin/pages/{$page->id}/meta", ['meta_description' => 'colado'])->assertRedirect('/login');
+        $this->patch("/admin/pages/{$page->id}", ['title' => 'Colado', 'meta_description' => 'colado'])->assertRedirect('/login');
 
         $this->assertSame($original, $page->fresh()->meta_description);
+        $this->assertSame('Voluntariado', $page->fresh()->title);
     }
 
     public function test_the_head_carries_the_link_preview_tags_rendered_by_the_server(): void
