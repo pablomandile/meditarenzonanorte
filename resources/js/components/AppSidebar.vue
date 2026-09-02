@@ -5,7 +5,7 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { CalendarDays, CalendarRange, ExternalLink, FileText, HelpCircle, Images, Settings } from 'lucide-vue-next';
+import { CalendarDays, CalendarRange, ExternalLink, FileText, GraduationCap, HelpCircle, Images, Settings } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -41,6 +41,14 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
+const helpNavItems: NavItem[] = [
+    {
+        title: 'Tutoriales',
+        href: '/admin/tutorials',
+        icon: GraduationCap,
+    },
+];
+
 const footerNavItems: NavItem[] = [
     {
         title: 'Ver sitio',
@@ -66,6 +74,7 @@ const footerNavItems: NavItem[] = [
 
         <SidebarContent>
             <NavMain :items="mainNavItems" />
+            <NavMain :items="helpNavItems" label="Ayuda" />
         </SidebarContent>
 
         <SidebarFooter>

@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\MediaController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\SectionController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\TutorialController;
 use App\Http\Controllers\PageController;
 use App\Http\Middleware\UnderConstruction;
 use Illuminate\Support\Facades\Route;
@@ -47,6 +48,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::put('faqs/{faq}', [FaqController::class, 'update'])->name('faqs.update');
     Route::delete('faqs/{faq}', [FaqController::class, 'destroy'])->name('faqs.destroy');
     Route::patch('faqs/{faq}/move', [FaqController::class, 'move'])->name('faqs.move');
+
+    Route::get('tutorials', [TutorialController::class, 'index'])->name('tutorials.index');
+    Route::post('tutorials', [TutorialController::class, 'store'])->name('tutorials.store');
+    Route::put('tutorials/{tutorial}', [TutorialController::class, 'update'])->name('tutorials.update');
+    Route::delete('tutorials/{tutorial}', [TutorialController::class, 'destroy'])->name('tutorials.destroy');
+    Route::patch('tutorials/{tutorial}/move', [TutorialController::class, 'move'])->name('tutorials.move');
 
     Route::get('settings', [SettingController::class, 'edit'])->name('settings.edit');
     Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
