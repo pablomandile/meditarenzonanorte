@@ -482,44 +482,46 @@ class SiteContentTest extends TestCase
         $this->assertNull($section->fresh()->content['image']);
     }
 
-    public function test_the_template_card_is_seeded_hidden_locked_and_ignored_by_the_public_page(): void
+    public function test_the_template_cards_are_seeded_hidden_locked_and_ignored_by_the_public_page(): void
     {
-        $page = Page::where('slug', 'cursos-y-retiros')->firstOrFail();
+        // Las dos páginas con fichas de clase clonables tienen su plantilla.
+        foreach (['cursos-y-retiros', 'clases-semanales'] as $slug) {
+            $page = Page::where('slug', $slug)->firstOrFail();
 
-        $plantilla = $page->sections()->where('key', 'plantilla')->firstOrFail();
-        $banner = $page->sections()->where('key', 'banner')->firstOrFail();
+            $plantilla = $page->sections()->where('key', 'plantilla')->firstOrFail();
+            $banner = $page->sections()->where('key', 'banner')->firstOrFail();
 
-        $this->assertSame('class_info', $plantilla->type);
-        $this->assertTrue($plantilla->is_template, 'es plantilla');
-        $this->assertFalse($plantilla->visible, 'entra oculta');
-        $this->assertFalse($plantilla->show_on_calendar, 'no va al calendario');
-        $this->assertSame($banner->position + 1, $plantilla->position, 'queda justo debajo de la portada');
+            $this->assertSame('class_info', $plantilla->type, $slug);
+            $this->assertTrue($plantilla->is_template, "$slug: es plantilla");
+            $this->assertFalse($plantilla->visible, "$slug: entra oculta");
+            $this->assertFalse($plantilla->show_on_calendar, "$slug: no va al calendario");
+            $this->assertSame($banner->position + 1, $plantilla->position, "$slug: queda justo debajo de la portada");
 
-        // Tiene los mismos campos que una ficha de clase: es de donde se clona.
-        foreach (['heading', 'body', 'schedule', 'location', 'price', 'cta_label', 'cta_url'] as $field) {
-            $this->assertArrayHasKey($field, $plantilla->content);
+            // Tiene los mismos campos que una ficha de clase: es de donde se clona.
+            foreach (['heading', 'body', 'schedule', 'location', 'price', 'cta_label', 'cta_url'] as $field) {
+                $this->assertArrayHasKey($field, $plantilla->content, "$slug.$field");
+            }
+
+            // Ni el saving() del modelo la deja publicar.
+            $plantilla->update(['visible' => true, 'show_on_calendar' => true]);
+            $this->assertFalse($plantilla->fresh()->visible, $slug);
+            $this->assertFalse($plantilla->fresh()->show_on_calendar, $slug);
+
+            // Y por estar oculta, la página pública no la renderiza.
+            $keys = [];
+            $this->get('/'.$slug)->assertOk()->assertInertia(function (AssertableInertia $p) use (&$keys) {
+                $keys = collect($p->toArray()['props']['sections'])->pluck('key')->all();
+            });
+            $this->assertNotContains('plantilla', $keys, $slug);
+
+            // Si se borra de la base, el seeder del deploy la vuelve a poner, oculta.
+            $plantilla->delete();
+            (new ContentSeeder)->seedMissingSection($slug, 'plantilla');
+
+            $repuesta = $page->sections()->where('key', 'plantilla')->firstOrFail();
+            $this->assertTrue($repuesta->is_template, $slug);
+            $this->assertFalse($repuesta->visible, $slug);
         }
-
-        // Ni el saving() del modelo la deja publicar.
-        $plantilla->update(['visible' => true, 'show_on_calendar' => true]);
-        $this->assertFalse($plantilla->fresh()->visible);
-        $this->assertFalse($plantilla->fresh()->show_on_calendar);
-
-        // Y por estar oculta, la página pública no la renderiza.
-        $keys = [];
-        $this->get('/cursos-y-retiros')->assertOk()->assertInertia(function (AssertableInertia $p) use (&$keys) {
-            $keys = collect($p->toArray()['props']['sections'])->pluck('key')->all();
-        });
-
-        $this->assertNotContains('plantilla', $keys);
-
-        // Si se borra de la base, el seeder del deploy la vuelve a poner, oculta.
-        $plantilla->delete();
-        (new ContentSeeder)->seedMissingSection('cursos-y-retiros', 'plantilla');
-
-        $repuesta = $page->sections()->where('key', 'plantilla')->firstOrFail();
-        $this->assertTrue($repuesta->is_template);
-        $this->assertFalse($repuesta->visible);
     }
 
     public function test_admin_requires_authentication(): void
@@ -1516,7 +1518,8 @@ class SiteContentTest extends TestCase
     public function test_admin_calendar_screen_needs_a_session(): void
     {
         $event = Event::create(['title' => 'Charla abierta', 'starts_at' => '2026-08-20', 'visible' => true]);
-        $section = Section::where('type', 'class_info')->firstOrFail();
+        // Una ficha real, no la plantilla: esa está siempre fuera del calendario.
+        $section = Section::where('type', 'class_info')->where('is_template', false)->firstOrFail();
 
         $this->get('/admin/calendar')->assertRedirect('/login');
         $this->patch('/admin/calendar', ['show' => true])->assertRedirect('/login');

@@ -187,6 +187,28 @@ return [
                 ],
             ],
             [
+                // La ficha plantilla: 'template' => true la vuelve oculta y no
+                // eliminable (columna is_template). Es de donde el dueño clona la
+                // ficha de cada clase. La siembra ClasesSemanalesFichaSeeder.
+                'type' => 'class_info',
+                'key' => 'plantilla',
+                'template' => true,
+                'content' => [
+                    'heading' => 'Nombre de la clase',
+                    'teachers' => 'Quién la dicta',
+                    'body' => "Contá de qué se trata: a quién está dirigida, qué se practica y con qué se va quien participa.\n\n*No hace falta experiencia previa ni inscripción.\n\n¡TODO EL MUNDO ES BIENVENIDO!",
+                    'schedule' => 'Día y horario',
+                    // Vacías a propósito: una fecha de ejemplo terminaría publicada
+                    // en el calendario si se muestra la ficha sin completarla.
+                    'occurrences' => [],
+                    'location' => 'Dirección donde se dicta',
+                    'price' => 'Precio o bono',
+                    'cta_label' => 'INSCRIPCIÓN',
+                    'cta_url' => 'https://meditarenargentina.org/tarjeta-kadampa/',
+                    'image' => null,
+                ],
+            ],
+            [
                 'type' => 'class_info',
                 'key' => 'clase-principal',
                 'content' => [
