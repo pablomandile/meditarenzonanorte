@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateSectionRequest;
 use App\Models\Faq;
 use App\Models\Section;
+use App\Models\Teacher;
+use App\Models\Venue;
 use App\Support\ImageStorage;
 use App\Support\Occurrences;
 use App\Support\SectionRegistry;
@@ -38,6 +40,17 @@ class SectionController extends Controller
 
         if ($section->type === 'faq') {
             $props['faqPool'] = Faq::ordered()->get(['id', 'question', 'visible']);
+        }
+
+        // Las listas de "Datos recurrentes" que usan los campos con `pool` (el
+        // maestro y el lugar de las fichas de clase), sólo si el tipo las pide.
+        $pools = collect(SectionRegistry::fields($section->type))->pluck('pool')->filter()->unique();
+
+        if ($pools->contains('teachers')) {
+            $props['pools']['teachers'] = Teacher::ordered()->pluck('name');
+        }
+        if ($pools->contains('venues')) {
+            $props['pools']['venues'] = Venue::ordered()->pluck('name');
         }
 
         // Aclaraciones por campo, debajo del input.

@@ -18,6 +18,8 @@ const props = defineProps<{
     fields: FieldDef[];
     page: { id: number; title: string; slug: string };
     faqPool?: { id: number; question: string; visible: boolean }[];
+    /** Listas de "Datos recurrentes" para los campos con pool (maestro, lugar). */
+    pools?: Record<string, string[]>;
     hints?: Record<string, string>;
 }>();
 
@@ -67,6 +69,7 @@ function submit() {
                             v-model:files="form.files"
                             :errors="form.errors as Record<string, string>"
                             :faq-pool="faqPool"
+                            :pools="pools"
                             :hints="hints"
                         />
                     </CardContent>

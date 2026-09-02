@@ -8,6 +8,8 @@ import LinksField from '@/components/admin/fields/LinksField.vue';
 import OccurrencesField from '@/components/admin/fields/OccurrencesField.vue';
 import PlansField from '@/components/admin/fields/PlansField.vue';
 import SelectField from '@/components/admin/fields/SelectField.vue';
+import SuggestField from '@/components/admin/fields/SuggestField.vue';
+import TagsField from '@/components/admin/fields/TagsField.vue';
 import TextareaField from '@/components/admin/fields/TextareaField.vue';
 import TextField from '@/components/admin/fields/TextField.vue';
 
@@ -16,12 +18,16 @@ export type FieldDef = {
     type: string;
     label: string;
     options?: Record<string, string>;
+    /** Para 'tags' y 'suggest': qué lista de "Datos recurrentes" ofrecer. */
+    pool?: string;
 };
 
 const props = defineProps<{
     fields: FieldDef[];
     errors: Record<string, string>;
     faqPool?: { id: number; question: string; visible: boolean }[];
+    /** Listas de "Datos recurrentes" por nombre (teachers, venues). */
+    pools?: Record<string, string[]>;
     /** Aclaraciones por clave de campo, que el servidor calcula (ej. el horario). */
     hints?: Record<string, string>;
 }>();
@@ -57,12 +63,24 @@ const files = defineModel<Record<string, any>>('files', { required: true });
                 :error="fieldError(field.key)"
             />
 
-            <TextareaField
-                v-else-if="field.type === 'textarea'"
+            <TagsField
+                v-else-if="field.type === 'tags'"
                 v-model="content[field.key]"
                 :label="field.label"
+                :options="pools?.[field.pool ?? ''] ?? []"
                 :error="fieldError(field.key)"
             />
+
+            <SuggestField
+                v-else-if="field.type === 'suggest'"
+                v-model="content[field.key]"
+                :label="field.label"
+                :options="pools?.[field.pool ?? ''] ?? []"
+                :hint="hints?.[field.key]"
+                :error="fieldError(field.key)"
+            />
+
+            <TextareaField v-else-if="field.type === 'textarea'" v-model="content[field.key]" :label="field.label" :error="fieldError(field.key)" />
 
             <SelectField
                 v-else-if="field.type === 'select'"
@@ -81,26 +99,11 @@ const files = defineModel<Record<string, any>>('files', { required: true });
                 :error="fieldError(field.key)"
             />
 
-            <LinksField
-                v-else-if="field.type === 'links'"
-                v-model="content[field.key]"
-                :label="field.label"
-                :error="fieldError(field.key)"
-            />
+            <LinksField v-else-if="field.type === 'links'" v-model="content[field.key]" :label="field.label" :error="fieldError(field.key)" />
 
-            <ItemsField
-                v-else-if="field.type === 'items'"
-                v-model="content[field.key]"
-                :label="field.label"
-                :error="fieldError(field.key)"
-            />
+            <ItemsField v-else-if="field.type === 'items'" v-model="content[field.key]" :label="field.label" :error="fieldError(field.key)" />
 
-            <PlansField
-                v-else-if="field.type === 'plans'"
-                v-model="content[field.key]"
-                :label="field.label"
-                :error="fieldError(field.key)"
-            />
+            <PlansField v-else-if="field.type === 'plans'" v-model="content[field.key]" :label="field.label" :error="fieldError(field.key)" />
 
             <CardsField
                 v-else-if="field.type === 'cards'"

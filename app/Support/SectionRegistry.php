@@ -92,11 +92,13 @@ class SectionRegistry
             'label' => 'Información de clase',
             'fields' => [
                 ['key' => 'heading', 'type' => 'text', 'label' => 'Título'],
-                ['key' => 'teachers', 'type' => 'text', 'label' => 'Maestr@ (varios separados por coma)'],
+                // 'tags' y 'suggest' se completan eligiendo de "Datos recurrentes"
+                // (o a mano). Se guardan igual que un texto: coma para varios.
+                ['key' => 'teachers', 'type' => 'tags', 'label' => 'Maestr@ (varios separados por coma)', 'pool' => 'teachers'],
                 ['key' => 'body', 'type' => 'textarea', 'label' => 'Descripción'],
                 ['key' => 'schedule', 'type' => 'text', 'label' => 'Horario (opcional, se arma solo)'],
                 ['key' => 'occurrences', 'type' => 'occurrences', 'label' => 'Fechas para el calendario'],
-                ['key' => 'location', 'type' => 'text', 'label' => 'Lugar'],
+                ['key' => 'location', 'type' => 'suggest', 'label' => 'Lugar', 'pool' => 'venues'],
                 ['key' => 'price', 'type' => 'text', 'label' => 'Precio'],
                 ['key' => 'cta_label', 'type' => 'text', 'label' => 'Texto del botón'],
                 ['key' => 'cta_url', 'type' => 'url', 'label' => 'URL del botón'],
@@ -250,7 +252,9 @@ class SectionRegistry
             }
 
             match ($field['type']) {
-                'text' => $rules["content.$key"] = ['nullable', 'string', 'max:255'],
+                // tags y suggest son texto: la lista de "Datos recurrentes" es sólo
+                // la ayuda para elegir, lo que se guarda sigue siendo un string.
+                'text', 'tags', 'suggest' => $rules["content.$key"] = ['nullable', 'string', 'max:255'],
                 'textarea' => $rules["content.$key"] = ['nullable', 'string', 'max:10000'],
                 'url' => $rules["content.$key"] = ['nullable', 'string', 'max:500'],
                 'select' => $rules["content.$key"] = ['nullable', 'string', 'in:'.implode(',', array_keys($field['options'] ?? []))],
