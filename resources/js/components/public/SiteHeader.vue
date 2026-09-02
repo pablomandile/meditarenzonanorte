@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { img } from '@/lib/site';
 import { Link, usePage } from '@inertiajs/vue3';
-import { Menu, Phone, X } from 'lucide-vue-next';
+import { Lock, Menu, Phone, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 const page = usePage();
@@ -29,12 +29,7 @@ const open = ref(false);
                 que en un logo apaisado son unos 35px menos de ancho.
             -->
             <Link href="/" class="flex h-full shrink-0 items-center gap-3" aria-label="Inicio">
-                <img
-                    v-if="settings.logo_path"
-                    :src="img(settings.logo_path)"
-                    alt="Logo"
-                    class="h-[75%] w-auto object-contain min-[1400px]:h-[90%]"
-                />
+                <img v-if="settings.logo_path" :src="img(settings.logo_path)" alt="Logo" class="h-[75%] w-auto object-contain min-[1400px]:h-[90%]" />
                 <span v-else class="font-display text-xl text-brand-ink">{{ settings.site_name }}</span>
             </Link>
 
@@ -63,6 +58,16 @@ const open = ref(false);
                     <Phone class="h-4 w-4 shrink-0" />
                     {{ settings.phone_display }}
                 </a>
+
+                <!-- Entrada discreta a la zona segura: sin sesión lleva al login. -->
+                <Link
+                    :href="route('admin.pages.index')"
+                    class="shrink-0 rounded-md p-2 text-brand-muted transition hover:bg-brand-light hover:text-brand-ink"
+                    aria-label="Zona segura para administrar el sitio"
+                    title="Zona segura"
+                >
+                    <Lock class="h-4 w-4" />
+                </Link>
 
                 <button
                     type="button"
