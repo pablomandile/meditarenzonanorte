@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\GoogleAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -29,8 +30,9 @@ class GoogleAuthController extends Controller
     /**
      * Handle the callback from Google and log the user in.
      *
-     * Security: only e-mails present in GOOGLE_ALLOWED_EMAILS may access the
-     * admin panel. Any other Google account is rejected.
+     * Security: only e-mails on the allowlist —GOOGLE_ALLOWED_EMAILS del servidor
+     * más las cuentas habilitadas en Ajustes— may access the admin panel. Any
+     * other Google account is rejected. Ver App\Support\GoogleAccess.
      */
     public function callback(): RedirectResponse
     {
@@ -43,11 +45,7 @@ class GoogleAuthController extends Controller
 
         $email = strtolower((string) $googleUser->getEmail());
 
-        $allowed = collect(explode(',', (string) config('services.google.allowed_emails')))
-            ->map(fn ($e) => strtolower(trim($e)))
-            ->filter();
-
-        if ($allowed->isEmpty() || ! $allowed->contains($email)) {
+        if (! GoogleAccess::isAllowed($email)) {
             return redirect()->route('login')
                 ->withErrors(['email' => 'Esta cuenta de Google no está autorizada para el panel.']);
         }

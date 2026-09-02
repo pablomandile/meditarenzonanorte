@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { type CardItem } from '@/lib/site';
 import { Head, useForm } from '@inertiajs/vue3';
-import { Check, Construction, Eye, Globe, LoaderCircle } from 'lucide-vue-next';
+import { Check, Construction, Eye, Globe, KeyRound, LoaderCircle } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 /** Una fuente del catálogo del servidor. Ver App\Support\Typography. */
@@ -19,6 +19,8 @@ const props = defineProps<{
     fonts: FontOption[];
     /** Los textos de fábrica del cartel de obra. Ver App\Support\Construction. */
     construction: { title: string; message: string };
+    /** Estado del login con Google. Ver App\Support\GoogleAccess. */
+    google: { configured: boolean; owner_emails: string[] };
 }>();
 
 const breadcrumbs = [{ title: 'Ajustes del sitio', href: '/admin/settings' }];
@@ -37,6 +39,7 @@ const form = useForm<Record<string, any>>({
     under_construction: props.settings.under_construction === '1',
     construction_title: props.settings.construction_title ?? '',
     construction_message: props.settings.construction_message ?? '',
+    google_allowed_emails: props.settings.google_allowed_emails ?? '',
     footer_resources: JSON.parse(JSON.stringify(props.settings.footer_resources ?? [])) as CardItem[],
     logo_path: props.settings.logo_path ?? null,
     footer_logo_path: props.settings.footer_logo_path ?? null,
@@ -60,6 +63,9 @@ function submit() {
             form.logo_path = props.settings.logo_path ?? null;
             form.footer_logo_path = props.settings.footer_logo_path ?? null;
             form.footer_resources = JSON.parse(JSON.stringify(props.settings.footer_resources ?? []));
+            // El servidor normaliza la lista (minúscula, sin repetidos, uno por
+            // línea): mostrar lo guardado y no lo que se tipeó.
+            form.google_allowed_emails = props.settings.google_allowed_emails ?? '';
             form.defaults();
         },
     });
@@ -213,6 +219,50 @@ const textFields: { key: string; label: string; placeholder?: string; hint?: str
                             label="Recursos del pie de página (libros / descargas)"
                             :error="form.errors.footer_resources"
                         />
+                    </CardContent>
+                </Card>
+
+                <Card class="mt-4">
+                    <CardContent class="grid gap-4 pt-6">
+                        <div class="grid gap-1">
+                            <Label class="flex items-center gap-2"><KeyRound class="h-4 w-4" /> Acceso con Google</Label>
+                            <p class="text-xs text-muted-foreground">
+                                Estas cuentas de Google pueden entrar con «Continuar con Google» en la pantalla de acceso. Cada una entra al
+                                <span class="font-medium text-brand-ink">panel completo</span>: puede editar todo el sitio. Agregá solo cuentas de
+                                confianza.
+                            </p>
+                        </div>
+
+                        <div
+                            v-if="!google.configured"
+                            class="rounded-lg border border-brand-orange/40 bg-brand-cream px-3 py-2 text-xs text-brand-ink"
+                        >
+                            El login con Google todavía no está configurado en el servidor, así que el botón no aparece en la pantalla de acceso. La
+                            lista de acá abajo queda guardada y lista para cuando se active.
+                        </div>
+
+                        <div v-if="google.owner_emails.length" class="text-xs text-muted-foreground">
+                            Con acceso fijo (no se puede quitar desde acá):
+                            <span class="font-medium text-brand-ink">{{ google.owner_emails.join(', ') }}</span>
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label for="google_allowed_emails">Cuentas habilitadas</Label>
+                            <textarea
+                                id="google_allowed_emails"
+                                v-model="form.google_allowed_emails"
+                                rows="3"
+                                placeholder="otra-persona@gmail.com&#10;tercera-persona@gmail.com"
+                                class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            ></textarea>
+                            <p class="text-xs text-muted-foreground">
+                                Una dirección por línea. Al entrar por primera vez, la cuenta se crea sola; para sacarle el acceso, borrala de la
+                                lista.
+                            </p>
+                            <p v-if="form.errors.google_allowed_emails" class="text-sm text-red-600">
+                                {{ form.errors.google_allowed_emails }}
+                            </p>
+                        </div>
                     </CardContent>
                 </Card>
 

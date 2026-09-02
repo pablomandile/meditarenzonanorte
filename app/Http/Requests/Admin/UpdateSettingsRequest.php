@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Support\GoogleAccess;
 use App\Support\Typography;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -35,6 +36,20 @@ class UpdateSettingsRequest extends FormRequest
             'under_construction' => ['nullable', 'boolean'],
             'construction_title' => ['nullable', 'string', 'max:120'],
             'construction_message' => ['nullable', 'string', 'max:600'],
+            // Cuentas de Google habilitadas para el panel (una por línea). Cada
+            // línea tiene que ser un email. Ver App\Support\GoogleAccess.
+            'google_allowed_emails' => [
+                'nullable',
+                'string',
+                'max:2000',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    foreach (GoogleAccess::parse($value) as $email) {
+                        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                            $fail("«{$email}» no parece un email. Poné una dirección de Google por línea.");
+                        }
+                    }
+                },
+            ],
             // Las rutas viajan de vuelta para poder detectar el "Quitar" del campo
             // de imagen: llegan vacías cuando se sacó el logo.
             'logo_path' => ['nullable', 'string', 'max:500'],

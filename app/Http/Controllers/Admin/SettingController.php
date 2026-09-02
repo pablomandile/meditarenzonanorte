@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateSettingsRequest;
 use App\Models\Setting;
 use App\Support\Construction;
+use App\Support\GoogleAccess;
 use App\Support\ImageStorage;
 use App\Support\Typography;
 use App\Support\WhatsApp;
@@ -46,6 +47,12 @@ class SettingController extends Controller
             // los pinta como marca de agua de los campos vacíos, así lo que se ve
             // ahí es lo que va a salir publicado. Ver App\Support\Construction.
             'construction' => Construction::defaults(),
+            // Para la sección "Acceso con Google": si el login con Google está
+            // configurado en el servidor y qué cuentas ya tienen acceso fijo.
+            'google' => [
+                'configured' => GoogleAccess::configured(),
+                'owner_emails' => GoogleAccess::ownerEmails(),
+            ],
         ]);
     }
 
@@ -70,6 +77,12 @@ class SettingController extends Controller
             // separar el mensaje, o pegado a mano): se guarda solo la parte del
             // número, y el mensaje vive aparte en whatsapp_message.
             Setting::set('whatsapp_url', $data['whatsapp_url'] ? strtok($data['whatsapp_url'], '?') : null);
+        }
+
+        if (array_key_exists('google_allowed_emails', $data)) {
+            // Se guarda normalizado —minúscula, sin repetidos, uno por línea— y sin
+            // los emails que ya vienen fijos del servidor. Ver App\Support\GoogleAccess.
+            Setting::set('google_allowed_emails', GoogleAccess::normalizeForStorage($data['google_allowed_emails']));
         }
 
         /*

@@ -76,7 +76,7 @@ Qué se puede administrar:
 | **Calendario** | Elige **qué eventos aparecen en el calendario** del sitio: lista los eventos visibles con un tilde cada uno y un tilde maestro en el encabezado que marca o desmarca todos de una. Se guarda al instante. Los eventos sin fecha de inicio se listan pero no se pueden tildar (no hay día donde ubicarlos). Las clases **no** pasan por acá: entran solas con sus "Fechas para el calendario". |
 | **Galería** | Grilla con **todas** las imágenes del disco (`sections/`, `events/`, `settings/`, `seed/`) y **dónde se usa cada una**. Permite borrar solo las que no usa nadie: si está en uso muestra el lugar y bloquea el botón, y las sembradas (`seed/…`) tampoco se borran porque el seeder las restaura. El servidor vuelve a comprobarlo al borrar, por si la vista quedó vieja. A diferencia del selector, no colapsa las copias de bytes idénticos: acá se administran archivos. |
 | **Preguntas frecuentes** | Pool global de FAQs compartido entre páginas: editar una vez, se actualiza en todas. Cada sección FAQ elige qué preguntas muestra. |
-| **Ajustes del sitio** | **Logo del menú** y **logo del pie** por separado (`logo_path` y `footer_logo_path`): pueden ser archivos distintos, y si el del pie está vacío el pie usa el del menú. El **ícono de la pestaña** (favicon) es el logo del pie, con el del menú como respaldo: `Setting::favicon()` lo resuelve y `app.blade.php` lo emite en el `<head>` con el tipo MIME deducido de la extensión. Se prefiere el del pie porque suele ser el isotipo cuadrado; el del menú es el logo ancho con el nombre al lado, que a 16 px no se lee. Como la ruta lleva un hash, cambiar el logo cambia la URL y no queda un ícono viejo en caché. Teléfono, WhatsApp, email, Instagram, dirección y los recursos (libros) del pie de página. La **fuente de los títulos** (tres de Google, o la de siempre) y el **estado del sitio**: publicado o [en construcción](#modo-en-construcción). |
+| **Ajustes del sitio** | **Logo del menú** y **logo del pie** por separado (`logo_path` y `footer_logo_path`): pueden ser archivos distintos, y si el del pie está vacío el pie usa el del menú. El **ícono de la pestaña** (favicon) es el logo del pie, con el del menú como respaldo: `Setting::favicon()` lo resuelve y `app.blade.php` lo emite en el `<head>` con el tipo MIME deducido de la extensión. Se prefiere el del pie porque suele ser el isotipo cuadrado; el del menú es el logo ancho con el nombre al lado, que a 16 px no se lee. Como la ruta lleva un hash, cambiar el logo cambia la URL y no queda un ícono viejo en caché. Teléfono, WhatsApp, email, Instagram, dirección y los recursos (libros) del pie de página. La **fuente de los títulos** (tres de Google, o la de siempre), el **acceso con Google** (qué cuentas pueden entrar al panel, ver [Login con Google](#login-con-google-opcional)) y el **estado del sitio**: publicado o [en construcción](#modo-en-construcción). |
 
 ### Modo "En construcción"
 
@@ -112,7 +112,10 @@ Qué se respeta solo:
 
 ### Login con Google (opcional)
 
-Además del login con email/contraseña, el panel soporta **"Continuar con Google"** (Laravel Socialite). Por seguridad —el `/admin` es de un solo dueño— solo entran los emails de una **lista blanca**.
+Además del login con email/contraseña, el panel soporta **"Continuar con Google"** (Laravel Socialite). Solo entran las cuentas de una **lista blanca**, que se arma de dos lados que se suman (`App\Support\GoogleAccess`):
+
+- **`GOOGLE_ALLOWED_EMAILS`** en el `.env` del servidor: el/los email(s) del dueño. Es la lista fija, no se edita desde el panel para que un error ahí no lo deje afuera.
+- **Ajustes → Acceso con Google**: las cuentas que el dueño habilita después, sin tocar el servidor. Se guardan en el ajuste `google_allowed_emails` (una por línea, normalizadas a minúscula y sin repetir). Cualquiera de esas cuentas entra al panel **completo** (no hay roles); al entrar por primera vez, el `User` se crea solo.
 
 1. Crear credenciales OAuth 2.0 en [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → *Aplicación web*.
    - URI de redirección autorizado: `https://TU_DOMINIO/auth/google/callback` (y `http://meditazn.test/auth/google/callback` para local).
@@ -120,7 +123,7 @@ Además del login con email/contraseña, el panel soporta **"Continuar con Googl
    ```env
    GOOGLE_CLIENT_ID=...
    GOOGLE_CLIENT_SECRET=...
-   GOOGLE_ALLOWED_EMAILS=persona@gmail.com   # separados por coma
+   GOOGLE_ALLOWED_EMAILS=persona@gmail.com   # el dueño; separados por coma
    ```
    El `GOOGLE_REDIRECT_URI` se deriva de `APP_URL` (podés fijarlo si querés uno distinto).
 
