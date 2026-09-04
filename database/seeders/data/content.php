@@ -73,11 +73,16 @@ return [
                 ],
             ],
             [
-                'type' => 'quote',
+                'type' => 'reviews',
                 'key' => 'testimonio',
                 'content' => [
-                    'quote' => 'Me encantó participar en la meditación , muy cálidos y amables todos por ser la primera vez que asistía, salí mas liviana mas ligera y queriendo volver.',
-                    'author' => 'Mariel Aguirre',
+                    'reviews' => [
+                        [
+                            'quote' => 'Me encantó participar en la meditación , muy cálidos y amables todos por ser la primera vez que asistía, salí mas liviana mas ligera y queriendo volver.',
+                            'author' => 'Mariel Aguirre',
+                            'rating' => 5,
+                        ],
+                    ],
                 ],
             ],
             [

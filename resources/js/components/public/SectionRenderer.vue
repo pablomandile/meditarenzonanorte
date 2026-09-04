@@ -13,7 +13,7 @@ import MapSection from '@/components/public/sections/MapSection.vue';
 import PageHeaderSection from '@/components/public/sections/PageHeaderSection.vue';
 import PersonSection from '@/components/public/sections/PersonSection.vue';
 import PricingSection from '@/components/public/sections/PricingSection.vue';
-import QuoteSection from '@/components/public/sections/QuoteSection.vue';
+import ReviewsSection from '@/components/public/sections/ReviewsSection.vue';
 import TextBlockSection from '@/components/public/sections/TextBlockSection.vue';
 import TextImageSection from '@/components/public/sections/TextImageSection.vue';
 import { type CalendarData } from '@/lib/calendar';
@@ -33,7 +33,7 @@ const components: Record<string, Component> = {
     page_header: PageHeaderSection,
     text_block: TextBlockSection,
     text_image: TextImageSection,
-    quote: QuoteSection,
+    reviews: ReviewsSection,
     card_grid: CardGridSection,
     bullet_list: BulletListSection,
     gallery: GallerySection,

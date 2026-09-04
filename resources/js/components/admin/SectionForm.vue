@@ -7,6 +7,7 @@ import ItemsField from '@/components/admin/fields/ItemsField.vue';
 import LinksField from '@/components/admin/fields/LinksField.vue';
 import OccurrencesField from '@/components/admin/fields/OccurrencesField.vue';
 import PlansField from '@/components/admin/fields/PlansField.vue';
+import ReviewsField from '@/components/admin/fields/ReviewsField.vue';
 import SelectField from '@/components/admin/fields/SelectField.vue';
 import SuggestField from '@/components/admin/fields/SuggestField.vue';
 import TagsField from '@/components/admin/fields/TagsField.vue';
@@ -104,6 +105,8 @@ const files = defineModel<Record<string, any>>('files', { required: true });
             <ItemsField v-else-if="field.type === 'items'" v-model="content[field.key]" :label="field.label" :error="fieldError(field.key)" />
 
             <PlansField v-else-if="field.type === 'plans'" v-model="content[field.key]" :label="field.label" :error="fieldError(field.key)" />
+
+            <ReviewsField v-else-if="field.type === 'reviews'" v-model="content[field.key]" :label="field.label" :error="fieldError(field.key)" />
 
             <CardsField
                 v-else-if="field.type === 'cards'"

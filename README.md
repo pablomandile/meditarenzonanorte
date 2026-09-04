@@ -144,7 +144,7 @@ El botón "Continuar con Google" aparece en el login **solo si `GOOGLE_CLIENT_ID
   | `page_header` | Encabezado con banda de color (naranja/celeste) |
   | `text_block` | Bloque de texto (con imagen y enlaces opcionales) |
   | `text_image` | Texto con imagen a un lado |
-  | `quote` | Testimonio / cita |
+  | `reviews` | Reseñas (carrusel de a 2, con estrellas) |
   | `card_grid` | Grilla de tarjetas |
   | `bullet_list` | Lista de ítems |
   | `gallery` | Galería de imágenes |

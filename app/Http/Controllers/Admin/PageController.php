@@ -51,7 +51,7 @@ class PageController extends Controller
                 'type_label' => SectionRegistry::label($section->type),
                 'key' => $section->key,
                 'title' => Str::limit(
-                    str_replace("\n", ' ', $section->content['heading'] ?? $section->content['quote'] ?? ''),
+                    str_replace("\n", ' ', $section->content['heading'] ?? $section->content['reviews'][0]['quote'] ?? ''),
                     70,
                 ) ?: null,
                 'position' => $section->position,

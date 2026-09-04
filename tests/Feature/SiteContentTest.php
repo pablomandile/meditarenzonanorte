@@ -156,6 +156,66 @@ class SiteContentTest extends TestCase
         $this->get('/')->assertDontSee('Mariel Aguirre');
     }
 
+    private function reviewsSection(): Section
+    {
+        return Section::whereHas('page', fn ($q) => $q->where('slug', 'home'))
+            ->where('key', 'testimonio')->firstOrFail();
+    }
+
+    public function test_reviews_section_publishes_every_review(): void
+    {
+        $this->reviewsSection()->update(['content' => ['reviews' => [
+            ['quote' => 'Primera reseña.', 'author' => 'Ana', 'rating' => 5],
+            ['quote' => 'Segunda reseña.', 'author' => 'Beto', 'rating' => 4],
+            ['quote' => 'Tercera reseña.', 'author' => 'Carla', 'rating' => 3],
+        ]]]);
+
+        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('sections.'.$this->sectionIndex('testimonio').'.content.reviews', [
+                ['quote' => 'Primera reseña.', 'author' => 'Ana', 'rating' => 5],
+                ['quote' => 'Segunda reseña.', 'author' => 'Beto', 'rating' => 4],
+                ['quote' => 'Tercera reseña.', 'author' => 'Carla', 'rating' => 3],
+            ]));
+    }
+
+    /** La posición de una sección dentro de las props públicas de la home. */
+    private function sectionIndex(string $key): int
+    {
+        return Section::whereHas('page', fn ($q) => $q->where('slug', 'home'))
+            ->visible()->orderBy('position')->pluck('key')->search($key);
+    }
+
+    public function test_saving_reviews_drops_empty_rows_and_stores_the_rating_as_an_integer(): void
+    {
+        $section = $this->reviewsSection();
+
+        $this->actingAs($this->admin())
+            ->put("/admin/sections/{$section->id}", ['content' => ['reviews' => [
+                ['quote' => 'Vale.', 'author' => 'Ana', 'rating' => '4'],
+                // Sin texto no es una reseña: se descarta aunque tenga autor.
+                ['quote' => '   ', 'author' => 'Beto', 'rating' => '5'],
+                // Sin puntaje explícito quedan las 5 estrellas de siempre.
+                ['quote' => 'También vale.', 'author' => null, 'rating' => null],
+            ]]])
+            ->assertRedirect();
+
+        $this->assertSame([
+            ['quote' => 'Vale.', 'author' => 'Ana', 'rating' => 4],
+            ['quote' => 'También vale.', 'author' => null, 'rating' => 5],
+        ], $section->fresh()->content['reviews']);
+    }
+
+    public function test_review_rating_outside_one_to_five_is_rejected(): void
+    {
+        $section = $this->reviewsSection();
+
+        $this->actingAs($this->admin())
+            ->put("/admin/sections/{$section->id}", ['content' => ['reviews' => [
+                ['quote' => 'Vale.', 'author' => 'Ana', 'rating' => 9],
+            ]]])
+            ->assertSessionHasErrors('content.reviews.0.rating');
+    }
+
     public function test_missing_section_seeder_inserts_the_cover_without_touching_edited_sections(): void
     {
         $page = Page::where('slug', 'clases-semanales')->firstOrFail();

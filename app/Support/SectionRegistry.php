@@ -12,6 +12,7 @@ namespace App\Support;
  *  - links: repeater of {label, url}.
  *  - cards: repeater of {image, title, text, url}; card image files arrive under files[key][i][image].
  *  - items: repeater of plain strings.
+ *  - reviews: repeater of {quote, author, rating 1..5}.
  *  - images: repeater of storage paths; files arrive under files[key][i].
  *  - faq_picker: ordered array of faq ids stored under content[faq_ids].
  *  - occurrences: repeater de reglas de fecha para el calendario
@@ -59,11 +60,11 @@ class SectionRegistry
                 ['key' => 'link_url', 'type' => 'url', 'label' => 'URL del enlace'],
             ],
         ],
-        'quote' => [
-            'label' => 'Testimonio / cita',
+        'reviews' => [
+            'label' => 'Reseñas',
             'fields' => [
-                ['key' => 'quote', 'type' => 'textarea', 'label' => 'Cita'],
-                ['key' => 'author', 'type' => 'text', 'label' => 'Autor'],
+                ['key' => 'heading', 'type' => 'text', 'label' => 'Título (opcional)'],
+                ['key' => 'reviews', 'type' => 'reviews', 'label' => 'Reseñas'],
             ],
         ],
         'card_grid' => [
@@ -278,6 +279,12 @@ class SectionRegistry
                 'items' => [
                     $rules["content.$key"] = ['nullable', 'array', 'max:24'],
                     $rules["content.$key.*"] = ['nullable', 'string', 'max:500'],
+                ],
+                'reviews' => [
+                    $rules["content.$key"] = ['nullable', 'array', 'max:24'],
+                    $rules["content.$key.*.quote"] = ['nullable', 'string', 'max:2000'],
+                    $rules["content.$key.*.author"] = ['nullable', 'string', 'max:255'],
+                    $rules["content.$key.*.rating"] = ['nullable', 'integer', 'between:1,5'],
                 ],
                 'plans' => [
                     $rules["content.$key"] = ['nullable', 'array', 'max:6'],

@@ -143,6 +143,20 @@ class SectionController extends Controller
                     ));
                     break;
 
+                // Una reseña sin texto no es nada: se descarta. El puntaje se guarda
+                // entero para que el JSON quede estable, y por defecto son 5 estrellas,
+                // que es como se venían mostrando todas.
+                case 'reviews':
+                    $content[$key] = array_values(array_map(fn ($review) => [
+                        'quote' => self::blankToNull($review['quote'] ?? null),
+                        'author' => self::blankToNull($review['author'] ?? null),
+                        'rating' => is_numeric($review['rating'] ?? null) ? (int) $review['rating'] : 5,
+                    ], array_filter(
+                        $content[$key] ?? [],
+                        fn ($review) => trim((string) ($review['quote'] ?? '')) !== '',
+                    )));
+                    break;
+
                 case 'faq_picker':
                     $content[$key] = array_values(array_map('intval', $content[$key] ?? []));
                     break;
