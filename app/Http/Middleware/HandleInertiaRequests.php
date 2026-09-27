@@ -94,6 +94,9 @@ class HandleInertiaRequests extends Middleware
             },
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
+                // Para lo que falla del otro lado y no es un error de validación: que
+                // Mailchimp rechace un envío, por ejemplo. Sin esto no se vería nada.
+                'error' => fn () => $request->session()->get('error'),
             ],
         ]);
     }

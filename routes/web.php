@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\FaqController;
 use App\Http\Controllers\Admin\GalleryController;
 use App\Http\Controllers\Admin\MediaController;
+use App\Http\Controllers\Admin\NewsletterController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Admin\RecurringDataController;
 use App\Http\Controllers\Admin\SectionController;
@@ -55,6 +56,18 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::put('tutorials/{tutorial}', [TutorialController::class, 'update'])->name('tutorials.update');
     Route::delete('tutorials/{tutorial}', [TutorialController::class, 'destroy'])->name('tutorials.destroy');
     Route::patch('tutorials/{tutorial}/move', [TutorialController::class, 'move'])->name('tutorials.move');
+
+    Route::get('newsletters', [NewsletterController::class, 'index'])->name('newsletters.index');
+    Route::post('newsletters', [NewsletterController::class, 'store'])->name('newsletters.store');
+    Route::get('newsletters/{newsletter}/edit', [NewsletterController::class, 'edit'])->name('newsletters.edit');
+    Route::put('newsletters/{newsletter}', [NewsletterController::class, 'update'])->name('newsletters.update');
+    Route::delete('newsletters/{newsletter}', [NewsletterController::class, 'destroy'])->name('newsletters.destroy');
+    Route::get('newsletters/{newsletter}/preview', [NewsletterController::class, 'preview'])->name('newsletters.preview');
+    Route::post('newsletters/{newsletter}/duplicate', [NewsletterController::class, 'duplicate'])->name('newsletters.duplicate');
+    Route::post('newsletters/{newsletter}/test', [NewsletterController::class, 'sendTest'])->name('newsletters.test');
+    Route::patch('newsletters/{newsletter}/schedule', [NewsletterController::class, 'schedule'])->name('newsletters.schedule');
+    Route::patch('newsletters/{newsletter}/unschedule', [NewsletterController::class, 'unschedule'])->name('newsletters.unschedule');
+    Route::post('newsletters/{newsletter}/send', [NewsletterController::class, 'sendNow'])->name('newsletters.send');
 
     Route::get('datos-recurrentes', [RecurringDataController::class, 'index'])->name('recurring.index');
     Route::post('datos-recurrentes/maestros', [RecurringDataController::class, 'storeTeacher'])->name('recurring.teachers.store');

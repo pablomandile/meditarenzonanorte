@@ -25,6 +25,13 @@
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
         <env name="MAIL_MAILER" value="array"/>
+        <!--
+            Los tests nunca usan la cuenta real de Mailchimp: sin esto leerían la clave
+            del .env de quien corre la suite, y el resultado dependería de qué tiene
+            configurado cada máquina. El que necesita credenciales las pone con config().
+        -->
+        <env name="MAILCHIMP_API_KEY" value=""/>
+        <env name="MAILCHIMP_LIVE_SENDS" value=""/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

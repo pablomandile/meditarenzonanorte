@@ -50,6 +50,16 @@ class UpdateSettingsRequest extends FormRequest
                     }
                 },
             ],
+            // Newsletter. La API key NO está acá: es un secreto y vive en el .env.
+            // Esto es lo que se elige y se cambia sin tocar el servidor: a qué
+            // audiencia se le manda y con qué nombre sale firmado.
+            // 'auto': los programados salen solos a su hora. 'manual': no sale nada
+            // sin que alguien apriete el botón. Ver App\Support\NewsletterSender.
+            'newsletter_mode' => ['nullable', 'in:auto,manual'],
+            'newsletter_list_id' => ['nullable', 'string', 'max:50'],
+            'newsletter_from_name' => ['nullable', 'string', 'max:100'],
+            'newsletter_reply_to' => ['nullable', 'email', 'max:255'],
+            'newsletter_test_email' => ['nullable', 'email', 'max:255'],
             // Las rutas viajan de vuelta para poder detectar el "Quitar" del campo
             // de imagen: llegan vacías cuando se sacó el logo.
             'logo_path' => ['nullable', 'string', 'max:500'],

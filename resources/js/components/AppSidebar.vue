@@ -5,7 +5,7 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { CalendarDays, CalendarRange, Database, ExternalLink, FileText, GraduationCap, HelpCircle, Images, Settings } from 'lucide-vue-next';
+import { CalendarDays, CalendarRange, Database, ExternalLink, FileText, GraduationCap, HelpCircle, Images, Mail, Settings } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -28,6 +28,11 @@ const mainNavItems: NavItem[] = [
         title: 'Galería',
         href: '/admin/gallery',
         icon: Images,
+    },
+    {
+        title: 'Newsletter',
+        href: '/admin/newsletters',
+        icon: Mail,
     },
     {
         title: 'Preguntas frecuentes',
