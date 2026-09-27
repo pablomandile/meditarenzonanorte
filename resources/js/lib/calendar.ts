@@ -38,6 +38,10 @@ export type CalendarData = {
     weekdays: string[];
     sources: CalendarSource[];
     weeks: CalendarWeek[];
+    /** 'Y-m' del mes anterior, o null en el borde de la ventana navegable. */
+    prev: string | null;
+    /** 'Y-m' del mes siguiente, o null en el borde de la ventana navegable. */
+    next: string | null;
 };
 
 /** Los días de la semana, empezando el lunes como la grilla del servidor. */

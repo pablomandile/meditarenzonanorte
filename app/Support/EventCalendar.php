@@ -23,21 +23,33 @@ class EventCalendar
      */
     public const TIMEZONE = 'America/Argentina/Buenos_Aires';
 
+    /**
+     * Cuántos meses se puede adelantar desde el mes en curso. El calendario es
+     * para mirar lo que viene, no un archivo: un solo mes alcanza para los
+     * últimos días, cuando ya hay más cargado en el mes siguiente que en el
+     * actual, sin abrir una navegación libre a cualquier fecha.
+     */
+    private const MONTHS_AHEAD = 1;
+
     /** Encabezados de las columnas. Los nombres largos salen de SpanishDate. */
     private const WEEKDAY_HEADERS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
     /**
-     * El mes en curso, y sólo ése: la grilla no navega a otros meses ni muestra
-     * los días de los vecinos. Las celdas que sobran al principio y al final
-     * viajan como null, para que la vista las deje vacías.
+     * El mes pedido, acotado entre el mes en curso y self::MONTHS_AHEAD meses más
+     * allá: fuera de esa ventana (o si $month no es un "Y-m" válido) se sirve el
+     * mes en curso, sin error. Las celdas que sobran al principio y al final de la
+     * grilla viajan como null, para que la vista las deje vacías.
      *
      * @return array<string, mixed>
      */
-    public static function currentMonth(): array
+    public static function forMonth(mixed $month = null): array
     {
         $today = CarbonImmutable::today(self::TIMEZONE);
-        $first = $today->startOfMonth();
-        $last = $today->endOfMonth();
+        $current = $today->startOfMonth();
+        $limit = $current->addMonths(self::MONTHS_AHEAD);
+
+        $first = self::parseMonth($month, $current, $limit);
+        $last = $first->endOfMonth();
 
         $activities = self::activities($first, $last);
 
@@ -75,7 +87,7 @@ class EventCalendar
                 $cursor = $cursor->addDay();
             }
 
-            $weeks[] = ['label' => self::weekLabel($days), 'days' => $days];
+            $weeks[] = ['label' => self::weekLabel($days, $first), 'days' => $days];
         }
 
         return [
@@ -85,7 +97,31 @@ class EventCalendar
             'weekdays' => self::WEEKDAY_HEADERS,
             'sources' => self::sources(),
             'weeks' => $weeks,
+            'prev' => $first->greaterThan($current) ? $first->subMonth()->format('Y-m') : null,
+            'next' => $first->lessThan($limit) ? $first->addMonth()->format('Y-m') : null,
         ];
+    }
+
+    /**
+     * El "Y-m" pedido por query string, si es válido y cae dentro de la ventana
+     * navegable; si no —vacío, mal formado, de otro mes, o de un ?mes[]= que ni
+     * siquiera es string—, se cae al mes en curso. A propósito no tira 422 ni
+     * redirige: un enlace favorito viejo, o cualquier otra basura, simplemente
+     * abre el mes en curso.
+     */
+    private static function parseMonth(mixed $month, CarbonImmutable $current, CarbonImmutable $limit): CarbonImmutable
+    {
+        if (! is_string($month) || ! preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month)) {
+            return $current;
+        }
+
+        $parsed = CarbonImmutable::createFromFormat('!Y-m-d', $month.'-01', self::TIMEZONE);
+
+        if (! $parsed || $parsed->lessThan($current) || $parsed->greaterThan($limit)) {
+            return $current;
+        }
+
+        return $parsed;
     }
 
     /**
@@ -290,10 +326,12 @@ class EventCalendar
     /**
      * El rango de la semana, contando sólo sus días del mes (las semanas de los
      * bordes tienen menos de siete). Es el encabezado de la vista de celular.
+     * $month es el mes que se está dibujando, no necesariamente el de hoy: al
+     * navegar al mes siguiente el encabezado tiene que acompañar.
      *
      * @param  array<int, array<string, mixed>|null>  $days
      */
-    private static function weekLabel(array $days): string
+    private static function weekLabel(array $days, CarbonImmutable $month): string
     {
         $numbers = array_column(array_filter($days), 'day');
 
@@ -303,9 +341,9 @@ class EventCalendar
 
         $first = (int) min($numbers);
         $last = (int) max($numbers);
-        $month = SpanishDate::month(CarbonImmutable::today(self::TIMEZONE)->month);
+        $monthName = SpanishDate::month($month->month);
 
-        return ($first === $last ? $first : $first.' al '.$last).' de '.$month;
+        return ($first === $last ? $first : $first.' al '.$last).' de '.$monthName;
     }
 
     private static function firstLine(mixed $value): ?string

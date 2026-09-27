@@ -58,7 +58,7 @@ class PageController extends Controller
         }
 
         if ($types->contains('event_calendar')) {
-            $props['calendar'] = EventCalendar::currentMonth();
+            $props['calendar'] = EventCalendar::forMonth(request()->query('mes'));
         }
 
         $faqIds = $sections->where('type', 'faq')

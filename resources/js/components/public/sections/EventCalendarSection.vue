@@ -3,14 +3,24 @@ import CalendarActivity from '@/components/public/CalendarActivity.vue';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DIAS, sourceStyles, styleFor, timeLabel, type CalendarData } from '@/lib/calendar';
 import { paragraphs, type SectionData } from '@/lib/site';
-import { Link } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{ section: SectionData; calendar?: CalendarData }>();
 
+const page = usePage();
+
+const loading = ref(false);
 const selectedDate = ref<string | null>(null);
 const weekIndex = ref(0);
+/**
+ * Qué semana mostrar cuando llega el mes pedido con goToMonth: 1 arrancó
+ * (empieza en la semana 0), -1 volvió (termina en la última). Ninguna semana
+ * de un mes queda vacía (la 0 siempre tiene el día 1, la última el día final),
+ * así que alcanza con la punta, sin comparar lunes contra el mes anterior.
+ */
+const pending = ref<1 | -1 | null>(null);
 
 const weeks = computed(() => props.calendar?.weeks ?? []);
 const week = computed(() => weeks.value[weekIndex.value] ?? null);
@@ -18,25 +28,76 @@ const styles = computed(() => sourceStyles(props.calendar?.sources ?? []));
 const days = computed(() => weeks.value.flatMap((w) => w.days).filter((day) => day !== null));
 const hasActivities = computed(() => days.value.some((day) => day.activities.length > 0));
 const selectedDay = computed(() => days.value.find((day) => day.date === selectedDate.value) ?? null);
+const isCurrentMonth = computed(() => props.calendar?.month === props.calendar?.today.slice(0, 7));
 
 /** En celular se muestra una semana por vez, dentro del mes. */
 const weekDays = computed(() => (week.value?.days ?? []).filter((day) => day !== null));
 const weekHasToday = computed(() => weekDays.value.some((day) => day.is_today));
 
+/** Pide el mes por partial reload: preserveState mantiene weekIndex y pending vivos durante el cruce. */
+function goToMonth(month: string | null | undefined, dir: 1 | -1 | null = null) {
+    if (!month || loading.value) return;
+
+    pending.value = dir;
+
+    router.get(
+        page.url.split('?')[0],
+        { mes: month },
+        {
+            only: ['calendar'],
+            preserveState: true,
+            preserveScroll: true,
+            onStart: () => (loading.value = true),
+            onFinish: () => (loading.value = false),
+        },
+    );
+}
+
 function stepWeek(direction: -1 | 1) {
     const next = weekIndex.value + direction;
 
-    if (next >= 0 && next < weeks.value.length) weekIndex.value = next;
+    if (next >= 0 && next < weeks.value.length) {
+        weekIndex.value = next;
+
+        return;
+    }
+
+    goToMonth(direction === 1 ? props.calendar?.next : props.calendar?.prev, direction);
 }
 
-/** Arranca en la semana de hoy, que es la que la persona vino a ver. */
-function pickTodaysWeek() {
+/** Qué semana mostrar cuando llegan los datos de un mes: ver el comentario de `pending`. */
+function pickWeek() {
+    if (pending.value !== null) {
+        weekIndex.value = pending.value === 1 ? 0 : weeks.value.length - 1;
+        pending.value = null;
+
+        return;
+    }
+
     const found = weeks.value.findIndex((w) => w.days.some((day) => day?.is_today));
 
     weekIndex.value = found >= 0 ? found : 0;
 }
 
-watch(() => props.calendar?.month, pickTodaysWeek, { immediate: true });
+function goToToday() {
+    pending.value = null;
+
+    if (isCurrentMonth.value) {
+        pickWeek();
+    } else {
+        goToMonth(props.calendar?.today.slice(0, 7));
+    }
+}
+
+// Al cambiar de mes se cierra el detalle abierto: sería de un día que ya no se ve.
+watch(
+    () => props.calendar?.month,
+    () => {
+        selectedDate.value = null;
+        pickWeek();
+    },
+    { immediate: true },
+);
 
 function dayAriaLabel(label: string, count: number): string {
     if (!count) return label;
@@ -60,15 +121,61 @@ function dayAriaLabel(label: string, count: number): string {
                 {{ p }}
             </p>
 
-            <h3 class="mb-5 mt-8 hidden text-center font-heading text-2xl font-light leading-none text-brand-sky first-letter:uppercase md:block md:text-[28px]">
-                {{ calendar.label }}
-            </h3>
+            <p class="sr-only" role="status" aria-live="polite">
+                {{ loading ? 'Cargando el calendario…' : `Mostrando ${calendar.label}` }}
+            </p>
+
+            <!-- Navegación por mes: en celular se navega por semana (ver más abajo). -->
+            <div class="mb-5 mt-8 hidden items-center justify-center gap-3 md:flex">
+                <button
+                    type="button"
+                    :disabled="!calendar.prev || loading"
+                    aria-label="Mes anterior"
+                    title="Mes anterior"
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-brand-sky ring-1 ring-brand-line transition hover:bg-brand-light disabled:opacity-40"
+                    @click="goToMonth(calendar.prev, -1)"
+                >
+                    <ChevronLeft class="h-5 w-5" />
+                </button>
+
+                <h3
+                    class="min-w-[13rem] text-center font-heading text-2xl font-light leading-none text-brand-sky first-letter:uppercase md:text-[28px]"
+                >
+                    {{ calendar.label }}
+                </h3>
+
+                <button
+                    type="button"
+                    :disabled="!calendar.next || loading"
+                    aria-label="Mes siguiente"
+                    title="Mes siguiente"
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-brand-sky ring-1 ring-brand-line transition hover:bg-brand-light disabled:opacity-40"
+                    @click="goToMonth(calendar.next, 1)"
+                >
+                    <ChevronRight class="h-5 w-5" />
+                </button>
+
+                <button
+                    v-if="!isCurrentMonth"
+                    type="button"
+                    :disabled="loading"
+                    class="ml-2 rounded-full px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-brand-sky ring-1 ring-brand-sky/40 transition hover:bg-brand-light disabled:opacity-40"
+                    @click="goToToday"
+                >
+                    hoy
+                </button>
+            </div>
 
             <!-- Escritorio: la grilla del mes. Es una tabla de verdad (día × semana). -->
-            <div class="hidden md:block">
-                <div class="overflow-hidden rounded-xl">
+            <div class="hidden md:block" :aria-busy="loading">
+                <div class="overflow-hidden rounded-xl transition-opacity" :class="loading ? 'pointer-events-none opacity-40' : 'opacity-100'">
                     <table class="w-full table-fixed border-collapse">
-                        <caption class="sr-only">Actividades de {{ calendar.label }}</caption>
+                        <caption class="sr-only">
+                            Actividades de
+                            {{
+                                calendar.label
+                            }}
+                        </caption>
                         <thead>
                             <tr>
                                 <th
@@ -162,7 +269,7 @@ function dayAriaLabel(label: string, count: number): string {
                 <div class="mb-3 mt-6 flex items-center gap-1">
                     <button
                         type="button"
-                        :disabled="weekIndex === 0"
+                        :disabled="(weekIndex === 0 && !calendar.prev) || loading"
                         aria-label="Semana anterior"
                         title="Semana anterior"
                         class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-brand-sky ring-1 ring-brand-line transition hover:bg-brand-light disabled:opacity-30"
@@ -180,7 +287,7 @@ function dayAriaLabel(label: string, count: number): string {
 
                     <button
                         type="button"
-                        :disabled="weekIndex >= weeks.length - 1"
+                        :disabled="(weekIndex >= weeks.length - 1 && !calendar.next) || loading"
                         aria-label="Semana siguiente"
                         title="Semana siguiente"
                         class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-brand-sky ring-1 ring-brand-line transition hover:bg-brand-light disabled:opacity-30"
@@ -191,10 +298,10 @@ function dayAriaLabel(label: string, count: number): string {
                 </div>
 
                 <button
-                    v-if="!weekHasToday"
+                    v-if="!weekHasToday || !isCurrentMonth"
                     type="button"
                     class="mx-auto mb-3 block rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wide text-brand-sky ring-1 ring-brand-sky/40"
-                    @click="pickTodaysWeek"
+                    @click="goToToday"
                 >
                     volver a hoy
                 </button>
