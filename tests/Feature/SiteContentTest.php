@@ -1066,12 +1066,14 @@ class SiteContentTest extends TestCase
         Setting::set('footer_logo_path', 'settings/isotipo.avif');
         $this->assertNull(Setting::favicon()['type']);
 
-        // Y sin ningún logo no se emite el enlace.
+        // Y sin ningún logo cae al ícono genérico de la PWA, nunca a uno de storage.
         Setting::set('footer_logo_path', null);
         Setting::set('logo_path', null);
 
         $this->assertNull(Setting::favicon());
-        $this->get('/')->assertOk()->assertDontSee('rel="icon"', false);
+        $this->get('/')->assertOk()
+            ->assertSee('<link rel="icon" type="image/png" href="/icons/icon-192.png?v=1">', false)
+            ->assertDontSee('<link rel="icon" type="image/png" href="/storage/', false);
     }
 
     /** Ruta del logo que el pie está mostrando, leída de los props compartidos. */
