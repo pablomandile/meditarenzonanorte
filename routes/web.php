@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\FaqController;
 use App\Http\Controllers\Admin\GalleryController;
 use App\Http\Controllers\Admin\MediaController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
+use App\Http\Controllers\Admin\PopupController;
 use App\Http\Controllers\Admin\RecurringDataController;
 use App\Http\Controllers\Admin\SectionController;
 use App\Http\Controllers\Admin\SettingController;
@@ -61,6 +62,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::delete('datos-recurrentes/maestros/{teacher}', [RecurringDataController::class, 'destroyTeacher'])->name('recurring.teachers.destroy');
     Route::post('datos-recurrentes/lugares', [RecurringDataController::class, 'storeVenue'])->name('recurring.venues.store');
     Route::delete('datos-recurrentes/lugares/{venue}', [RecurringDataController::class, 'destroyVenue'])->name('recurring.venues.destroy');
+
+    Route::get('popup', [PopupController::class, 'edit'])->name('popup.edit');
+    Route::post('popup', [PopupController::class, 'update'])->name('popup.update');
 
     Route::get('settings', [SettingController::class, 'edit'])->name('settings.edit');
     Route::post('settings', [SettingController::class, 'update'])->name('settings.update');

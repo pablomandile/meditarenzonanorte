@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import SectionRenderer from '@/components/public/SectionRenderer.vue';
+import SitePopup, { type PopupData } from '@/components/public/SitePopup.vue';
 import { useHashScroll } from '@/composables/useHashScroll';
 import PublicLayout from '@/layouts/PublicLayout.vue';
 import { type CalendarData } from '@/lib/calendar';
@@ -16,6 +17,8 @@ defineProps<{
     homeEvents?: EventData[];
     faqs?: Record<number, FaqItem>;
     calendar?: CalendarData;
+    /** Solo en la portada, y null si está apagado. Ver PageController::popup(). */
+    popup?: PopupData | null;
 }>();
 </script>
 
@@ -34,5 +37,7 @@ defineProps<{
             :faqs="faqs"
             :calendar="calendar"
         />
+
+        <SitePopup v-if="popup" :popup="popup" />
     </PublicLayout>
 </template>

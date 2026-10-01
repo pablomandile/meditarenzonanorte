@@ -6,6 +6,7 @@ use App\Models\Event;
 use App\Models\Faq;
 use App\Models\Page;
 use App\Models\Section;
+use App\Models\Setting;
 use App\Support\EventCalendar;
 use App\Support\Occurrences;
 use Illuminate\Http\RedirectResponse;
@@ -72,7 +73,47 @@ class PageController extends Controller
                 ->map(fn ($faq) => ['question' => $faq->question, 'answer' => $faq->answer]);
         }
 
+        // El pop-up sale solo en la portada. Se arma en Admin\PopupController.
+        if ($page->slug === 'home') {
+            $props['popup'] = self::popup();
+        }
+
         return Inertia::render('Public/Page', $props);
+    }
+
+    /**
+     * Lo que necesita SitePopup.vue, o null si está apagado o si el evento elegido
+     * ya no se publica: un pop-up que lleva a un evento oculto no tiene sentido.
+     *
+     * @return array<string, mixed>|null
+     */
+    private static function popup(): ?array
+    {
+        if (Setting::get('popup_enabled') !== '1') {
+            return null;
+        }
+
+        $kind = Setting::get('popup_kind', 'image');
+        $event = null;
+
+        if ($kind === 'event') {
+            $event = Event::visible()->find(Setting::get('popup_event_id'));
+
+            if (! $event) {
+                return null;
+            }
+        } elseif (! Setting::get('popup_image_path')) {
+            return null;
+        }
+
+        return [
+            'version' => Setting::get('popup_version', '0'),
+            'mode' => Setting::get('popup_mode', 'once'),
+            'kind' => $kind,
+            'text' => Setting::get('popup_text'),
+            'image_path' => Setting::get('popup_image_path'),
+            'event' => $event,
+        ];
     }
 
     /**

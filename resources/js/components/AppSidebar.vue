@@ -6,7 +6,7 @@ import PwaInstallSidebarItem from '@/components/PwaInstallSidebarItem.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { CalendarDays, CalendarRange, Database, ExternalLink, FileText, GraduationCap, HelpCircle, Images, Settings } from 'lucide-vue-next';
+import { CalendarDays, CalendarRange, Database, ExternalLink, FileText, GraduationCap, HelpCircle, Images, MessageSquare, Settings } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -34,6 +34,11 @@ const mainNavItems: NavItem[] = [
         title: 'Preguntas frecuentes',
         href: '/admin/faqs',
         icon: HelpCircle,
+    },
+    {
+        title: 'Mensaje Pop-up',
+        href: '/admin/popup',
+        icon: MessageSquare,
     },
     {
         title: 'Datos recurrentes',
