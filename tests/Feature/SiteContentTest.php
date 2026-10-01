@@ -1090,11 +1090,11 @@ class SiteContentTest extends TestCase
     // ---------------------------------------------------------------- calendario
 
     /** El prop del calendario, tal como lo recibe EventCalendarSection.vue. */
-    private function calendar(): array
+    private function calendar(string $query = ''): array
     {
         $data = [];
 
-        $this->get('/calendario')->assertOk()->assertInertia(function (AssertableInertia $page) use (&$data) {
+        $this->get('/calendario'.$query)->assertOk()->assertInertia(function (AssertableInertia $page) use (&$data) {
             $data = $page->toArray()['props']['calendar'];
         });
 
@@ -1106,11 +1106,11 @@ class SiteContentTest extends TestCase
      *
      * @return array<string, array<int, string>>
      */
-    private function calendarDays(): array
+    private function calendarDays(string $query = ''): array
     {
         $days = [];
 
-        foreach ($this->calendar()['weeks'] as $week) {
+        foreach ($this->calendar($query)['weeks'] as $week) {
             foreach (array_filter($week['days']) as $day) {
                 if ($day['activities']) {
                     $days[$day['date']] = array_column($day['activities'], 'title');
@@ -1133,9 +1133,9 @@ class SiteContentTest extends TestCase
         $this->assertSame('Lun', $calendar['weekdays'][0]);
         $this->assertSame('Dom', $calendar['weekdays'][6]);
 
-        // Sin navegación: el calendario es siempre el mes en curso.
-        $this->assertArrayNotHasKey('prev', $calendar);
-        $this->assertArrayNotHasKey('next', $calendar);
+        // Desde el mes en curso se puede avanzar un mes, pero no retroceder.
+        $this->assertNull($calendar['prev']);
+        $this->assertSame('2026-09', $calendar['next']);
 
         // Las filas siguen teniendo 7 celdas para que cada día caiga bajo su
         // columna, pero las de los meses vecinos van vacías.
@@ -1278,32 +1278,77 @@ class SiteContentTest extends TestCase
         $this->assertNotContains('Retiro de fin de semana', $days['2026-08-31'] ?? []);
     }
 
-    public function test_the_calendar_is_always_the_current_month_and_ignores_any_query_string(): void
+    public function test_the_calendar_navigates_one_month_ahead_and_no_further(): void
     {
         $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
 
-        // No se puede pedir otro mes: un ?mes= viejo (o cualquier parámetro) se
-        // ignora y la página responde el mes en curso, sin 422 ni redirección.
-        foreach (['?mes=2026-09', '?mes=2025-03', '?mes=basura', '?cualquier=cosa'] as $query) {
-            $data = [];
+        // Un mes adelante sí se puede pedir, y trae su propia navegación.
+        $september = $this->calendar('?mes=2026-09');
+        $this->assertSame('2026-09', $september['month']);
+        $this->assertSame('septiembre de 2026', $september['label']);
+        $this->assertSame('2026-08', $september['prev']);
+        $this->assertNull($september['next']);
+        // El "hoy" no cambia: sigue siendo el día real, y no cae en este mes.
+        $this->assertSame('2026-08-15', $september['today']);
+        $todays = collect($september['weeks'])->flatMap(fn ($week) => array_filter($week['days']))->where('is_today', true);
+        $this->assertCount(0, $todays);
 
-            $this->get('/calendario'.$query)->assertOk()->assertInertia(function (AssertableInertia $page) use (&$data) {
-                $data = $page->toArray()['props']['calendar'];
-            });
+        // Pero no más lejos, ni con basura: todo eso cae en el mes en curso, sin
+        // 422 ni redirección.
+        foreach (['?mes=2026-10', '?mes=2026-07', '?mes=2025-03', '?mes=2026-13', '?mes=basura', '?mes[]=2026-09', '?cualquier=cosa'] as $query) {
+            $data = $this->calendar($query);
 
             $this->assertSame('2026-08', $data['month'], "$query debería seguir mostrando agosto");
         }
 
-        // Y al cambiar el mes, el calendario acompaña.
+        // Y al cambiar el mes en curso, el calendario acompaña.
         $this->travelTo(Carbon::parse('2026-09-10 12:00', EventCalendar::TIMEZONE));
 
-        $september = $this->calendar();
-        $this->assertSame('2026-09', $september['month']);
-        $this->assertSame('septiembre de 2026', $september['label']);
-        $this->assertSame('2026-09-10', $september['today']);
+        $current = $this->calendar();
+        $this->assertSame('2026-09', $current['month']);
+        $this->assertSame('septiembre de 2026', $current['label']);
+        $this->assertSame('2026-09-10', $current['today']);
 
         // Las clases semanales sembradas no tienen vigencia, así que siguen ahí.
         $this->assertContains('Clases semanales', $this->calendarDays()['2026-09-02'] ?? []);
+    }
+
+    public function test_week_labels_in_the_next_month_use_that_months_name(): void
+    {
+        $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
+
+        // weekLabel() arma el nombre del mes con el mes que se dibuja, no con el
+        // de hoy: si tomara "hoy" (agosto), esta semana diría "de agosto".
+        $september = $this->calendar('?mes=2026-09');
+
+        $this->assertSame('1 al 6 de septiembre', $september['weeks'][0]['label']);
+    }
+
+    public function test_the_next_month_shows_its_own_activities(): void
+    {
+        $this->travelTo(Carbon::parse('2026-08-15 12:00', EventCalendar::TIMEZONE));
+
+        // La clase semanal sembrada, sin vigencia, cae en sus miércoles de septiembre.
+        $septemberDays = $this->calendarDays('?mes=2026-09');
+        $this->assertContains('Clases semanales', $septemberDays['2026-09-02'] ?? []);
+        $this->assertContains('Clases semanales', $septemberDays['2026-09-30'] ?? []);
+
+        // Una ficha con vigencia hasta agosto no llega a septiembre.
+        $clase = Section::whereHas('page', fn ($query) => $query->where('slug', 'clases-semanales'))
+            ->where('key', 'clase-principal')
+            ->firstOrFail();
+        $clase->update(['content' => [
+            ...$clase->content,
+            'occurrences' => [
+                ['type' => 'weekly', 'weekday' => 3, 'date' => null, 'from' => null, 'until' => '2026-08-31', 'start' => '19:00', 'end' => '20:15', 'label' => null],
+            ],
+        ]]);
+
+        $days = $this->calendarDays();
+        $this->assertContains('Clases semanales', $days['2026-08-26'] ?? []);
+
+        $septemberDays = $this->calendarDays('?mes=2026-09');
+        $this->assertNotContains('Clases semanales', $septemberDays['2026-09-02'] ?? []);
     }
 
     public function test_calendar_uses_the_argentine_day_and_not_utc(): void

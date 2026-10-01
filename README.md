@@ -110,10 +110,10 @@ Qué se respeta solo:
 
 - **Ocultar** una ficha de clase, o su página, la saca del calendario. Misma regla que el resto del sitio: lo que no se ve, no está.
 - Una actividad cargada dos veces (misma fecha, título, hora y lugar) **aparece una sola vez por día** — pasa con las meditaciones que están tanto en Clases semanales como en Gratis, y al clonar una sección.
-- **Es siempre el mes en curso**: no hay navegación a otros meses ni `?mes=`, y las celdas de los meses vecinos que completan la primera y la última fila van **vacías** (viajan como `null`, sin número ni actividades). Las filas conservan las 7 celdas para que cada día caiga bajo su columna.
-- El “hoy” y el mes se calculan en **hora de Argentina**, no en UTC: `config/app.php` sigue en UTC y la zona vive en `EventCalendar::TIMEZONE`. Sin eso, a las 21 del 31 de agosto el calendario ya mostraría septiembre.
+- **Abre en el mes en curso y deja avanzar uno más**: la flecha adelante lleva a `?mes=YYYY-MM` con el mes siguiente; desde ahí la flecha atrás vuelve. No se puede ir más lejos ni al pasado — pedir un mes fuera de esa ventana, o un `?mes=` mal escrito, cae en el mes en curso sin 422 ni redirección. Las celdas de los meses vecinos que completan la primera y la última fila van **vacías** (viajan como `null`, sin número ni actividades). Las filas conservan las 7 celdas para que cada día caiga bajo su columna.
+- El “hoy” y el mes en curso se calculan en **hora de Argentina**, no en UTC: `config/app.php` sigue en UTC y la zona vive en `EventCalendar::TIMEZONE`. Sin eso, a las 21 del 31 de agosto el calendario ya mostraría septiembre.
 - Los nombres de meses y días están escritos a mano en `EventCalendar` (`APP_LOCALE` es `en`, así que Carbon devolvería inglés). Cada día viaja con su `weekday` ISO para que la vista no tenga que parsear fechas en el navegador.
-- En **escritorio** es la grilla del mes con píldoras por día (hasta 2, después “+N más”) y el detalle del día en un modal; en **celular** es una semana por vez con las actividades desplegadas, moviéndose sólo entre las semanas del mes. El color y el ícono de cada píldora identifican de qué página sale la actividad (hay una referencia debajo).
+- En **escritorio** es la grilla del mes con píldoras por día (hasta 2, después “+N más”), el detalle del día en un modal, y flechas de mes con un botón “hoy” que aparece al alejarse del mes en curso; en **celular** es una semana por vez con las actividades desplegadas — la misma flecha de semana, al llegar al borde del mes, cruza al mes siguiente o anterior según la ventana navegable. El color y el ícono de cada píldora identifican de qué página sale la actividad (hay una referencia debajo).
 
 ### Login con Google (opcional)
 
@@ -133,6 +133,44 @@ Además del login con email/contraseña, el panel soporta **"Continuar con Googl
    El `GOOGLE_REDIRECT_URI` se deriva de `APP_URL` (podés fijarlo si querés uno distinto).
 
 El botón "Continuar con Google" aparece en el login **solo si `GOOGLE_CLIENT_ID` está configurado**. Cualquier cuenta fuera de la lista blanca es rechazada aunque el login de Google sea exitoso.
+
+### Newsletter (Mailchimp)
+
+El panel arma el newsletter **eligiendo fichas de clase y eventos que ya están cargados en el sitio** —sin volver a tipear título, horario, lugar ni precio— y lo manda por la API de Mailchimp. Mailchimp aporta sólo la lista de suscriptores y la entrega; el armado y la programación son de acá.
+
+**Por qué la programación es nuestra.** El plan gratuito de Mailchimp no incluye programar envíos (`POST /campaigns/{id}/actions/schedule` es de Essentials para arriba), así que la fecha y la hora se guardan en la tabla `newsletters` y el comando `newsletter:send-due`, llamado por el cron, dispara lo que venció. El resultado para quien lo usa es idéntico. Ojo con la confusión clásica: **la cuota de envíos es de la cuenta, no de la interfaz** — mandar por la API gasta exactamente lo mismo que mandar desde el editor de ellos. `php artisan mailchimp:ping` dice qué plan es la cuenta y cuántos suscriptores tiene.
+
+Configuración, en dos lugares a propósito:
+
+```env
+MAILCHIMP_API_KEY=...-us11   # la clave, entera: el final es el centro de datos
+MAILCHIMP_LIVE_SENDS=false   # en true SÓLO en producción
+```
+
+Cuidado con dónde se copia la clave: la pantalla del **Mobile SDK** de Mailchimp muestra una clave con la misma forma (`32 hex-us11`) que **no sirve** para la Marketing API y devuelve `401 API Key Invalid`. La buena sale de **Account & billing → Extras → API keys** (`https://<dc>.admin.mailchimp.com/account/api/`).
+
+**`MAILCHIMP_LIVE_SENDS` va en `true` en un solo servidor.** El interruptor existe porque el proyecto tiene dos instalaciones en Hostinger y **las dos corren con `APP_ENV=production`**, así que atar los envíos al entorno no distinguiría producción del entorno de pruebas: un "Enviar ahora" apretado para probar saldría a los suscriptores reales. Donde el interruptor está apagado, programar y enviar quedan bloqueados —el panel lo muestra y lo explica— y **la prueba a la casilla propia sigue funcionando**, que es lo único que hace falta para desarrollar. El peor caso de olvidarse de prenderlo es un envío que no sale; el peor caso del criterio contrario son novecientos correos que no se pueden deshacer.
+
+y en **Ajustes del sitio → Newsletter**, la audiencia (se elige de un desplegable que lee las audiencias de la cuenta), el nombre del remitente y la casilla de respuesta. Eso no son credenciales y cambian sin tocar el servidor.
+
+El flujo: **Newsletter → Nuevo** → elegir clases y eventos y ordenarlos → **Vista previa** y **Enviar prueba** a la propia casilla → **Programar** día y hora (hora de Argentina; se guarda UTC) → el cron lo manda.
+
+**Modo de envío** (Ajustes → Newsletter): en **Automático** los programados salen solos a su hora; en **Manual** el cron no manda nada y cada envío lo dispara una persona. Sirve para las vacaciones o para los meses en que se quiere revisar cada envío antes de que salga. Al pasar a manual, lo que ya estaba programado **no se cancela ni vuelve a borrador**: queda esperando con su fecha vencida y el listado lo muestra como *"le llegó la hora y está listo para que lo mandes"*. Ese mismo aviso, en modo automático, significa otra cosa —que el cron no está corriendo— y el texto lo dice así.
+
+Son tres cosas distintas y las tres tienen que dar verde para que salga un envío automático: `MAILCHIMP_LIVE_SENDS` (qué servidor puede mandar), el modo de envío (decisión editorial, en el panel) y que el cron esté configurado. El botón **Enviar ahora** depende sólo de la primera: el modo manual no impide mandar, impide que salga *solo*.
+
+Dos decisiones que conviene no deshacer sin entenderlas:
+
+- **El mail se congela al programarlo.** `NewsletterSender::freeze()` dibuja el HTML y lo guarda en la fila; el cron sube eso y no vuelve a mirar el sitio. Así borrar una ficha el martes no rompe el envío del miércoles, editarla no cambia lo que ya se decidió mandar, y queda archivado tal cual lo que recibió la gente. De paso evita que `url()` corra desde el CLI, donde cae en `APP_URL` y las imágenes podrían salir apuntando a `localhost`.
+- **Nunca mandar dos veces.** `NewsletterSender::send()` reclama el newsletter con un `UPDATE` condicional (el segundo proceso ve cero filas y se va), guarda el id de campaña **antes** de enviar, y si al reintentar ya hay uno le pregunta a Mailchimp cómo quedó antes de hacer nada. Por eso el cliente HTTP **no reintenta los 4xx** y un newsletter en estado `sending` no se reintenta solo nunca: eso lo mira una persona.
+
+El HTML del mail es propio (`resources/views/emails/newsletter.blade.php`), con tablas y estilos en cada etiqueta porque Gmail borra el `<style>` del `<head>` y Outlook no entiende flex. Cabecera y pie salen de Ajustes del sitio, así que son iguales en todos los envíos. El enlace `*|UNSUB|*` tiene que ir como `href` de un `<a>` —no como texto suelto— o Mailchimp rechaza la campaña.
+
+Para que el cron corra en Hostinger hace falta **una** tarea en hPanel, cada minuto, sin `cd ... &&` (el ejecutor de hPanel no lo soporta):
+
+```
+/opt/alt/php84/usr/bin/php /home/u108242632/domains/meditarenzonanorte.org/<carpeta-app>/artisan schedule:run
+```
 
 ## Arquitectura de contenido
 
@@ -154,7 +192,7 @@ El botón "Continuar con Google" aparece en el login **solo si `GOOGLE_CLIENT_ID
   | `pricing` | Planes / abonos (tarjetas de precios) |
   | `event_strip` | Eventos destacados en la home |
   | `event_list` | Listado de eventos |
-  | `event_calendar` | Grilla mensual (mes en escritorio, semana en celular) |
+  | `event_calendar` | Grilla mensual (mes en escritorio, semana en celular; navega hasta un mes adelante) |
   | `map` | Mapa embebido de Google Maps |
   | `faq` | Preguntas frecuentes (elige del pool global) |
 
