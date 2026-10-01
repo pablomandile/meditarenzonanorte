@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PwaInstallBanner from '@/components/PwaInstallBanner.vue';
 import SiteFooter from '@/components/public/SiteFooter.vue';
 import SiteHeader from '@/components/public/SiteHeader.vue';
 import { Link, usePage } from '@inertiajs/vue3';
@@ -35,6 +36,8 @@ const avisoDeObra = computed(() => Boolean(page.props.auth?.user && settings.val
             <Construction class="h-4 w-4 shrink-0" />
             <span class="truncate">El sitio está en construcción para las visitas</span>
         </Link>
+
+        <PwaInstallBanner />
 
         <a
             v-if="settings.whatsapp_url"

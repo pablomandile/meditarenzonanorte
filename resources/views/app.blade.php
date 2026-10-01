@@ -53,7 +53,46 @@
                 <link rel="icon" href="/storage/{{ $favicon['path'] }}">
             @endif
             <link rel="apple-touch-icon" href="/storage/{{ $favicon['path'] }}">
+        @else
+            <link rel="icon" type="image/png" href="/icons/icon-192.png?v=1">
+            <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=1">
         @endif
+
+        {{-- PWA --}}
+        <link rel="manifest" href="/manifest.webmanifest">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="default">
+        <meta name="apple-mobile-web-app-title" content="Meditar ZN">
+
+        {{--
+            El evento beforeinstallprompt llega apenas carga la página, antes de que
+            Monte Vue. Si lo capturaríamos en un componente (onMounted) ya pasó y el
+            botón de instalación nunca aparece. Por eso va acá, como script inline.
+        --}}
+        <script>
+            (function () {
+                window.__pwaInstall = { prompt: null, installed: false };
+
+                window.addEventListener('beforeinstallprompt', function (e) {
+                    e.preventDefault();
+                    window.__pwaInstall.prompt = e;
+                    window.dispatchEvent(new CustomEvent('pwa:installable'));
+                });
+
+                window.addEventListener('appinstalled', function () {
+                    window.__pwaInstall.prompt = null;
+                    window.__pwaInstall.installed = true;
+                    window.dispatchEvent(new CustomEvent('pwa:installed'));
+                });
+
+                if ('serviceWorker' in navigator) {
+                    window.addEventListener('load', function () {
+                        navigator.serviceWorker.register('/sw.js?v=1').catch(function () {});
+                    });
+                }
+            })();
+        </script>
 
         {{-- Si no hay fuente elegida no se emite nada y no se descarga nada. --}}
         @if ($fuente)

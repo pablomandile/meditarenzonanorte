@@ -76,6 +76,43 @@ Route::get('dashboard', fn () => redirect()->route('admin.pages.index'))
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
 
+// PWA manifest dinámico — usa el logo real cargado en Ajustes.
+// El archivo estático public/manifest.webmanifest fue eliminado para que el
+// rewrite de .htaccess pase la petición acá y se sirva el ícono correcto.
+Route::get('/manifest.webmanifest', function () {
+    $favicon = rescue(fn () => \App\Models\Setting::favicon(), null, false);
+    $name = rescue(fn () => \App\Models\Setting::get('site_name'), null, false) ?? 'Meditar en Zona Norte';
+    $shortName = mb_strlen($name) <= 12 ? $name : 'Meditar ZN';
+
+    $icons = [];
+
+    // Si hay un logo cargado en PNG/WebP/JPEG lo usamos como ícono principal.
+    if ($favicon && in_array($favicon['type'], ['image/png', 'image/webp', 'image/jpeg'])) {
+        $src = '/storage/'.$favicon['path'];
+        $icons[] = ['src' => $src, 'sizes' => 'any', 'type' => $favicon['type'], 'purpose' => 'any'];
+        $icons[] = ['src' => $src, 'sizes' => 'any', 'type' => $favicon['type'], 'purpose' => 'maskable'];
+    }
+
+    // Íconos estáticos de respaldo con tamaños concretos (requeridos por Chrome).
+    $icons[] = ['src' => '/icons/icon-192.png?v=1', 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'];
+    $icons[] = ['src' => '/icons/icon-512.png?v=1', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'];
+    $icons[] = ['src' => '/icons/icon-512.png?v=1', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'];
+
+    return response()->json([
+        'name'             => $name,
+        'short_name'       => $shortName,
+        'start_url'        => '/',
+        'scope'            => '/',
+        'display'          => 'standalone',
+        'background_color' => '#ffffff',
+        'theme_color'      => '#ffffff',
+        'lang'             => 'es-AR',
+        'icons'            => $icons,
+    ], 200, [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+        ->header('Content-Type', 'application/manifest+json')
+        ->header('Cache-Control', 'no-cache, must-revalidate, max-age=0');
+})->name('pwa.manifest');
+
 // Public site — the slug catch-all must stay LAST.
 //
 // El interruptor de "En construcción" se cuelga acá y no del grupo web: tapa el

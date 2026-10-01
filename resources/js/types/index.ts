@@ -40,3 +40,17 @@ export interface User {
 }
 
 export type BreadcrumbItemType = BreadcrumbItem;
+
+declare global {
+    interface Window {
+        __pwaInstall: {
+            prompt: BeforeInstallPromptEvent | null;
+            installed: boolean;
+        };
+    }
+
+    interface BeforeInstallPromptEvent extends Event {
+        prompt(): Promise<void>;
+        userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+    }
+}
