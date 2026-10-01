@@ -35,6 +35,18 @@ return [
         ],
     ],
 
+    // La key sola: termina con el centro de datos de la cuenta ("...-us21"), que es
+    // el subdominio al que hay que pegarle. A qué audiencia se le manda, con qué
+    // nombre y a qué casilla responden son ajustes del panel, no credenciales.
+    'mailchimp' => [
+        'key' => env('MAILCHIMP_API_KEY'),
+        // El interruptor de los envíos a la audiencia real: va en true en UN solo
+        // servidor, el de producción. No alcanza con mirar APP_ENV, porque el entorno
+        // de pruebas de Hostinger también corre como production.
+        // Ver App\Support\NewsletterSender::liveSendsAllowed().
+        'live_sends' => env('MAILCHIMP_LIVE_SENDS', false),
+    ],
+
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),

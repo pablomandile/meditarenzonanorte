@@ -8,11 +8,13 @@ use App\Models\Setting;
 use App\Support\Construction;
 use App\Support\GoogleAccess;
 use App\Support\ImageStorage;
+use App\Support\Mailchimp;
 use App\Support\Typography;
 use App\Support\WhatsApp;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class SettingController extends Controller
 {
@@ -29,6 +31,11 @@ class SettingController extends Controller
         'heading_font',
         'construction_title',
         'construction_message',
+        'newsletter_mode',
+        'newsletter_list_id',
+        'newsletter_from_name',
+        'newsletter_reply_to',
+        'newsletter_test_email',
     ];
 
     public function edit(): Response
@@ -53,7 +60,36 @@ class SettingController extends Controller
                 'configured' => GoogleAccess::configured(),
                 'owner_emails' => GoogleAccess::ownerEmails(),
             ],
+            // Para la sección "Newsletter": las audiencias se leen de la cuenta de
+            // Mailchimp en vez de pedir que se pegue un id a mano, que es un dato que
+            // no se puede verificar a ojo.
+            'newsletter' => self::newsletterProps(),
         ]);
+    }
+
+    /**
+     * Las audiencias de Mailchimp para el desplegable.
+     *
+     * Que la cuenta no conteste no puede dejar sin abrir toda la página de Ajustes,
+     * así que el error viaja como un dato más y se muestra ahí mismo.
+     *
+     * @return array<string, mixed>
+     */
+    private static function newsletterProps(): array
+    {
+        if (! Mailchimp::configured()) {
+            return ['configured' => false, 'audiences' => [], 'error' => null];
+        }
+
+        try {
+            return ['configured' => true, 'audiences' => Mailchimp::lists(), 'error' => null];
+        } catch (Throwable $e) {
+            // Throwable y no sólo MailchimpException: acá entra también que se corte la
+            // red o que el DNS no resuelva. Ajustes es la página desde donde se arregla
+            // media configuración del sitio, y no puede quedar inaccesible porque un
+            // servicio de terceros no conteste.
+            return ['configured' => true, 'audiences' => [], 'error' => $e->getMessage()];
+        }
     }
 
     /** El cartel de "En construcción" tal cual lo ven las visitas. */

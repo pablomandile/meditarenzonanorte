@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { type CardItem } from '@/lib/site';
 import { Head, useForm } from '@inertiajs/vue3';
-import { Check, Construction, Eye, Globe, KeyRound, LoaderCircle } from 'lucide-vue-next';
+import { CalendarClock, Check, Construction, Eye, Globe, Hand, KeyRound, LoaderCircle, Mail } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 /** Una fuente del catálogo del servidor. Ver App\Support\Typography. */
@@ -21,6 +21,12 @@ const props = defineProps<{
     construction: { title: string; message: string };
     /** Estado del login con Google. Ver App\Support\GoogleAccess. */
     google: { configured: boolean; owner_emails: string[] };
+    /** Las audiencias leídas de la cuenta de Mailchimp. Ver App\Support\Mailchimp. */
+    newsletter: {
+        configured: boolean;
+        audiences: { id: string; name: string; stats?: { member_count?: number } }[];
+        error: string | null;
+    };
 }>();
 
 const breadcrumbs = [{ title: 'Ajustes del sitio', href: '/admin/settings' }];
@@ -40,6 +46,10 @@ const form = useForm<Record<string, any>>({
     construction_title: props.settings.construction_title ?? '',
     construction_message: props.settings.construction_message ?? '',
     google_allowed_emails: props.settings.google_allowed_emails ?? '',
+    newsletter_mode: props.settings.newsletter_mode === 'manual' ? 'manual' : 'auto',
+    newsletter_list_id: props.settings.newsletter_list_id ?? '',
+    newsletter_from_name: props.settings.newsletter_from_name ?? '',
+    newsletter_reply_to: props.settings.newsletter_reply_to ?? '',
     footer_resources: JSON.parse(JSON.stringify(props.settings.footer_resources ?? [])) as CardItem[],
     logo_path: props.settings.logo_path ?? null,
     footer_logo_path: props.settings.footer_logo_path ?? null,
@@ -90,6 +100,15 @@ const fontCards = computed(() => [
 const estados = [
     { value: false, icon: Globe, name: 'Publicado', note: 'Cualquiera puede entrar y ver las páginas.' },
     { value: true, icon: Construction, name: 'En construcción', note: 'Las visitas ven el cartel; vos seguís viendo el sitio.' },
+];
+
+/**
+ * Mismo gesto que el interruptor de arriba: dos fichas que dicen en una línea qué pasa
+ * con cada opción, en vez de una casilla que hay que interpretar.
+ */
+const modosEnvio = [
+    { value: 'auto', icon: CalendarClock, name: 'Automático', note: 'Los que programes salen solos el día y la hora que fijaste.' },
+    { value: 'manual', icon: Hand, name: 'Manual', note: 'Nada sale solo: cada envío lo disparás vos desde el botón.' },
 ];
 
 /** Lo que está publicado ahora mismo, que no es lo mismo que lo elegido sin guardar. */
@@ -262,6 +281,90 @@ const textFields: { key: string; label: string; placeholder?: string; hint?: str
                             <p v-if="form.errors.google_allowed_emails" class="text-sm text-red-600">
                                 {{ form.errors.google_allowed_emails }}
                             </p>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card id="newsletter" class="mt-4 scroll-mt-4">
+                    <CardContent class="grid gap-4 pt-6">
+                        <div class="grid gap-1">
+                            <Label class="flex items-center gap-2"><Mail class="h-4 w-4" /> Newsletter</Label>
+                            <p class="text-xs text-muted-foreground">
+                                A quién se le manda y con qué nombre sale firmado. La clave de Mailchimp la configura el servidor y no se edita desde
+                                acá.
+                            </p>
+                        </div>
+
+                        <div
+                            v-if="!props.newsletter.configured"
+                            class="rounded-lg border border-brand-orange/40 bg-brand-cream px-3 py-2 text-xs text-brand-ink"
+                        >
+                            Falta la clave de Mailchimp en el servidor (<span class="font-mono">MAILCHIMP_API_KEY</span>). Hasta que esté, no se puede
+                            elegir la audiencia ni enviar.
+                        </div>
+
+                        <div v-else-if="props.newsletter.error" class="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700">
+                            No se pudo leer la cuenta de Mailchimp: {{ props.newsletter.error }}
+                        </div>
+
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <button
+                                v-for="modo in modosEnvio"
+                                :key="modo.value"
+                                type="button"
+                                class="grid gap-2 rounded-lg border p-4 text-left transition hover:bg-accent"
+                                :class="form.newsletter_mode === modo.value ? 'border-primary ring-1 ring-primary' : 'border-input'"
+                                @click="form.newsletter_mode = modo.value"
+                            >
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="flex items-center gap-2 font-medium">
+                                        <component :is="modo.icon" class="h-4 w-4" /> {{ modo.name }}
+                                    </span>
+                                    <Check v-if="form.newsletter_mode === modo.value" class="h-4 w-4 text-primary" />
+                                </div>
+                                <span class="text-xs text-muted-foreground">{{ modo.note }}</span>
+                            </button>
+                        </div>
+
+                        <p class="text-xs text-muted-foreground">
+                            En manual, lo que ya esté programado <span class="font-medium text-brand-ink">no se pierde ni se cancela</span>: queda
+                            esperando en la lista con la leyenda de que está listo para que lo mandes.
+                        </p>
+
+                        <div class="grid gap-2 border-t pt-4">
+                            <Label for="newsletter_list_id">Audiencia</Label>
+                            <select
+                                id="newsletter_list_id"
+                                v-model="form.newsletter_list_id"
+                                :disabled="!props.newsletter.audiences.length"
+                                class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+                            >
+                                <option value="">— Elegir audiencia —</option>
+                                <option v-for="audiencia in props.newsletter.audiences" :key="audiencia.id" :value="audiencia.id">
+                                    {{ audiencia.name }} ({{ audiencia.stats?.member_count ?? 0 }} suscriptores)
+                                </option>
+                            </select>
+                            <p class="text-xs text-muted-foreground">
+                                El envío semanal y el mensual usan la misma audiencia: cambian en el contenido y en el asunto, no en a quién le
+                                llegan.
+                            </p>
+                            <p v-if="form.errors.newsletter_list_id" class="text-sm text-red-600">{{ form.errors.newsletter_list_id }}</p>
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="grid gap-2">
+                                <Label for="newsletter_from_name">Nombre del remitente</Label>
+                                <Input id="newsletter_from_name" v-model="form.newsletter_from_name" placeholder="Meditar en Zona Norte" />
+                                <p class="text-xs text-muted-foreground">Lo que se lee como remitente en la bandeja de entrada.</p>
+                                <p v-if="form.errors.newsletter_from_name" class="text-sm text-red-600">{{ form.errors.newsletter_from_name }}</p>
+                            </div>
+
+                            <div class="grid gap-2">
+                                <Label for="newsletter_reply_to">Casilla de respuesta</Label>
+                                <Input id="newsletter_reply_to" v-model="form.newsletter_reply_to" type="email" placeholder="info@tudominio.org" />
+                                <p class="text-xs text-muted-foreground">Adónde llega lo que responda quien reciba el correo.</p>
+                                <p v-if="form.errors.newsletter_reply_to" class="text-sm text-red-600">{{ form.errors.newsletter_reply_to }}</p>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
