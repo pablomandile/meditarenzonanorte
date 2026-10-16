@@ -103,11 +103,16 @@ Route::get('/manifest.webmanifest', function () {
 
     $icons = [];
 
-    // Si hay un logo cargado en PNG/WebP/JPEG lo usamos como ícono principal.
+    // Si hay un logo cargado en PNG/WebP/JPEG lo usamos como ícono principal,
+    // pero pasado por /pwa-icon: opaco y con margen. Un logo con fondo
+    // transparente declarado "maskable" se ve como un cuadrado negro en Android.
     if ($favicon && in_array($favicon['type'], ['image/png', 'image/webp', 'image/jpeg'])) {
-        $src = '/storage/'.$favicon['path'];
-        $icons[] = ['src' => $src, 'sizes' => 'any', 'type' => $favicon['type'], 'purpose' => 'any'];
-        $icons[] = ['src' => $src, 'sizes' => 'any', 'type' => $favicon['type'], 'purpose' => 'maskable'];
+        $v = substr(md5($favicon['path']), 0, 8);
+        foreach ([192, 512] as $px) {
+            foreach (['any', 'maskable'] as $purpose) {
+                $icons[] = ['src' => "/pwa-icon/{$px}-{$purpose}.png?v={$v}", 'sizes' => "{$px}x{$px}", 'type' => 'image/png', 'purpose' => $purpose];
+            }
+        }
     }
 
     // Íconos estáticos de respaldo con tamaños concretos (requeridos por Chrome).
@@ -129,6 +134,40 @@ Route::get('/manifest.webmanifest', function () {
         ->header('Content-Type', 'application/manifest+json')
         ->header('Cache-Control', 'no-cache, must-revalidate, max-age=0');
 })->name('pwa.manifest');
+
+// Ícono de la PWA derivado del logo: fondo blanco opaco y logo centrado dentro
+// de la zona segura (maskable: 60% del lado; any: 80%).
+Route::get('/pwa-icon/{size}-{purpose}.png', function (int $size, string $purpose) {
+    abort_unless(in_array($size, [192, 512], true) && in_array($purpose, ['any', 'maskable'], true), 404);
+
+    $favicon = rescue(fn () => \App\Models\Setting::favicon(), null, false);
+    $file = $favicon ? storage_path('app/public/'.$favicon['path']) : null;
+    abort_unless($file && is_file($file) && function_exists('imagecreatefromstring'), 404);
+
+    $src = @imagecreatefromstring((string) file_get_contents($file));
+    abort_unless($src, 404);
+
+    $canvas = imagecreatetruecolor($size, $size);
+    imagefill($canvas, 0, 0, imagecolorallocate($canvas, 255, 255, 255));
+
+    $box = (int) round($size * ($purpose === 'maskable' ? 0.6 : 0.8));
+    $w = imagesx($src);
+    $h = imagesy($src);
+    $scale = min($box / $w, $box / $h);
+    $dw = max(1, (int) round($w * $scale));
+    $dh = max(1, (int) round($h * $scale));
+    imagealphablending($canvas, true);
+    imagecopyresampled($canvas, $src, intdiv($size - $dw, 2), intdiv($size - $dh, 2), 0, 0, $dw, $dh, $w, $h);
+
+    ob_start();
+    imagepng($canvas);
+    $png = ob_get_clean();
+
+    return response($png, 200, [
+        'Content-Type' => 'image/png',
+        'Cache-Control' => 'public, max-age=86400',
+    ]);
+})->whereNumber('size')->name('pwa.icon');
 
 // Public site — the slug catch-all must stay LAST.
 //
