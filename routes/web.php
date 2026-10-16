@@ -115,10 +115,13 @@ Route::get('/manifest.webmanifest', function () {
         }
     }
 
-    // Íconos estáticos de respaldo con tamaños concretos (requeridos por Chrome).
-    $icons[] = ['src' => '/icons/icon-192.png?v=1', 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'];
-    $icons[] = ['src' => '/icons/icon-512.png?v=1', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'];
-    $icons[] = ['src' => '/icons/icon-512.png?v=1', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'];
+    // Íconos genéricos: sólo si no hay logo. Si conviven con los del logo,
+    // Chrome puede elegir el genérico para la pantalla de inicio.
+    if ($icons === []) {
+        $icons[] = ['src' => '/icons/icon-192.png?v=1', 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'];
+        $icons[] = ['src' => '/icons/icon-512.png?v=1', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'];
+        $icons[] = ['src' => '/icons/icon-512.png?v=1', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'];
+    }
 
     return response()->json([
         'name'             => $name,
