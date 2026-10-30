@@ -22,7 +22,8 @@ const cols = computed(() => Math.min(cards.value.length, 3));
             <div
                 class="grid gap-8"
                 :class="{
-                    'sm:grid-cols-1': cols === 1,
+                    // Una sola tarjeta a todo el ancho queda enorme: va a la mitad, centrada.
+                    'sm:mx-auto sm:w-1/2 sm:grid-cols-1': cols === 1,
                     'sm:grid-cols-2': cols === 2,
                     'sm:grid-cols-2 lg:grid-cols-3': cols >= 3,
                 }"
