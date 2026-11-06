@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\PageController as PublicPageController;
 use App\Models\Page;
+use App\Support\EventLanding;
 use App\Support\SectionRegistry;
 use App\Support\SiteMeta;
 use Illuminate\Http\RedirectResponse;
@@ -16,7 +18,7 @@ class PageController extends Controller
 {
     public function index(): Response
     {
-        $pages = Page::withCount('sections')->orderBy('menu_order')->get()
+        $pages = Page::regular()->withCount('sections')->orderBy('menu_order')->get()
             ->map(fn ($page) => [
                 'id' => $page->id,
                 'slug' => $page->slug,
@@ -29,8 +31,35 @@ class PageController extends Controller
         return Inertia::render('Admin/Pages/Index', ['pages' => $pages]);
     }
 
-    public function show(Page $page): Response
+    public function show(Page $page): Response|RedirectResponse
     {
+        // La plantilla tiene su propia dirección, debajo de Eventos en el menú.
+        if ($page->kind === Page::KIND_EVENT_TEMPLATE) {
+            return redirect($page->adminUrl());
+        }
+
+        return $this->sectionsScreen($page);
+    }
+
+    /** La plantilla genérica de la landing de evento (Admin › Plantilla de landing). */
+    public function eventTemplate(): Response
+    {
+        return $this->sectionsScreen(EventLanding::template());
+    }
+
+    /**
+     * Cómo se ve la plantilla, con el diseño público. No tiene dirección pública
+     * porque no es de ningún evento: sólo la ve quien tiene sesión.
+     */
+    public function eventTemplatePreview(): Response
+    {
+        return PublicPageController::eventLandingResponse(EventLanding::template(), preview: true);
+    }
+
+    private function sectionsScreen(Page $page): Response
+    {
+        $event = $page->kind === Page::KIND_EVENT_LANDING ? $page->event : null;
+
         return Inertia::render('Admin/Pages/Show', [
             'page' => [
                 'id' => $page->id,
@@ -39,11 +68,20 @@ class PageController extends Controller
                 // La home es la raíz del sitio y se llega por el logo: nunca va en
                 // el menú, así que su nombre de menú no se ofrece para editar.
                 'menu_label' => $page->slug === 'home' ? null : $page->menu_label,
+                'kind' => $page->kind,
+                'breadcrumbs' => $page->adminBreadcrumbs(),
+                // El evento dueño de la landing: si no está publicado (oculto o con
+                // Link externo) el panel lo avisa, porque la dirección da 404.
+                'event' => $event ? [
+                    'id' => $event->id,
+                    'title' => $event->title,
+                    'published' => $event->isInternal() && $event->visible,
+                ] : null,
                 'meta_description' => $page->meta_description,
                 // El nombre del sitio que acompaña al título en Google y al
                 // compartir el enlace; el panel arma la vista previa con él.
                 'site_name' => SiteMeta::siteName(),
-                'url' => $page->slug === 'home' ? url('/') : url('/'.$page->slug),
+                'url' => url($page->publicPath()),
             ],
             'sections' => $page->sections->map(fn ($section) => [
                 'id' => $section->id,
@@ -51,7 +89,7 @@ class PageController extends Controller
                 'type_label' => SectionRegistry::label($section->type),
                 'key' => $section->key,
                 'title' => Str::limit(
-                    str_replace("\n", ' ', $section->content['heading'] ?? $section->content['reviews'][0]['quote'] ?? ''),
+                    str_replace("\n", ' ', $section->content['heading'] ?? $section->content['quote'] ?? $section->content['reviews'][0]['quote'] ?? ''),
                     70,
                 ) ?: null,
                 'position' => $section->position,
@@ -80,7 +118,7 @@ class PageController extends Controller
             'meta_description' => ['nullable', 'string', 'max:500'],
         ];
 
-        if ($page->slug !== 'home') {
+        if ($page->slug !== 'home' && $page->isRegular()) {
             $rules['menu_label'] = ['nullable', 'string', 'max:255'];
         }
 
@@ -104,7 +142,7 @@ class PageController extends Controller
      */
     public function toggle(Page $page): RedirectResponse
     {
-        abort_if($page->slug === 'home', 403);
+        abort_if($page->slug === 'home' || ! $page->isRegular(), 403);
 
         $page->update(['visible' => ! $page->visible]);
 
@@ -119,11 +157,11 @@ class PageController extends Controller
      */
     public function move(Request $request, Page $page): RedirectResponse
     {
-        abort_if($page->slug === 'home', 403);
+        abort_if($page->slug === 'home' || ! $page->isRegular(), 403);
 
         $direction = $request->validate(['direction' => ['required', 'in:up,down']])['direction'];
 
-        $sibling = Page::where('slug', '!=', 'home')
+        $sibling = Page::regular()->where('slug', '!=', 'home')
             ->when($direction === 'up',
                 fn ($q) => $q->where('menu_order', '<', $page->menu_order)->orderByDesc('menu_order'),
                 fn ($q) => $q->where('menu_order', '>', $page->menu_order)->orderBy('menu_order'),

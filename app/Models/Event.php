@@ -7,9 +7,18 @@ use App\Support\SpanishDate;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Event extends Model
 {
+    public const LINK_EXTERNAL = 'external';
+
+    public const LINK_INTERNAL = 'internal';
+
+    protected $attributes = [
+        'link_type' => self::LINK_EXTERNAL,
+    ];
+
     /** Los dos se calculan; viajan en los props para que las vistas no rearmen nada. */
     protected $appends = ['date_auto', 'date_label'];
 
@@ -25,6 +34,7 @@ class Event extends Model
         'price',
         'cta_label',
         'cta_url',
+        'link_type',
         'image_path',
         'image_url',
         'visible',
@@ -96,6 +106,20 @@ class Event extends Model
     protected function dateLabel(): Attribute
     {
         return Attribute::get(fn (): ?string => filled($this->date_text) ? $this->date_text : $this->date_auto);
+    }
+
+    /**
+     * La landing del evento (Link interno). Sobrevive al pasar a Link externo —queda
+     * sin publicar— para no perder lo cargado si se vuelve a interno.
+     */
+    public function landing(): HasOne
+    {
+        return $this->hasOne(Page::class)->where('kind', Page::KIND_EVENT_LANDING);
+    }
+
+    public function isInternal(): bool
+    {
+        return $this->link_type === self::LINK_INTERNAL;
     }
 
     public function scopeVisible(Builder $query): Builder

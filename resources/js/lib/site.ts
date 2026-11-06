@@ -22,7 +22,9 @@ export type EventData = {
     location: string | null;
     price: string | null;
     cta_label: string | null;
+    /** Con 'internal', cta_url es la dirección de la landing del evento. */
     cta_url: string | null;
+    link_type: 'external' | 'internal';
     image_path: string | null;
     image_url: string | null;
     visible: boolean;

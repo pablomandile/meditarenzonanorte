@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { type CardItem } from '@/lib/site';
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-vue-next';
 
-defineProps<{ label: string; error?: string }>();
+defineProps<{ label: string; error?: string; simple?: boolean }>();
 
 const model = defineModel<CardItem[]>({ default: () => [] });
 const files = defineModel<Record<number, { image: File | null }>>('files', { default: () => ({}) });
@@ -80,6 +80,7 @@ function move(index: number, direction: -1 | 1) {
             </div>
 
             <ImageField
+                v-if="!simple"
                 label="Imagen"
                 gallery
                 :model-value="card.image"
@@ -88,12 +89,12 @@ function move(index: number, direction: -1 | 1) {
                 @update:file="setFile(i, $event ?? null)"
             />
 
-            <div class="grid gap-2 sm:grid-cols-2">
+            <div class="grid gap-2" :class="{ 'sm:grid-cols-2': !simple }">
                 <div class="grid gap-1">
                     <Label class="text-xs">Título</Label>
                     <Input :model-value="card.title ?? ''" @update:model-value="card.title = ($event as string) || null" />
                 </div>
-                <div class="grid gap-1">
+                <div v-if="!simple" class="grid gap-1">
                     <Label class="text-xs">Enlace (URL)</Label>
                     <Input :model-value="card.url ?? ''" @update:model-value="card.url = ($event as string) || null" />
                 </div>

@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
+/** Los lugares de "Datos recurrentes", para sugerir en el campo Lugar. */
+defineProps<{ venues: string[] }>();
+
 const breadcrumbs = [
     { title: 'Eventos', href: '/admin/events' },
     { title: 'Nuevo evento', href: '/admin/events/create' },
@@ -17,7 +20,7 @@ const breadcrumbs = [
         <div class="mx-auto flex w-full max-w-3xl flex-col gap-4 p-4">
             <h1 class="text-xl font-semibold">Nuevo evento</h1>
 
-            <EventForm>
+            <EventForm :venues="venues">
                 <template #actions>
                     <Button as-child variant="ghost">
                         <Link href="/admin/events">Cancelar</Link>

@@ -7,6 +7,8 @@ import ItemsField from '@/components/admin/fields/ItemsField.vue';
 import LinksField from '@/components/admin/fields/LinksField.vue';
 import OccurrencesField from '@/components/admin/fields/OccurrencesField.vue';
 import PlansField from '@/components/admin/fields/PlansField.vue';
+import PricesField from '@/components/admin/fields/PricesField.vue';
+import ProgramDaysField from '@/components/admin/fields/ProgramDaysField.vue';
 import ReviewsField from '@/components/admin/fields/ReviewsField.vue';
 import SelectField from '@/components/admin/fields/SelectField.vue';
 import SuggestField from '@/components/admin/fields/SuggestField.vue';
@@ -21,6 +23,8 @@ export type FieldDef = {
     options?: Record<string, string>;
     /** Para 'tags' y 'suggest': qué lista de "Datos recurrentes" ofrecer. */
     pool?: string;
+    /** Para 'cards': sólo título y texto, sin imagen ni enlace (las tarjetas numeradas de la landing). */
+    simple?: boolean;
 };
 
 const props = defineProps<{
@@ -113,8 +117,18 @@ const files = defineModel<Record<string, any>>('files', { required: true });
                 v-model="content[field.key]"
                 v-model:files="files[field.key]"
                 :label="field.label"
+                :simple="field.simple"
                 :error="fieldError(field.key)"
             />
+
+            <ProgramDaysField
+                v-else-if="field.type === 'program_days'"
+                v-model="content[field.key]"
+                :label="field.label"
+                :error="fieldError(field.key)"
+            />
+
+            <PricesField v-else-if="field.type === 'prices'" v-model="content[field.key]" :label="field.label" :error="fieldError(field.key)" />
 
             <ImagesField
                 v-else-if="field.type === 'images'"

@@ -10,6 +10,7 @@ use App\Models\Teacher;
 use App\Models\Venue;
 use App\Support\ImageStorage;
 use App\Support\Occurrences;
+use App\Support\SectionImages;
 use App\Support\SectionRegistry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,6 +36,7 @@ class SectionController extends Controller
                 'id' => $section->page->id,
                 'title' => $section->page->title,
                 'slug' => $section->page->slug,
+                'breadcrumbs' => $section->page->adminBreadcrumbs(),
             ],
         ];
 
@@ -180,6 +182,39 @@ class SectionController extends Controller
                             : trim((string) ($row['weekday'] ?? '')) !== '',
                     )));
                     break;
+
+                // Un día sin nombre ni actividades se descarta, y una actividad sin
+                // hora ni nombre también. Los tildes llegan como "1"/"0" del
+                // FormData y se guardan booleanos, porque "0" en JS es verdadero.
+                case 'program_days':
+                    $days = [];
+                    foreach ($content[$key] ?? [] as $day) {
+                        $items = [];
+                        foreach ($day['items'] ?? [] as $item) {
+                            $time = self::blankToNull($item['time'] ?? null);
+                            $name = self::blankToNull($item['name'] ?? null);
+                            if ($time !== null || $name !== null) {
+                                $items[] = ['time' => $time, 'name' => $name, 'highlight' => filter_var($item['highlight'] ?? false, FILTER_VALIDATE_BOOLEAN)];
+                            }
+                        }
+                        $weekday = self::blankToNull($day['weekday'] ?? null);
+                        $number = self::blankToNull($day['day'] ?? null);
+                        if ($weekday !== null || $number !== null || $items) {
+                            $days[] = ['weekday' => $weekday, 'day' => $number, 'featured' => filter_var($day['featured'] ?? false, FILTER_VALIDATE_BOOLEAN), 'items' => $items];
+                        }
+                    }
+                    $content[$key] = $days;
+                    break;
+
+                case 'prices':
+                    $content[$key] = array_values(array_map(fn ($price) => [
+                        'note' => self::blankToNull($price['note'] ?? null),
+                        'amount' => self::blankToNull($price['amount'] ?? null),
+                    ], array_filter(
+                        $content[$key] ?? [],
+                        fn ($price) => trim((string) ($price['note'] ?? '')) !== '' || trim((string) ($price['amount'] ?? '')) !== '',
+                    )));
+                    break;
             }
         }
 
@@ -225,7 +260,7 @@ class SectionController extends Controller
                 'key' => self::copyKey($section),
                 'position' => $section->position + 1,
                 'visible' => false,
-                'content' => self::duplicateImages($section->type, $section->content ?? []),
+                'content' => SectionImages::duplicate($section->type, $section->content ?? []),
             ]);
         });
 
@@ -249,41 +284,6 @@ class SectionController extends Controller
         return $key;
     }
 
-    /**
-     * @param  array<string, mixed>  $content
-     * @return array<string, mixed>
-     */
-    private static function duplicateImages(string $type, array $content): array
-    {
-        foreach (SectionRegistry::fields($type) as $field) {
-            $key = $field['key'];
-
-            switch ($field['type']) {
-                case 'image':
-                    if (isset($content[$key])) {
-                        $content[$key] = ImageStorage::duplicate($content[$key]);
-                    }
-                    break;
-
-                case 'images':
-                    foreach ($content[$key] ?? [] as $i => $path) {
-                        $content[$key][$i] = ImageStorage::duplicate($path);
-                    }
-                    break;
-
-                case 'cards':
-                    foreach ($content[$key] ?? [] as $i => $card) {
-                        if (isset($card['image'])) {
-                            $content[$key][$i]['image'] = ImageStorage::duplicate($card['image']);
-                        }
-                    }
-                    break;
-            }
-        }
-
-        return $content;
-    }
-
     public function toggle(Section $section): RedirectResponse
     {
         // La plantilla nunca se publica: el modelo la volvería a ocultar igual,
@@ -303,9 +303,7 @@ class SectionController extends Controller
     {
         abort_if($section->is_template, 403, 'La plantilla no se puede eliminar.');
 
-        foreach (SectionRegistry::imagePaths($section->type, $section->content ?? []) as $path) {
-            ImageStorage::delete($path);
-        }
+        SectionImages::delete($section->type, $section->content ?? []);
 
         $section->delete();
 

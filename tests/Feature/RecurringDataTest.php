@@ -75,6 +75,21 @@ class RecurringDataTest extends TestCase
         $this->assertSame('Otro lugar', $ficha->fresh()->content['location']);
     }
 
+    public function test_the_event_form_gets_the_venues_to_pick_the_location(): void
+    {
+        $admin = $this->admin();
+        Venue::create(['name' => 'Olivos']);
+        Venue::create(['name' => 'Centro Kadampa']);
+
+        $this->actingAs($admin)->get('/admin/events/create')
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('venues', ['Centro Kadampa', 'Olivos']));
+
+        $event = \App\Models\Event::create(['title' => 'Retiro', 'visible' => true]);
+
+        $this->actingAs($admin)->get("/admin/events/{$event->id}/edit")
+            ->assertInertia(fn (AssertableInertia $page) => $page->where('venues', ['Centro Kadampa', 'Olivos']));
+    }
+
     public function test_seeder_fills_the_lists_from_the_existing_class_cards(): void
     {
         $this->seed(ContentSeeder::class);

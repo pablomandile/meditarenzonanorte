@@ -1,0 +1,607 @@
+/**
+ * Landing de evento (Link interno).
+ *
+ * Copia del diseño de https://meditarenperu.org/eventos-especiales/iniciacion-de-tara-verde
+ * (los estilos "tara-*" de esa página, 2026-11-06): mismos colores, tipografía,
+ * tamaños de sección y de tarjetas. Allá las variables cuelgan de :root; acá
+ * quedan dentro de .landing-page para no chocar con los colores del sitio.
+ *
+ * La fuente es Roboto, la misma del tema de esa página (el sitio ya la sirve);
+ * la frase va en Georgia, como allá.
+ *
+ * Se importa desde pages/Public/EventLanding.vue, así sólo la baja esa página.
+ */
+
+.landing-page {
+    --lp-blue: #5689c4;
+    --lp-violet: #80558f;
+    --lp-teal: #438c88;
+    --lp-gold: #d9b46a;
+    --lp-ink: #343747;
+    --lp-title: #333333;
+    --lp-muted: #686b78;
+    --lp-body: #575a66;
+    --lp-cream: #faf8f5;
+    --lp-white: #ffffff;
+
+    color: var(--lp-ink);
+    font-family: Roboto, Helvetica, Arial, Verdana, sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    overflow: hidden;
+    background: var(--lp-white);
+    /* El ancho del contenedor del tema de la página de ejemplo. */
+    max-width: 1140px;
+    margin: 0 auto;
+}
+
+.landing-page * {
+    box-sizing: border-box;
+}
+.landing-page img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+.landing-page h1,
+.landing-page h2,
+.landing-page h3,
+.landing-page p {
+    margin-top: 0;
+}
+.landing-page h1,
+.landing-page h2,
+.landing-page h3 {
+    line-height: 1.2;
+    color: var(--lp-title);
+}
+.landing-page h2 {
+    font-size: clamp(30px, 3.4vw, 44px);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    margin-bottom: 22px;
+}
+.landing-page h3 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+.landing-page p {
+    margin-bottom: 18px;
+}
+.landing-page p:last-child {
+    margin-bottom: 0;
+}
+
+.lp-kicker,
+.lp-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+.lp-kicker {
+    color: var(--lp-violet);
+    margin-bottom: 13px !important;
+}
+
+/* 1. Banner */
+.lp-hero {
+    min-height: 610px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 80px max(7%, calc((100% - 1180px) / 2));
+    color: #fff;
+    background-color: #181f2f;
+    background-position: center 38%;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+.lp-hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 660px;
+}
+.lp-hero .lp-eyebrow {
+    color: #f0ddaf;
+    margin-bottom: 22px;
+}
+.landing-page .lp-hero h1 {
+    color: #fff;
+    font-size: clamp(46px, 6.2vw, 76px);
+    font-weight: 500;
+    letter-spacing: -0.04em;
+    margin-bottom: 22px;
+}
+.lp-hero h1 span {
+    color: #e8d3a0;
+    font-style: italic;
+}
+.lp-hero-subtitle {
+    font-size: clamp(17px, 2vw, 21px);
+    max-width: 530px;
+    line-height: 1.55;
+    margin-bottom: 24px !important;
+}
+.lp-hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    margin-bottom: 30px;
+}
+.lp-meta-dot {
+    color: #e8d3a0;
+}
+
+/* Botones */
+.lp-button {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 49px;
+    padding: 13px 25px;
+    border-radius: 3px;
+    text-decoration: none !important;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition:
+        transform 0.2s ease,
+        background 0.2s ease;
+}
+.lp-button:hover {
+    transform: translateY(-2px);
+}
+.lp-button-light {
+    background: #fff;
+    color: #343747 !important;
+}
+.lp-button-primary {
+    background: var(--lp-violet);
+    color: #fff !important;
+    width: 100%;
+    margin-top: 12px;
+}
+
+/* Secciones con título centrado */
+.lp-section {
+    padding: 88px 7%;
+}
+.lp-section-heading {
+    max-width: 760px;
+    margin: 0 auto 42px;
+    text-align: center;
+}
+.lp-heading-line {
+    width: 54px;
+    height: 3px;
+    background: var(--lp-gold);
+    margin: 0 auto 20px;
+}
+.lp-heading-description {
+    color: var(--lp-muted);
+    margin-bottom: 0 !important;
+}
+
+/* 2. Texto con tarjetas numeradas */
+.lp-intro {
+    max-width: 1240px;
+    margin: 0 auto;
+}
+.lp-intro-copy {
+    max-width: 850px;
+    margin: 0 auto 40px;
+    text-align: center;
+    color: var(--lp-body);
+}
+.lp-points {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+}
+/* Con una o dos tarjetas no quedan huecos a la derecha: van centradas. */
+.lp-points-1 {
+    grid-template-columns: minmax(0, 420px);
+    justify-content: center;
+}
+.lp-points-2 {
+    grid-template-columns: repeat(2, minmax(0, 420px));
+    justify-content: center;
+}
+.lp-point {
+    padding: 28px 28px 25px;
+    border-top: 2px solid var(--lp-gold);
+    background: var(--lp-cream);
+}
+.lp-point-number {
+    display: block;
+    color: var(--lp-violet);
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    margin-bottom: 18px;
+}
+.lp-point p {
+    color: var(--lp-muted);
+    margin-bottom: 0;
+    font-size: 15px;
+}
+
+/* 3. Imagen y texto */
+.lp-about {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(35px, 7vw, 95px);
+    align-items: center;
+    background: #f7f5f8;
+}
+.lp-about-image img {
+    width: 100%;
+    max-height: 590px;
+    object-fit: cover;
+    object-position: center;
+}
+.lp-about-copy {
+    max-width: 580px;
+}
+.lp-about-copy p:not(.lp-kicker) {
+    color: var(--lp-body);
+}
+.lp-about-right .lp-about-image {
+    order: 2;
+}
+
+/* 4. Frase */
+.lp-quote-section {
+    padding: 70px 8%;
+    background: #f0edf4;
+    text-align: center;
+}
+.lp-quote-mark {
+    font-family: Georgia, serif;
+    color: var(--lp-violet);
+    font-size: 70px;
+    line-height: 0.8;
+}
+.lp-quote-section blockquote {
+    max-width: 900px;
+    margin: 12px auto 20px;
+    color: #4d4d5a;
+    font-family: Georgia, serif;
+    font-size: clamp(19px, 2.2vw, 27px);
+    font-style: italic;
+    line-height: 1.6;
+}
+.lp-quote-credit {
+    color: var(--lp-violet);
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 0 !important;
+}
+
+/* 5. Lista con tildes */
+.lp-benefits {
+    max-width: 1240px;
+    margin: 0 auto;
+}
+.lp-benefit-list {
+    max-width: 850px;
+    margin: 0 auto 30px;
+}
+.lp-benefit {
+    display: flex;
+    gap: 17px;
+    align-items: flex-start;
+    padding: 15px 0;
+    border-bottom: 1px solid #e9e6ec;
+}
+.lp-benefit > span {
+    flex: 0 0 27px;
+    height: 27px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    color: #fff;
+    background: var(--lp-teal);
+    font-size: 13px;
+    margin-top: 2px;
+}
+.lp-benefit p {
+    margin-bottom: 0;
+}
+.lp-benefits-closing {
+    max-width: 850px;
+    margin: 0 auto !important;
+    text-align: center;
+    color: var(--lp-muted);
+}
+
+/* 6. Maestro */
+.lp-teacher {
+    display: grid;
+    grid-template-columns: minmax(270px, 0.8fr) 1.2fr;
+    align-items: center;
+    gap: clamp(35px, 8vw, 100px);
+    padding: 75px max(7%, calc((100% - 1080px) / 2));
+    background: var(--lp-cream);
+}
+.lp-teacher-photo {
+    max-width: 390px;
+    width: 100%;
+    margin: 0 auto;
+}
+.lp-teacher-photo img {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    object-position: center top;
+    border-radius: 2px;
+}
+.lp-teacher-copy h2 {
+    color: var(--lp-ink);
+}
+.lp-teacher-copy p:not(.lp-kicker) {
+    color: var(--lp-muted);
+    max-width: 520px;
+}
+
+/* 7. Programa */
+.lp-program-section {
+    background: #f7f5f8;
+}
+.lp-program {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    max-width: 1120px;
+    margin: 0 auto;
+    align-items: stretch;
+}
+.lp-program-1 {
+    grid-template-columns: minmax(0, 380px);
+    justify-content: center;
+}
+.lp-program-2 {
+    grid-template-columns: repeat(2, minmax(0, 380px));
+    justify-content: center;
+}
+.lp-program-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+.lp-program-day {
+    padding: 28px 25px;
+    background: #fff;
+    border: 1px solid #e9e4ed;
+}
+.lp-program-day-featured {
+    border-top: 4px solid var(--lp-violet);
+}
+.lp-day-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 20px;
+    margin-bottom: 7px;
+    border-bottom: 1px solid #e9e4ed;
+}
+.lp-day-label span {
+    color: var(--lp-violet);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+.lp-day-label strong {
+    color: var(--lp-ink);
+    font-size: 42px;
+    font-weight: 400;
+    line-height: 1;
+}
+.lp-schedule-item {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 3px;
+    padding: 14px 0;
+    border-bottom: 1px solid #f0edf2;
+}
+.lp-schedule-item:last-child {
+    border-bottom: 0;
+}
+.lp-schedule-item time {
+    color: var(--lp-violet);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+.lp-schedule-item span {
+    font-size: 15px;
+}
+.lp-schedule-highlight {
+    padding: 15px 12px;
+    margin: 3px -12px;
+    background: #f2edf5;
+    border-radius: 2px;
+}
+
+/* 8. Reserva */
+.lp-details {
+    padding: 80px 7%;
+    background: #fff;
+    scroll-margin-top: 35px;
+}
+.lp-details-heading {
+    text-align: center;
+    max-width: 760px;
+    margin: 0 auto 35px;
+}
+.landing-page .lp-details-heading h2 {
+    margin-bottom: 15px;
+}
+.lp-details-heading > p:last-child {
+    color: var(--lp-muted);
+}
+.lp-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+    max-width: 940px;
+    margin: 0 auto;
+    align-items: stretch;
+}
+.lp-details-grid-1 {
+    grid-template-columns: minmax(0, 460px);
+    justify-content: center;
+}
+.lp-detail-card {
+    padding: 32px;
+    border: 1px solid #e7e3ea;
+    background: #fff;
+}
+.lp-price-card {
+    background: #faf8fb;
+    border-top: 4px solid var(--lp-violet);
+}
+.lp-detail-label {
+    display: block;
+    color: var(--lp-violet);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+}
+.lp-price-note {
+    font-size: 13px;
+    color: var(--lp-muted);
+    margin-bottom: 4px !important;
+}
+.lp-price {
+    font-size: 43px;
+    line-height: 1.3;
+    color: var(--lp-ink);
+    font-weight: 500;
+}
+.lp-price-later {
+    font-size: 30px;
+}
+.lp-price-divider {
+    height: 1px;
+    background: #e4dfe8;
+    margin: 16px 0;
+}
+.lp-detail-icon {
+    display: block;
+    color: var(--lp-gold);
+    font-size: 27px;
+    line-height: 1;
+    margin-bottom: 15px;
+}
+.landing-page .lp-detail-card h3 {
+    font-size: 21px;
+}
+.lp-detail-card p {
+    color: var(--lp-muted);
+    white-space: pre-line;
+}
+.lp-text-link {
+    color: var(--lp-violet) !important;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+/* El mapa: no está en la página de ejemplo, que sólo trae el enlace. */
+.lp-map {
+    display: block;
+    width: 100%;
+    height: 220px;
+    border: 0;
+    margin: 4px 0 16px;
+    filter: saturate(0.85);
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+    .lp-hero {
+        min-height: 570px;
+        padding: 65px 7%;
+        background-position: 58% center;
+    }
+    .landing-page .lp-hero h1 {
+        font-size: clamp(43px, 12vw, 62px);
+    }
+    .lp-hero-meta {
+        align-items: flex-start;
+        gap: 7px 10px;
+    }
+    .lp-section {
+        padding: 60px 6%;
+    }
+    .lp-points,
+    .lp-points-1,
+    .lp-points-2,
+    .lp-about,
+    .lp-teacher,
+    .lp-program,
+    .lp-program-1,
+    .lp-program-2,
+    .lp-program-4,
+    .lp-details-grid,
+    .lp-details-grid-1 {
+        grid-template-columns: 1fr;
+    }
+    .lp-points {
+        gap: 13px;
+    }
+    .lp-point {
+        padding: 22px;
+    }
+    .lp-about {
+        gap: 30px;
+    }
+    .lp-about-right .lp-about-image {
+        order: 0;
+    }
+    .lp-about-image img {
+        max-height: 430px;
+    }
+    .lp-quote-section {
+        padding: 55px 7%;
+    }
+    .lp-teacher {
+        padding: 58px 7%;
+        gap: 28px;
+    }
+    .lp-teacher-photo {
+        max-width: 320px;
+    }
+    .lp-teacher-copy {
+        text-align: center;
+    }
+    .lp-teacher-copy p:not(.lp-kicker) {
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .lp-program {
+        gap: 14px;
+    }
+    .lp-program-day {
+        padding: 24px 22px;
+    }
+    .lp-details {
+        padding: 60px 6%;
+    }
+    .lp-detail-card {
+        padding: 25px;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    .lp-program-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

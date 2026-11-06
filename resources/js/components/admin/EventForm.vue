@@ -1,15 +1,24 @@
 <script setup lang="ts">
 import ImageField from '@/components/admin/fields/ImageField.vue';
+import SuggestField from '@/components/admin/fields/SuggestField.vue';
 import TextareaField from '@/components/admin/fields/TextareaField.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { type EventData } from '@/lib/site';
-import { useForm } from '@inertiajs/vue3';
-import { LoaderCircle } from 'lucide-vue-next';
+import { Link, useForm } from '@inertiajs/vue3';
+import { ExternalLink, LoaderCircle, Pencil } from 'lucide-vue-next';
+import { watch } from 'vue';
 
-const props = defineProps<{ event?: EventData }>();
+/** La landing del evento, si ya tiene una (ver Admin\EventController::landing). */
+type Landing = { id: number; url: string; published: boolean };
+
+const props = defineProps<{
+    event?: EventData & { landing?: Landing | null };
+    /** Los lugares de "Datos recurrentes": se eligen o se escribe otro. */
+    venues?: string[];
+}>();
 
 const form = useForm<Record<string, any>>({
     _method: props.event ? 'put' : 'post',
@@ -24,6 +33,7 @@ const form = useForm<Record<string, any>>({
     price: props.event?.price ?? null,
     cta_label: props.event?.cta_label ?? null,
     cta_url: props.event?.cta_url ?? null,
+    link_type: props.event?.link_type ?? 'external',
     image_path: props.event?.image_path ?? null,
     image_url: props.event?.image_url ?? null,
     image: null as File | null,
@@ -31,6 +41,22 @@ const form = useForm<Record<string, any>>({
     show_on_home: props.event?.show_on_home ?? false,
     show_on_calendar: props.event?.show_on_calendar ?? false,
 });
+
+/**
+ * Con Link interno la dirección de la landing queda guardada en cta_url. Al pasar a
+ * externo no tiene sentido mostrarla como si fuera una URL elegida: se vacía.
+ */
+watch(
+    () => form.link_type,
+    (type) => {
+        if (type === 'external' && props.event?.landing && form.cta_url === props.event.landing.url) {
+            form.cta_url = null;
+        }
+        if (type === 'internal' && !form.cta_label) {
+            form.cta_label = 'Más información';
+        }
+    },
+);
 
 function submit() {
     const url = props.event ? route('admin.events.update', props.event.id) : route('admin.events.store');
@@ -73,9 +99,7 @@ function submit() {
                     <p v-if="props.event?.date_auto" class="text-xs text-muted-foreground">
                         Vacío se publica <span class="font-medium">“{{ props.event.date_auto }}”</span>. Escribí algo sólo si querés otro texto.
                     </p>
-                    <p v-else class="text-xs text-muted-foreground">
-                        Completá la fecha y la hora de inicio abajo y el texto se arma solo.
-                    </p>
+                    <p v-else class="text-xs text-muted-foreground">Completá la fecha y la hora de inicio abajo y el texto se arma solo.</p>
                     <p v-if="form.errors.date_text" class="text-sm text-red-600">{{ form.errors.date_text }}</p>
                 </div>
 
@@ -109,17 +133,50 @@ function submit() {
                 </div>
 
                 <div class="grid gap-5 sm:grid-cols-2">
-                    <div class="grid gap-2">
-                        <Label>Lugar</Label>
-                        <Input v-model="form.location" />
-                    </div>
+                    <SuggestField v-model="form.location" label="Lugar" :options="venues ?? []" :error="form.errors.location" />
                     <div class="grid gap-2">
                         <Label>Precio</Label>
                         <Input v-model="form.price" placeholder="$5.000 / GRATUITO" />
                     </div>
                 </div>
 
-                <div class="grid gap-5 sm:grid-cols-2">
+                <!-- A dónde lleva el evento: una URL de afuera o su propia landing. -->
+                <div class="grid gap-2">
+                    <Label>Enlace del evento</Label>
+                    <div class="inline-flex w-fit rounded-lg border bg-muted/40 p-1" role="radiogroup" aria-label="Tipo de enlace">
+                        <button
+                            type="button"
+                            role="radio"
+                            :aria-checked="form.link_type === 'external'"
+                            class="rounded-md px-4 py-1.5 text-sm font-medium transition"
+                            :class="form.link_type === 'external' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+                            @click="form.link_type = 'external'"
+                        >
+                            Link externo
+                        </button>
+                        <button
+                            type="button"
+                            role="radio"
+                            :aria-checked="form.link_type === 'internal'"
+                            class="rounded-md px-4 py-1.5 text-sm font-medium transition"
+                            :class="form.link_type === 'internal' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+                            @click="form.link_type = 'internal'"
+                        >
+                            Link interno
+                        </button>
+                    </div>
+                    <p class="text-xs text-muted-foreground">
+                        <template v-if="form.link_type === 'external'"
+                            >El afiche y el botón llevan a una página de afuera (un formulario, Instagram…).</template
+                        >
+                        <template v-else>
+                            El afiche y el botón llevan a una landing propia del evento, armada con la plantilla. Los botones de inscripción se
+                            configuran dentro de la landing.
+                        </template>
+                    </p>
+                </div>
+
+                <div v-if="form.link_type === 'external'" class="grid gap-5 sm:grid-cols-2">
                     <div class="grid gap-2">
                         <Label>Texto del botón</Label>
                         <Input v-model="form.cta_label" placeholder="Inscripción aquí" />
@@ -131,14 +188,30 @@ function submit() {
                     </div>
                 </div>
 
-                <ImageField
-                    v-model="form.image_path"
-                    v-model:file="form.image"
-                    label="Imagen / afiche"
-                    :error="form.errors.image"
-                />
+                <div v-else class="grid gap-4 rounded-lg border p-4">
+                    <div class="grid gap-2 sm:max-w-sm">
+                        <Label>Texto del botón</Label>
+                        <Input v-model="form.cta_label" placeholder="Más información" />
+                    </div>
 
-                <div class="grid gap-2">
+                    <div v-if="event?.landing" class="flex flex-wrap items-center gap-2">
+                        <Button as-child size="sm">
+                            <Link :href="`/admin/pages/${event.landing.id}`"><Pencil class="mr-1 h-4 w-4" /> Editar landing</Link>
+                        </Button>
+                        <Button as-child size="sm" variant="outline">
+                            <a :href="event.landing.url" target="_blank"><ExternalLink class="mr-1 h-4 w-4" /> Ver</a>
+                        </Button>
+                        <span class="text-xs text-muted-foreground">{{ event.landing.url }}</span>
+                    </div>
+                    <p v-else class="text-sm text-muted-foreground">
+                        Al guardar se crea la landing del evento copiando la plantilla, con el título, la fecha, el lugar y el precio que cargues acá.
+                        Después vas directo a editarla.
+                    </p>
+                </div>
+
+                <ImageField v-model="form.image_path" v-model:file="form.image" label="Imagen / afiche" :error="form.errors.image" />
+
+                <div v-if="form.link_type === 'external'" class="grid gap-2">
                     <Label>URL de la imagen (opcional)</Label>
                     <Input v-model="form.image_url" placeholder="https://instagram.com/p/..." />
                     <p class="text-xs text-muted-foreground">
