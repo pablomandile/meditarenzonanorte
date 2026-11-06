@@ -6,7 +6,20 @@ import PwaInstallSidebarItem from '@/components/PwaInstallSidebarItem.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { CalendarDays, CalendarRange, Database, ExternalLink, FileText, GraduationCap, HelpCircle, Images, Mail, MessageSquare, Settings } from 'lucide-vue-next';
+import {
+    CalendarDays,
+    CalendarRange,
+    Database,
+    ExternalLink,
+    FileText,
+    GraduationCap,
+    HelpCircle,
+    Images,
+    LayoutTemplate,
+    Mail,
+    MessageSquare,
+    Settings,
+} from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -19,6 +32,12 @@ const mainNavItems: NavItem[] = [
         title: 'Eventos',
         href: '/admin/events',
         icon: CalendarDays,
+    },
+    {
+        // El molde de la landing de los eventos con "Link interno".
+        title: 'Plantilla de landing',
+        href: '/admin/landing-eventos/plantilla',
+        icon: LayoutTemplate,
     },
     {
         title: 'Calendario',

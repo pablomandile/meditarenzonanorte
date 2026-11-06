@@ -16,18 +16,14 @@ const props = defineProps<{
         content: Record<string, any>;
     };
     fields: FieldDef[];
-    page: { id: number; title: string; slug: string };
+    page: { id: number; title: string; slug: string; breadcrumbs: { title: string; href: string }[] };
     faqPool?: { id: number; question: string; visible: boolean }[];
     /** Listas de "Datos recurrentes" para los campos con pool (maestro, lugar). */
     pools?: Record<string, string[]>;
     hints?: Record<string, string>;
 }>();
 
-const breadcrumbs = [
-    { title: 'Páginas', href: '/admin/pages' },
-    { title: props.page.title, href: `/admin/pages/${props.page.id}` },
-    { title: props.section.type_label, href: `/admin/sections/${props.section.id}/edit` },
-];
+const breadcrumbs = [...props.page.breadcrumbs, { title: props.section.type_label, href: `/admin/sections/${props.section.id}/edit` }];
 
 const form = useForm<{ _method: string; content: Record<string, any>; files: Record<string, any> }>({
     _method: 'put',
@@ -81,7 +77,7 @@ function submit() {
                         Guardar cambios
                     </Button>
                     <Button as-child variant="ghost">
-                        <Link :href="`/admin/pages/${page.id}`">Volver</Link>
+                        <Link :href="page.breadcrumbs[page.breadcrumbs.length - 1].href">Volver</Link>
                     </Button>
                 </div>
             </form>

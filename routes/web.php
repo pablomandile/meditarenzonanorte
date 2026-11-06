@@ -41,6 +41,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::patch('events/{event}/toggle', [EventController::class, 'toggle'])->name('events.toggle');
     Route::patch('events/{event}/toggle-home', [EventController::class, 'toggleHome'])->name('events.toggle-home');
 
+    // La plantilla genérica de la landing de evento. Va con otro prefijo que
+    // /admin/events para que el menú lateral no marque los dos ítems a la vez.
+    Route::get('landing-eventos/plantilla', [AdminPageController::class, 'eventTemplate'])->name('event-template.show');
+    Route::get('landing-eventos/plantilla/vista-previa', [AdminPageController::class, 'eventTemplatePreview'])->name('event-template.preview');
+
     Route::get('calendar', [CalendarController::class, 'index'])->name('calendar.index');
     Route::patch('calendar', [CalendarController::class, 'bulk'])->name('calendar.bulk');
     Route::patch('calendar/sections/{section}', [CalendarController::class, 'toggleSection'])->name('calendar.sections.toggle');
@@ -178,5 +183,6 @@ Route::get('/pwa-icon/{size}-{purpose}.png', function (int $size, string $purpos
 // sitio público y nada más, así ponerlo no puede dejar al dueño afuera del panel.
 Route::middleware(UnderConstruction::class)->group(function () {
     Route::get('/', [PageController::class, 'home'])->name('home');
+    Route::get('/eventos-especiales/{slug}', [PageController::class, 'eventLanding'])->name('event-landing.show');
     Route::get('/{page:slug}', [PageController::class, 'show'])->name('page.show');
 });

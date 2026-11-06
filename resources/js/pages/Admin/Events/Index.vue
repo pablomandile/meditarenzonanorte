@@ -5,9 +5,9 @@ import { useConfirm } from '@/composables/useConfirm';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { img, type EventData } from '@/lib/site';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Eye, EyeOff, Home, Pencil, Plus, Trash2 } from 'lucide-vue-next';
+import { Eye, EyeOff, Home, LayoutTemplate, Pencil, Plus, Trash2 } from 'lucide-vue-next';
 
-defineProps<{ events: EventData[] }>();
+defineProps<{ events: (EventData & { landing: { id: number; url: string; published: boolean } | null })[] }>();
 
 const breadcrumbs = [{ title: 'Eventos', href: '/admin/events' }];
 
@@ -45,9 +45,19 @@ async function destroy(event: EventData) {
                     <h1 class="text-xl font-semibold">Eventos especiales</h1>
                     <p class="text-sm text-muted-foreground">Se muestran en la página Eventos especiales y, si los destacás, en el inicio.</p>
                 </div>
-                <Button as-child>
-                    <Link href="/admin/events/create"><Plus class="mr-1 h-4 w-4" /> Nuevo evento</Link>
-                </Button>
+                <div class="flex flex-wrap gap-2">
+                    <Button as-child variant="outline">
+                        <Link href="/admin/landing-eventos/plantilla"><LayoutTemplate class="mr-1 h-4 w-4" /> Plantilla de landing</Link>
+                    </Button>
+                    <Button as-child variant="outline">
+                        <a href="/admin/landing-eventos/plantilla/vista-previa" target="_blank"
+                            ><Eye class="mr-1 h-4 w-4" /> Vista previa de la plantilla</a
+                        >
+                    </Button>
+                    <Button as-child>
+                        <Link href="/admin/events/create"><Plus class="mr-1 h-4 w-4" /> Nuevo evento</Link>
+                    </Button>
+                </div>
             </div>
 
             <Card>
@@ -75,6 +85,7 @@ async function destroy(event: EventData) {
                                 <div class="min-w-0">
                                     <p class="truncate font-medium">{{ event.title }}</p>
                                     <p class="truncate text-sm text-muted-foreground">{{ event.date_label }}</p>
+                                    <p v-if="event.link_type === 'internal'" class="text-xs text-muted-foreground">Link interno · landing propia</p>
                                 </div>
                             </div>
 
@@ -92,6 +103,16 @@ async function destroy(event: EventData) {
                                 <Button variant="ghost" size="sm" :title="event.visible ? 'Ocultar' : 'Mostrar'" @click="toggle(event.id)">
                                     <Eye v-if="event.visible" class="h-4 w-4" />
                                     <EyeOff v-else class="h-4 w-4 text-red-500" />
+                                </Button>
+
+                                <Button
+                                    v-if="event.link_type === 'internal' && event.landing"
+                                    as-child
+                                    size="sm"
+                                    variant="ghost"
+                                    title="Editar la landing"
+                                >
+                                    <Link :href="`/admin/pages/${event.landing.id}`"><LayoutTemplate class="h-4 w-4" /></Link>
                                 </Button>
 
                                 <Button as-child size="sm" variant="outline">

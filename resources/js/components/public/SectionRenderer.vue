@@ -16,6 +16,14 @@ import PricingSection from '@/components/public/sections/PricingSection.vue';
 import ReviewsSection from '@/components/public/sections/ReviewsSection.vue';
 import TextBlockSection from '@/components/public/sections/TextBlockSection.vue';
 import TextImageSection from '@/components/public/sections/TextImageSection.vue';
+import LandingAboutSection from '@/components/public/sections/landing/LandingAboutSection.vue';
+import LandingBenefitsSection from '@/components/public/sections/landing/LandingBenefitsSection.vue';
+import LandingBookingSection from '@/components/public/sections/landing/LandingBookingSection.vue';
+import LandingHeroSection from '@/components/public/sections/landing/LandingHeroSection.vue';
+import LandingIntroSection from '@/components/public/sections/landing/LandingIntroSection.vue';
+import LandingProgramSection from '@/components/public/sections/landing/LandingProgramSection.vue';
+import LandingQuoteSection from '@/components/public/sections/landing/LandingQuoteSection.vue';
+import LandingTeacherSection from '@/components/public/sections/landing/LandingTeacherSection.vue';
 import { type CalendarData } from '@/lib/calendar';
 import { type EventData, type FaqItem, type SectionData } from '@/lib/site';
 import { computed, type Component } from 'vue';
@@ -46,6 +54,15 @@ const components: Record<string, Component> = {
     event_calendar: EventCalendarSection,
     map: MapSection,
     faq: FaqSection,
+    // Landing de evento (Link interno); los estilos están en resources/css/landing.css.
+    landing_hero: LandingHeroSection,
+    landing_intro: LandingIntroSection,
+    landing_about: LandingAboutSection,
+    landing_quote: LandingQuoteSection,
+    landing_benefits: LandingBenefitsSection,
+    landing_teacher: LandingTeacherSection,
+    landing_program: LandingProgramSection,
+    landing_booking: LandingBookingSection,
 };
 
 const component = computed(() => components[props.section.type]);

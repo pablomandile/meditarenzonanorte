@@ -26,6 +26,7 @@ class EventRequest extends FormRequest
             'price' => ['nullable', 'string', 'max:255'],
             'cta_label' => ['nullable', 'string', 'max:255'],
             'cta_url' => ['nullable', 'string', 'max:500'],
+            'link_type' => ['nullable', 'string', 'in:external,internal'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
             'image_path' => ['nullable', 'string', 'max:500'],
             'image_url' => ['nullable', 'string', 'max:500'],

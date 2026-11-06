@@ -19,6 +19,11 @@ namespace App\Support;
  *    {type: weekly|date, weekday 1..7, date, from, until, start, end, label};
  *    las resuelve App\Support\Occurrences. El horario que se lee en la tarjeta
  *    sigue siendo el texto libre de `schedule`.
+ *  - program_days: días del programa de la landing de evento
+ *    {weekday, day, featured, items: [{time, name, highlight}]}.
+ *  - prices: precios de la landing de evento {note, amount}.
+ *
+ * Un tipo con 'landing' => true es una sección de la landing de evento.
  */
 class SectionRegistry
 {
@@ -180,7 +185,112 @@ class SectionRegistry
                 ['key' => 'faq_ids', 'type' => 'faq_picker', 'label' => 'Preguntas a mostrar'],
             ],
         ],
+
+        /*
+         * Las secciones de la landing de evento (Link interno). Tienen su propio
+         * diseño —resources/css/landing.css, copiado de la página de Tara Verde de
+         * Meditar en Perú— y sólo se usan en la plantilla y en las landings.
+         * El "kicker" es la línea chica en mayúsculas que va arriba del título.
+         */
+        'landing_hero' => [
+            'label' => 'Landing · Banner con botón',
+            'landing' => true,
+            'fields' => [
+                ['key' => 'image', 'type' => 'image', 'label' => 'Imagen de fondo'],
+                ['key' => 'eyebrow', 'type' => 'text', 'label' => 'Línea superior (ej. el centro y la ciudad)'],
+                ['key' => 'heading', 'type' => 'text', 'label' => 'Título'],
+                ['key' => 'heading_accent', 'type' => 'text', 'label' => 'Título destacado (segunda línea, en itálica dorada)'],
+                ['key' => 'subheading', 'type' => 'textarea', 'label' => 'Subtítulo'],
+                ['key' => 'date', 'type' => 'text', 'label' => 'Fecha'],
+                ['key' => 'place', 'type' => 'text', 'label' => 'Lugar'],
+                ['key' => 'cta_label', 'type' => 'text', 'label' => 'Texto del botón'],
+                ['key' => 'cta_url', 'type' => 'url', 'label' => 'URL del botón (vacía: baja a “Reserva tu lugar”)'],
+            ],
+        ],
+        'landing_intro' => [
+            'label' => 'Landing · Texto con tarjetas numeradas',
+            'landing' => true,
+            'fields' => [
+                ['key' => 'kicker', 'type' => 'text', 'label' => 'Línea superior'],
+                ['key' => 'heading', 'type' => 'text', 'label' => 'Título'],
+                ['key' => 'body', 'type' => 'textarea', 'label' => 'Texto (un párrafo por bloque, separados por una línea en blanco)'],
+                ['key' => 'cards', 'type' => 'cards', 'label' => 'Tarjetas (se numeran solas: 01, 02, 03…)', 'simple' => true],
+            ],
+        ],
+        'landing_about' => [
+            'label' => 'Landing · Imagen y texto',
+            'landing' => true,
+            'fields' => [
+                ['key' => 'image', 'type' => 'image', 'label' => 'Imagen'],
+                ['key' => 'image_side', 'type' => 'select', 'label' => 'Lado de la imagen', 'options' => ['left' => 'Izquierda', 'right' => 'Derecha']],
+                ['key' => 'kicker', 'type' => 'text', 'label' => 'Línea superior'],
+                ['key' => 'heading', 'type' => 'text', 'label' => 'Título'],
+                ['key' => 'body', 'type' => 'textarea', 'label' => 'Texto (un párrafo por bloque, separados por una línea en blanco)'],
+            ],
+        ],
+        'landing_quote' => [
+            'label' => 'Landing · Frase',
+            'landing' => true,
+            'fields' => [
+                ['key' => 'quote', 'type' => 'textarea', 'label' => 'Frase'],
+                ['key' => 'author', 'type' => 'text', 'label' => 'Autor'],
+            ],
+        ],
+        'landing_benefits' => [
+            'label' => 'Landing · Lista con tildes',
+            'landing' => true,
+            'fields' => [
+                ['key' => 'kicker', 'type' => 'text', 'label' => 'Línea superior'],
+                ['key' => 'heading', 'type' => 'text', 'label' => 'Título'],
+                ['key' => 'intro', 'type' => 'textarea', 'label' => 'Introducción'],
+                ['key' => 'items', 'type' => 'items', 'label' => 'Ítems'],
+                ['key' => 'closing', 'type' => 'textarea', 'label' => 'Texto de cierre'],
+            ],
+        ],
+        'landing_teacher' => [
+            'label' => 'Landing · Maestro',
+            'landing' => true,
+            'fields' => [
+                ['key' => 'image', 'type' => 'image', 'label' => 'Foto (se recorta vertical, 4:5)'],
+                ['key' => 'kicker', 'type' => 'text', 'label' => 'Línea superior (ej. LA MAESTRA)'],
+                ['key' => 'heading', 'type' => 'text', 'label' => 'Nombre'],
+                ['key' => 'body', 'type' => 'textarea', 'label' => 'Biografía (un párrafo por bloque, separados por una línea en blanco)'],
+            ],
+        ],
+        'landing_program' => [
+            'label' => 'Landing · Programa',
+            'landing' => true,
+            'fields' => [
+                ['key' => 'kicker', 'type' => 'text', 'label' => 'Línea superior (ej. las fechas)'],
+                ['key' => 'heading', 'type' => 'text', 'label' => 'Título'],
+                ['key' => 'intro', 'type' => 'textarea', 'label' => 'Introducción'],
+                ['key' => 'days', 'type' => 'program_days', 'label' => 'Días'],
+            ],
+        ],
+        'landing_booking' => [
+            'label' => 'Landing · Reserva (precio, botón y lugar)',
+            'landing' => true,
+            'fields' => [
+                ['key' => 'kicker', 'type' => 'text', 'label' => 'Línea superior'],
+                ['key' => 'heading', 'type' => 'text', 'label' => 'Título'],
+                ['key' => 'intro', 'type' => 'textarea', 'label' => 'Subtítulo'],
+                ['key' => 'price_label', 'type' => 'text', 'label' => 'Rótulo de la tarjeta de precio (ej. CONTRIBUCIÓN)'],
+                ['key' => 'prices', 'type' => 'prices', 'label' => 'Precios (el primero se ve más grande)'],
+                ['key' => 'cta_label', 'type' => 'text', 'label' => 'Texto del botón'],
+                ['key' => 'cta_url', 'type' => 'url', 'label' => 'URL del botón (inscripción)'],
+                ['key' => 'place_label', 'type' => 'text', 'label' => 'Rótulo de la tarjeta de lugar (ej. LUGAR)'],
+                ['key' => 'venue', 'type' => 'text', 'label' => 'Nombre del lugar'],
+                ['key' => 'address', 'type' => 'textarea', 'label' => 'Dirección'],
+                ['key' => 'map_query', 'type' => 'text', 'label' => 'Búsqueda para el mapa (vacía: se usa la dirección)'],
+            ],
+        ],
     ];
+
+    /** Los tipos que se usan en la landing de evento, en el orden de la plantilla. */
+    public static function landingTypes(): array
+    {
+        return array_keys(array_filter(self::TYPES, fn ($type) => $type['landing'] ?? false));
+    }
 
     /**
      * @return array<int, array<string, mixed>>
@@ -316,6 +426,22 @@ class SectionRegistry
                     $rules["content.$key.*.start"] = ['nullable', 'date_format:H:i'],
                     $rules["content.$key.*.end"] = ['nullable', 'date_format:H:i'],
                     $rules["content.$key.*.label"] = ['nullable', 'string', 'max:120'],
+                ],
+                // Igual que occurrences: cada sub-clave con su regla, o se pierde.
+                'program_days' => [
+                    $rules["content.$key"] = ['nullable', 'array', 'max:10'],
+                    $rules["content.$key.*.weekday"] = ['nullable', 'string', 'max:40'],
+                    $rules["content.$key.*.day"] = ['nullable', 'string', 'max:10'],
+                    $rules["content.$key.*.featured"] = ['nullable', 'boolean'],
+                    $rules["content.$key.*.items"] = ['nullable', 'array', 'max:20'],
+                    $rules["content.$key.*.items.*.time"] = ['nullable', 'string', 'max:60'],
+                    $rules["content.$key.*.items.*.name"] = ['nullable', 'string', 'max:255'],
+                    $rules["content.$key.*.items.*.highlight"] = ['nullable', 'boolean'],
+                ],
+                'prices' => [
+                    $rules["content.$key"] = ['nullable', 'array', 'max:6'],
+                    $rules["content.$key.*.note"] = ['nullable', 'string', 'max:255'],
+                    $rules["content.$key.*.amount"] = ['nullable', 'string', 'max:60'],
                 ],
                 default => null,
             };

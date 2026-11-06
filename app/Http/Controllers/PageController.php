@@ -22,13 +22,51 @@ class PageController extends Controller
 
     public function show(Page $page): Response|RedirectResponse
     {
-        abort_unless($page->visible, 404);
+        // La plantilla y las landings de evento no son páginas del sitio: las
+        // landings tienen su dirección bajo /eventos-especiales.
+        abort_unless($page->visible && $page->isRegular(), 404);
 
         if ($page->slug === 'home') {
             return redirect()->route('home');
         }
 
         return $this->render($page);
+    }
+
+    /**
+     * La landing de un evento con Link interno. Se publica mientras el evento esté
+     * visible y siga en Link interno; si no, da 404 a las visitas, pero quien tiene
+     * sesión la sigue viendo (con una cinta que lo avisa) para poder revisarla.
+     */
+    public function eventLanding(string $slug): Response
+    {
+        $landing = Page::where('kind', Page::KIND_EVENT_LANDING)->where('slug', $slug)->with('event')->firstOrFail();
+        $published = $landing->visible && $landing->event && $landing->event->visible && $landing->event->isInternal();
+
+        abort_unless($published || auth()->check(), 404);
+
+        return self::eventLandingResponse($landing, preview: ! $published);
+    }
+
+    /** También la usa la vista previa de la plantilla, desde el panel. */
+    public static function eventLandingResponse(Page $landing, bool $preview = false): Response
+    {
+        return Inertia::render('Public/EventLanding', [
+            'page' => [
+                'slug' => $landing->slug,
+                'title' => $landing->title,
+                'meta_description' => $landing->meta_description,
+                'kind' => $landing->kind,
+                'admin_url' => auth()->check() ? $landing->adminUrl() : null,
+            ],
+            'preview' => $preview,
+            'sections' => $landing->sections()->visible()->orderBy('position')->get()->map(fn ($section) => [
+                'id' => $section->id,
+                'type' => $section->type,
+                'key' => $section->key,
+                'content' => $section->content ?? [],
+            ])->values(),
+        ]);
     }
 
     private function render(Page $page): Response

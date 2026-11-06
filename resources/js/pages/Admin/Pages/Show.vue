@@ -18,6 +18,11 @@ const props = defineProps<{
         meta_description: string | null;
         site_name: string;
         url: string;
+        /** 'page' (del sitio), 'event_template' (la plantilla) o 'event_landing'. */
+        kind: 'page' | 'event_template' | 'event_landing';
+        breadcrumbs: { title: string; href: string }[];
+        /** Sólo en una landing: el evento dueño y si la landing está publicada. */
+        event: { id: number; title: string; published: boolean } | null;
     };
     sections: {
         id: number;
@@ -31,10 +36,11 @@ const props = defineProps<{
     }[];
 }>();
 
-const breadcrumbs = [
-    { title: 'Páginas', href: '/admin/pages' },
-    { title: props.page.title, href: `/admin/pages/${props.page.id}` },
-];
+const breadcrumbs = props.page.breadcrumbs;
+
+const esPlantilla = props.page.kind === 'event_template';
+const esLanding = props.page.kind === 'event_landing';
+const esDelSitio = props.page.kind === 'page';
 
 const { confirm } = useConfirm();
 
@@ -117,19 +123,38 @@ async function destroy(section: { id: number; title: string | null; type_label: 
         <div class="flex flex-col gap-4 p-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                    <h1 class="text-xl font-semibold">{{ page.title }}</h1>
-                    <p class="text-sm text-muted-foreground">Ordená, ocultá o editá las secciones. Los cambios se ven al instante en el sitio.</p>
+                    <h1 class="text-xl font-semibold">{{ esLanding ? `Landing: ${page.title}` : page.title }}</h1>
+                    <p v-if="esPlantilla" class="text-sm text-muted-foreground">
+                        Es el molde de la landing de los eventos con “Link interno”. Cada evento nuevo recibe una copia; los cambios de acá no tocan
+                        las landings que ya existen.
+                    </p>
+                    <p v-else class="text-sm text-muted-foreground">
+                        Ordená, ocultá, cloná o editá las secciones. Los cambios se ven al instante en el sitio.
+                    </p>
                 </div>
-                <Button as-child variant="outline">
-                    <a :href="page.slug === 'home' ? '/' : `/${page.slug}`" target="_blank">Ver página</a>
-                </Button>
+                <div class="flex flex-wrap gap-2">
+                    <Button v-if="esLanding && page.event" as-child variant="ghost">
+                        <Link :href="`/admin/events/${page.event.id}/edit`">Editar el evento</Link>
+                    </Button>
+                    <Button as-child variant="outline">
+                        <a :href="page.url" target="_blank">{{ esPlantilla ? 'Vista previa' : 'Ver página' }}</a>
+                    </Button>
+                </div>
+            </div>
+
+            <div
+                v-if="esLanding && page.event && !page.event.published"
+                class="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200"
+            >
+                Esta landing no está publicada: el evento está oculto o tiene “Link externo”. Vos la podés ver porque tenés la sesión iniciada; las
+                visitas reciben “página no encontrada”.
             </div>
 
             <!--
                 Datos de la página en sí. El slug no se edita —cambiarlo rompería
                 los enlaces— y el orden del menú se cambia con las flechas del listado.
             -->
-            <Card>
+            <Card v-if="!esPlantilla">
                 <!-- [&>*]:min-w-0: sin esto, la vista previa con el enlace largo (truncate) desborda en mobile. -->
                 <CardContent class="grid gap-4 p-4 [&>*]:min-w-0">
                     <div class="grid gap-1.5">
@@ -139,7 +164,7 @@ async function destroy(section: { id: number; title: string | null; type_label: 
                         <p v-if="datos.errors.title" class="text-sm text-red-600">{{ datos.errors.title }}</p>
                     </div>
 
-                    <div v-if="!esHome" class="grid gap-1.5">
+                    <div v-if="!esHome && esDelSitio" class="grid gap-1.5">
                         <Label for="menu_label">Nombre en el menú</Label>
                         <p class="text-sm text-muted-foreground">
                             Cómo aparece esta página en el menú del sitio. Si lo dejás vacío sale del menú, aunque su dirección siga funcionando.
