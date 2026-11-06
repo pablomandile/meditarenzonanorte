@@ -253,7 +253,8 @@ class SectionRegistry
             'fields' => [
                 ['key' => 'image', 'type' => 'image', 'label' => 'Foto (se recorta vertical, 4:5)'],
                 ['key' => 'kicker', 'type' => 'text', 'label' => 'Línea superior (ej. LA MAESTRA)'],
-                ['key' => 'heading', 'type' => 'text', 'label' => 'Nombre'],
+                // Se elige de los maestr@s de "Datos recurrentes" o se escribe a mano.
+                ['key' => 'heading', 'type' => 'suggest', 'label' => 'Nombre', 'pool' => 'teachers'],
                 ['key' => 'body', 'type' => 'textarea', 'label' => 'Biografía (un párrafo por bloque, separados por una línea en blanco)'],
             ],
         ],

@@ -90,6 +90,18 @@ class RecurringDataTest extends TestCase
             ->assertInertia(fn (AssertableInertia $page) => $page->where('venues', ['Centro Kadampa', 'Olivos']));
     }
 
+    public function test_the_landing_teacher_section_suggests_the_teachers(): void
+    {
+        $this->seed(ContentSeeder::class);
+        Teacher::create(['name' => 'Guen Kelsang Namdrol']);
+        $section = \App\Support\EventLanding::template()->sections()->where('type', 'landing_teacher')->first();
+
+        $this->actingAs($this->admin())->get("/admin/sections/{$section->id}/edit")
+            ->assertInertia(fn (AssertableInertia $page) => $page
+                ->where('pools.teachers', ['Guen Kelsang Namdrol'])
+                ->where('fields.2.type', 'suggest'));
+    }
+
     public function test_seeder_fills_the_lists_from_the_existing_class_cards(): void
     {
         $this->seed(ContentSeeder::class);
