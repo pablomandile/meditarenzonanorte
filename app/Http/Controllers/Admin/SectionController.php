@@ -220,7 +220,8 @@ class SectionController extends Controller
 
         $section->update(['content' => $content]);
 
-        return back()->with('success', 'Sección guardada.');
+        // Guardar cierra la edición: vuelve a la página de la sección.
+        return redirect()->route('admin.pages.show', $section->page)->with('success', 'Sección guardada.');
     }
 
     /**

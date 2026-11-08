@@ -93,10 +93,11 @@ class NewsletterController extends Controller
         if ($newsletter->status === Newsletter::SCHEDULED) {
             NewsletterSender::freeze($newsletter);
 
-            return back()->with('success', 'Guardado. Sigue programado para el '.$this->localLabel($newsletter->scheduled_at).'.');
+            return redirect()->route('admin.newsletters.index')->with('success', 'Guardado. Sigue programado para el '.$this->localLabel($newsletter->scheduled_at).'.');
         }
 
-        return back()->with('success', 'Newsletter guardado.');
+        // Guardar cierra la edición: vuelve al listado.
+        return redirect()->route('admin.newsletters.index')->with('success', 'Newsletter guardado.');
     }
 
     public function destroy(Newsletter $newsletter): RedirectResponse

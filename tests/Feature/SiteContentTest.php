@@ -197,7 +197,8 @@ class SiteContentTest extends TestCase
                 // Sin puntaje explícito quedan las 5 estrellas de siempre.
                 ['quote' => 'También vale.', 'author' => null, 'rating' => null],
             ]]])
-            ->assertRedirect();
+            // Guardar cierra la edición y vuelve a la página de la sección.
+            ->assertRedirect(route('admin.pages.show', $section->page));
 
         $this->assertSame([
             ['quote' => 'Vale.', 'author' => 'Ana', 'rating' => 4],

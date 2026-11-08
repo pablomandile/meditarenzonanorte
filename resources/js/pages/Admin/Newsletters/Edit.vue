@@ -47,7 +47,8 @@ const form = useForm({
 });
 
 function save() {
-    form.put(route('admin.newsletters.update', props.newsletter.id), { preserveScroll: true });
+    // Al guardar, el server vuelve al listado.
+    form.put(route('admin.newsletters.update', props.newsletter.id));
 }
 
 const scheduledAt = ref(props.newsletter.scheduled_input ?? '');

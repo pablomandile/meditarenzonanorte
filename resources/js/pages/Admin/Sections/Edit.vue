@@ -33,15 +33,8 @@ const form = useForm<{ _method: string; content: Record<string, any>; files: Rec
 
 function submit() {
     form.post(route('admin.sections.update', props.section.id), {
+        // Al guardar, el server vuelve a la página de la sección.
         forceFormData: true,
-        preserveScroll: true,
-        onSuccess: () => {
-            // Re-sync the form with the values the server just persisted so
-            // image previews (and any normalized content) refresh without a reload.
-            form.files = {};
-            form.content = JSON.parse(JSON.stringify(props.section.content ?? {}));
-            form.defaults();
-        },
     });
 }
 </script>

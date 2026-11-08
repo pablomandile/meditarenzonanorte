@@ -121,7 +121,8 @@ class NewsletterAdminTest extends TestCase
                     ['kind' => 'section', 'id' => $first->id],
                 ],
             ])
-            ->assertRedirect()
+            // Guardar cierra la edición y vuelve al listado.
+            ->assertRedirect(route('admin.newsletters.index'))
             ->assertSessionHas('success');
 
         $this->assertSame(
