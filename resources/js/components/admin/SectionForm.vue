@@ -21,6 +21,8 @@ export type FieldDef = {
     type: string;
     label: string;
     options?: Record<string, string>;
+    /** Para 'select': el texto de la opción vacía, cuando vacío significa algo. */
+    empty?: string;
     /** Para 'tags' y 'suggest': qué lista de "Datos recurrentes" ofrecer. */
     pool?: string;
     /** Para 'cards': sólo título y texto, sin imagen ni enlace (las tarjetas numeradas de la landing). */
@@ -92,6 +94,7 @@ const files = defineModel<Record<string, any>>('files', { required: true });
                 v-model="content[field.key]"
                 :label="field.label"
                 :options="field.options ?? {}"
+                :empty="field.empty"
                 :error="fieldError(field.key)"
             />
 

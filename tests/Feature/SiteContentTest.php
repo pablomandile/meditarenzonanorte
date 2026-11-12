@@ -217,6 +217,23 @@ class SiteContentTest extends TestCase
             ->assertSessionHasErrors('content.reviews.0.rating');
     }
 
+    public function test_a_class_can_choose_to_scroll_a_long_description_instead_of_more(): void
+    {
+        $admin = $this->admin();
+        $section = Section::where('type', 'class_info')->where('is_template', false)->firstOrFail();
+
+        $this->actingAs($admin)
+            ->put("/admin/sections/{$section->id}", ['content' => [...$section->content, 'body_overflow' => 'scroll']])
+            ->assertRedirect();
+
+        $this->assertSame('scroll', $section->fresh()->content['body_overflow']);
+
+        // Vacío es el "más…" de siempre; cualquier otra cosa se rechaza.
+        $this->actingAs($admin)
+            ->put("/admin/sections/{$section->id}", ['content' => [...$section->content, 'body_overflow' => 'zoom']])
+            ->assertSessionHasErrors('content.body_overflow');
+    }
+
     public function test_missing_section_seeder_inserts_the_cover_without_touching_edited_sections(): void
     {
         $page = Page::where('slug', 'clases-semanales')->firstOrFail();

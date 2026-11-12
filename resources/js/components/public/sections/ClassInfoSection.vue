@@ -21,9 +21,18 @@ function closeUnlessSelecting() {
     if (!window.getSelection()?.toString()) flipped.value = false;
 }
 
+/**
+ * Qué hacer con una descripción que no entra junto al afiche: por defecto se
+ * corta y "más…" despliega la ficha; con 'scroll' se desplaza dentro del mismo
+ * alto y la ficha no cambia de tamaño.
+ */
+const scrolls = computed(() => props.section.content.body_overflow === 'scroll');
+
 const expanded = ref(false);
 const body = ref<HTMLElement>();
 const clipped = ref(false);
+/** Con scroll: si ya se llegó al final, el degradado sobra. */
+const atEnd = ref(false);
 
 /**
  * En desktop el alto de la tarjeta lo fija el afiche y el texto se recorta a lo
@@ -35,6 +44,7 @@ function measure() {
     const el = body.value;
 
     clipped.value = !!el && el.scrollHeight - el.clientHeight > 4;
+    atEnd.value = !!el && el.scrollHeight - el.clientHeight - el.scrollTop <= 4;
 }
 
 let observer: ResizeObserver | null = null;
@@ -168,21 +178,40 @@ watch(expanded, () => nextTick(measure));
                             >
                         </h2>
 
-                        <div v-if="paragraphs(section.content.body).length" ref="body" class="relative min-h-0 overflow-hidden">
+                        <!--
+                            Con scroll, el tabindex deja desplazarlo con el teclado, y el
+                            degradado va sticky para quedarse al pie mientras el texto se
+                            mueve (absolute se iría con el contenido).
+                        -->
+                        <div
+                            v-if="paragraphs(section.content.body).length"
+                            ref="body"
+                            class="relative min-h-0"
+                            :class="scrolls ? 'overflow-y-auto overscroll-contain pr-2 focus:outline-none' : 'overflow-hidden'"
+                            :tabindex="scrolls && clipped ? 0 : undefined"
+                            :aria-label="scrolls && clipped ? 'Descripción' : undefined"
+                            @scroll="scrolls && measure()"
+                        >
                             <p v-for="(p, i) in paragraphs(section.content.body)" :key="i" class="mt-4 whitespace-pre-line leading-relaxed text-brand-body">
                                 {{ p }}
                             </p>
 
+                            <div
+                                v-if="scrolls && clipped && !atEnd"
+                                class="pointer-events-none sticky bottom-0 -mt-10 h-10 bg-gradient-to-t from-brand-cream to-transparent"
+                                aria-hidden="true"
+                            ></div>
+
                             <!-- Degradado para que el corte no quede a mitad de renglón. -->
                             <div
-                                v-if="clipped && !expanded"
+                                v-else-if="!scrolls && clipped && !expanded"
                                 class="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-brand-cream to-transparent"
                                 aria-hidden="true"
                             ></div>
                         </div>
 
                         <button
-                            v-if="clipped || expanded"
+                            v-if="!scrolls && (clipped || expanded)"
                             type="button"
                             class="mt-3 flex shrink-0 items-center gap-1 self-start text-sm font-medium text-brand-sky hover:underline"
                             :aria-expanded="expanded"
