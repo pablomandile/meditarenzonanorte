@@ -153,3 +153,18 @@ html {
         margin-top: 0;
     }
 }
+
+/*
+ * Barra de desplazamiento discreta para el texto con scroll de las fichas: fina,
+ * sin riel, y con el celeste de la marca a medias, para que se funda con la
+ * tarjeta crema en vez del gris oscuro del sistema. El pulgar se afirma al pasar
+ * el mouse.
+ */
+.scroll-suave {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(37 154 207 / 0.35) transparent;
+}
+
+.scroll-suave:hover {
+    scrollbar-color: rgb(37 154 207 / 0.6) transparent;
+}

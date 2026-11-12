@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { type CardItem } from '@/lib/site';
 import { Head, useForm } from '@inertiajs/vue3';
-import { CalendarClock, Check, Construction, Eye, Globe, Hand, KeyRound, LoaderCircle, Mail } from 'lucide-vue-next';
+import { CalendarClock, Check, ChevronDown, Construction, Eye, Globe, Hand, KeyRound, LoaderCircle, Mail, ScrollText } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 /** Una fuente del catálogo del servidor. Ver App\Support\Typography. */
@@ -41,6 +41,7 @@ const form = useForm<Record<string, any>>({
     instagram_url: props.settings.instagram_url ?? '',
     address: props.settings.address ?? '',
     heading_font: (props.settings.heading_font ?? null) as string | null,
+    class_description_mode: props.settings.class_description_mode === 'scroll' ? 'scroll' : 'more',
     // El ajuste se guarda como '1' o nada, así que la comparación exacta alcanza.
     under_construction: props.settings.under_construction === '1',
     construction_title: props.settings.construction_title ?? '',
@@ -100,6 +101,12 @@ const fontCards = computed(() => [
 const estados = [
     { value: false, icon: Globe, name: 'Publicado', note: 'Cualquiera puede entrar y ver las páginas.' },
     { value: true, icon: Construction, name: 'En construcción', note: 'Las visitas ven el cartel; vos seguís viendo el sitio.' },
+];
+
+/** Cómo se muestra, por defecto, una descripción larga en las fichas de clase. */
+const modosDescripcion = [
+    { value: 'more', icon: ChevronDown, name: 'Cortada, con «más…»', note: 'Se muestra lo que entra junto al afiche y «más…» despliega el resto, estirando la ficha.' },
+    { value: 'scroll', icon: ScrollText, name: 'Con scroll', note: 'El texto se desplaza dentro de la ficha, que mantiene siempre el mismo alto.' },
 ];
 
 /**
@@ -215,6 +222,39 @@ const textFields: { key: string; label: string; placeholder?: string; hint?: str
                         </div>
 
                         <p v-if="form.errors.heading_font" class="text-sm text-red-600">{{ form.errors.heading_font }}</p>
+                    </CardContent>
+                </Card>
+
+                <Card class="mt-4">
+                    <CardContent class="grid gap-4 pt-6">
+                        <div class="grid gap-1">
+                            <Label>Descripción de las fichas de clase</Label>
+                            <p class="text-xs text-muted-foreground">
+                                Qué pasa con una descripción que no entra junto al afiche (en celular siempre se ve completa). Es el valor de todas
+                                las fichas; cada una puede elegir otro desde su propia edición.
+                            </p>
+                        </div>
+
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <button
+                                v-for="modo in modosDescripcion"
+                                :key="modo.value"
+                                type="button"
+                                class="grid gap-2 rounded-lg border p-4 text-left transition hover:bg-accent"
+                                :class="form.class_description_mode === modo.value ? 'border-primary ring-1 ring-primary' : 'border-input'"
+                                @click="form.class_description_mode = modo.value"
+                            >
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="flex items-center gap-2 font-medium">
+                                        <component :is="modo.icon" class="h-4 w-4" /> {{ modo.name }}
+                                    </span>
+                                    <Check v-if="form.class_description_mode === modo.value" class="h-4 w-4 text-primary" />
+                                </div>
+                                <span class="text-xs text-muted-foreground">{{ modo.note }}</span>
+                            </button>
+                        </div>
+
+                        <p v-if="form.errors.class_description_mode" class="text-sm text-red-600">{{ form.errors.class_description_mode }}</p>
                     </CardContent>
                 </Card>
 

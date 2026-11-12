@@ -103,13 +103,17 @@ class SectionRegistry
                 ['key' => 'teachers', 'type' => 'tags', 'label' => 'Maestr@ (varios separados por coma)', 'pool' => 'teachers'],
                 ['key' => 'body', 'type' => 'textarea', 'label' => 'Descripción'],
                 // Sólo importa en desktop y con imagen: ahí el alto de la ficha lo
-                // fija el afiche y una descripción larga no entra. Vacío = "más…".
+                // fija el afiche y una descripción larga no entra. Vacío = el modo
+                // elegido en Ajustes del sitio (class_description_mode).
                 [
                     'key' => 'body_overflow',
                     'type' => 'select',
                     'label' => 'Si la descripción no entra junto al afiche',
-                    'empty' => 'Se corta, con “más…” para desplegarla',
-                    'options' => ['scroll' => 'Se desplaza dentro de la ficha, sin cambiar el alto'],
+                    'empty' => 'Lo que se eligió en Ajustes del sitio',
+                    'options' => [
+                        'more' => 'Se corta, con “más…” para desplegarla',
+                        'scroll' => 'Se desplaza dentro de la ficha, sin cambiar el alto',
+                    ],
                 ],
                 ['key' => 'schedule', 'type' => 'text', 'label' => 'Horario (opcional, se arma solo)'],
                 ['key' => 'occurrences', 'type' => 'occurrences', 'label' => 'Fechas para el calendario'],

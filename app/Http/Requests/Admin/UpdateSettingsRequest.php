@@ -31,6 +31,9 @@ class UpdateSettingsRequest extends FormRequest
             // Sólo una clave del catálogo: el valor termina dentro de un font-family
             // del HTML, así que no puede ser texto libre. Vacío = la fuente de siempre.
             'heading_font' => ['nullable', Rule::in(array_keys(Typography::FONTS))],
+            // Cómo se muestra una descripción larga en las fichas de clase que no
+            // eligen por su cuenta: 'more' (se corta con «más…») o 'scroll'.
+            'class_description_mode' => ['nullable', 'in:more,scroll'],
             // El cartel de "En construcción". Los textos vacíos no borran nada: el
             // cartel cae en los de fábrica. Ver App\Support\Construction.
             'under_construction' => ['nullable', 'boolean'],

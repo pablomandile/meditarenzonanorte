@@ -228,10 +228,27 @@ class SiteContentTest extends TestCase
 
         $this->assertSame('scroll', $section->fresh()->content['body_overflow']);
 
-        // Vacío es el "más…" de siempre; cualquier otra cosa se rechaza.
+        $this->actingAs($admin)
+            ->put("/admin/sections/{$section->id}", ['content' => [...$section->content, 'body_overflow' => 'more']])
+            ->assertRedirect();
+
+        // Vacío es "lo de Ajustes del sitio"; cualquier otra cosa se rechaza.
         $this->actingAs($admin)
             ->put("/admin/sections/{$section->id}", ['content' => [...$section->content, 'body_overflow' => 'zoom']])
             ->assertSessionHasErrors('content.body_overflow');
+    }
+
+    public function test_the_site_wide_description_mode_is_saved_and_reaches_the_public_pages(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->post('/admin/settings', ['class_description_mode' => 'scroll'])->assertRedirect();
+        $this->assertSame('scroll', Setting::get('class_description_mode'));
+
+        // Las páginas públicas lo reciben en las props compartidas, que es de donde lo lee la ficha.
+        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page->where('settings.class_description_mode', 'scroll'));
+
+        $this->actingAs($admin)->post('/admin/settings', ['class_description_mode' => 'zoom'])->assertSessionHasErrors('class_description_mode');
     }
 
     public function test_missing_section_seeder_inserts_the_cover_without_touching_edited_sections(): void

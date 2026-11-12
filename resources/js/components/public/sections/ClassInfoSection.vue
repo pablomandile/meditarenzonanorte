@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { img, isInternal, joinNames, lines, mapsUrl, paragraphs, type SectionData } from '@/lib/site';
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import { ChevronDown, Clock, MapPin, RotateCcw, RotateCw, Ticket } from 'lucide-vue-next';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
@@ -22,11 +22,13 @@ function closeUnlessSelecting() {
 }
 
 /**
- * Qué hacer con una descripción que no entra junto al afiche: por defecto se
- * corta y "más…" despliega la ficha; con 'scroll' se desplaza dentro del mismo
- * alto y la ficha no cambia de tamaño.
+ * Qué hacer con una descripción que no entra junto al afiche: 'more' la corta y
+ * "más…" despliega la ficha; 'scroll' la desplaza dentro del mismo alto y la
+ * ficha no cambia de tamaño. La ficha puede elegir; si no, vale el de Ajustes
+ * del sitio, y si tampoco hay, "más…".
  */
-const scrolls = computed(() => props.section.content.body_overflow === 'scroll');
+const page = usePage<{ settings?: Record<string, string | null> }>();
+const scrolls = computed(() => (props.section.content.body_overflow || page.props.settings?.class_description_mode) === 'scroll');
 
 const expanded = ref(false);
 const body = ref<HTMLElement>();
@@ -187,7 +189,7 @@ watch(expanded, () => nextTick(measure));
                             v-if="paragraphs(section.content.body).length"
                             ref="body"
                             class="relative min-h-0"
-                            :class="scrolls ? 'overflow-y-auto overscroll-contain pr-2 focus:outline-none' : 'overflow-hidden'"
+                            :class="scrolls ? 'scroll-suave overflow-y-auto overscroll-contain pr-2 focus:outline-none' : 'overflow-hidden'"
                             :tabindex="scrolls && clipped ? 0 : undefined"
                             :aria-label="scrolls && clipped ? 'Descripción' : undefined"
                             @scroll="scrolls && measure()"

@@ -29,6 +29,7 @@ class SettingController extends Controller
         'instagram_url',
         'address',
         'heading_font',
+        'class_description_mode',
         'construction_title',
         'construction_message',
         'newsletter_mode',
