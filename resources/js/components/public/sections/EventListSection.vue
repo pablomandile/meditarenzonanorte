@@ -48,7 +48,7 @@ const list = computed(() => props.events ?? []);
                         {{ event.title }}
                     </h3>
 
-                    <p v-for="(p, i) in paragraphs(event.description)" :key="i" class="mt-4 leading-relaxed text-brand-body">
+                    <p v-for="(p, i) in paragraphs(event.description)" :key="i" class="mt-4 whitespace-pre-line leading-relaxed text-brand-body">
                         {{ p }}
                     </p>
 

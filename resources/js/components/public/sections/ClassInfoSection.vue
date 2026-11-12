@@ -169,7 +169,7 @@ watch(expanded, () => nextTick(measure));
                         </h2>
 
                         <div v-if="paragraphs(section.content.body).length" ref="body" class="relative min-h-0 overflow-hidden">
-                            <p v-for="(p, i) in paragraphs(section.content.body)" :key="i" class="mt-4 leading-relaxed text-brand-body">
+                            <p v-for="(p, i) in paragraphs(section.content.body)" :key="i" class="mt-4 whitespace-pre-line leading-relaxed text-brand-body">
                                 {{ p }}
                             </p>
 
