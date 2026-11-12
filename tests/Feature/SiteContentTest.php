@@ -251,6 +251,10 @@ class SiteContentTest extends TestCase
         $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page->where('settings.class_description_mode', 'scroll'));
 
         $this->actingAs($admin)->post('/admin/settings', ['class_description_mode' => 'zoom'])->assertSessionHasErrors('class_description_mode');
+
+        // Vacío = que elija cada ficha: se guarda como "sin valor" y deja de pisarlas.
+        $this->actingAs($admin)->post('/admin/settings', ['class_description_mode' => ''])->assertRedirect();
+        $this->assertEmpty(Setting::get('class_description_mode'));
     }
 
     public function test_missing_section_seeder_inserts_the_cover_without_touching_edited_sections(): void

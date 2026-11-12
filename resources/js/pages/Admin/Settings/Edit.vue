@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { type CardItem } from '@/lib/site';
 import { Head, useForm } from '@inertiajs/vue3';
-import { CalendarClock, Check, ChevronDown, Construction, Eye, Globe, Hand, KeyRound, LoaderCircle, Mail, RotateCw, ScrollText } from 'lucide-vue-next';
+import { CalendarClock, Check, ChevronDown, Construction, Eye, Globe, Hand, KeyRound, ListChecks, LoaderCircle, Mail, RotateCw, ScrollText } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 /** Una fuente del catálogo del servidor. Ver App\Support\Typography. */
@@ -41,7 +41,8 @@ const form = useForm<Record<string, any>>({
     instagram_url: props.settings.instagram_url ?? '',
     address: props.settings.address ?? '',
     heading_font: (props.settings.heading_font ?? null) as string | null,
-    class_description_mode: ['scroll', 'flip'].includes(props.settings.class_description_mode) ? props.settings.class_description_mode : 'more',
+    // Vacío = que elija cada ficha.
+    class_description_mode: ['more', 'scroll', 'flip'].includes(props.settings.class_description_mode) ? props.settings.class_description_mode : '',
     // El ajuste se guarda como '1' o nada, así que la comparación exacta alcanza.
     under_construction: props.settings.under_construction === '1',
     construction_title: props.settings.construction_title ?? '',
@@ -105,6 +106,7 @@ const estados = [
 
 /** Cómo se muestra, por defecto, una descripción larga en las fichas de clase. */
 const modosDescripcion = [
+    { value: '', icon: ListChecks, name: 'Que elija cada ficha', note: 'Cada ficha usa el modo que tenga elegido en su edición; si no eligió, se corta con «más…».' },
     { value: 'more', icon: ChevronDown, name: 'Cortada, con «más…»', note: 'Se muestra lo que entra junto al afiche y «más…» despliega el resto, estirando la ficha.' },
     { value: 'scroll', icon: ScrollText, name: 'Con scroll', note: 'El texto se desplaza dentro de la ficha, que mantiene siempre el mismo alto.' },
     { value: 'flip', icon: RotateCw, name: 'En el dorso del afiche', note: 'El afiche se da vuelta y la descripción ocupa su lugar. Las fichas sin imagen la muestran con «más…».' },
@@ -231,12 +233,13 @@ const textFields: { key: string; label: string; placeholder?: string; hint?: str
                         <div class="grid gap-1">
                             <Label>Descripción de las fichas de clase</Label>
                             <p class="text-xs text-muted-foreground">
-                                Qué pasa con una descripción que no entra junto al afiche (en celular siempre se ve completa). Es el valor de todas
-                                las fichas; cada una puede elegir otro desde su propia edición.
+                                Qué pasa con una descripción que no entra junto al afiche (en celular siempre se ve completa). Si elegís un modo,
+                                vale para todas las fichas y pisa lo que cada una tenga elegido; con «Que elija cada ficha» se respeta la elección de
+                                cada una.
                             </p>
                         </div>
 
-                        <div class="grid gap-3 sm:grid-cols-3">
+                        <div class="grid gap-3 sm:grid-cols-2">
                             <button
                                 v-for="modo in modosDescripcion"
                                 :key="modo.value"

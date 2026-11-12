@@ -25,11 +25,12 @@ function closeUnlessSelecting() {
  * Qué hacer con una descripción que no entra junto al afiche: 'more' la corta y
  * "más…" despliega la ficha; 'scroll' la desplaza dentro del mismo alto y la
  * ficha no cambia de tamaño; 'flip' la pasa al dorso del afiche, que se da
- * vuelta como el de las clases del ciclo. La ficha puede elegir; si no, vale el
- * de Ajustes del sitio, y si tampoco hay, "más…".
+ * vuelta como el de las clases del ciclo. Manda Ajustes del sitio: si ahí hay un
+ * modo elegido vale para todas las fichas; si no (cada ficha elige), vale el de
+ * la ficha, y si tampoco hay, "más…".
  */
 const page = usePage<{ settings?: Record<string, string | null> }>();
-const mode = computed(() => props.section.content.body_overflow || page.props.settings?.class_description_mode || 'more');
+const mode = computed(() => page.props.settings?.class_description_mode || props.section.content.body_overflow || 'more');
 const scrolls = computed(() => mode.value === 'scroll');
 
 const bodyParagraphs = computed(() => paragraphs(props.section.content.body));
