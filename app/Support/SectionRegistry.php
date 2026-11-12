@@ -113,6 +113,7 @@ class SectionRegistry
                     'options' => [
                         'more' => 'Se corta, con “más…” para desplegarla',
                         'scroll' => 'Se desplaza dentro de la ficha, sin cambiar el alto',
+                        'flip' => 'Va en el dorso del afiche, que se da vuelta (necesita imagen)',
                     ],
                 ],
                 ['key' => 'schedule', 'type' => 'text', 'label' => 'Horario (opcional, se arma solo)'],

@@ -229,8 +229,10 @@ class SiteContentTest extends TestCase
         $this->assertSame('scroll', $section->fresh()->content['body_overflow']);
 
         $this->actingAs($admin)
-            ->put("/admin/sections/{$section->id}", ['content' => [...$section->content, 'body_overflow' => 'more']])
+            ->put("/admin/sections/{$section->id}", ['content' => [...$section->content, 'body_overflow' => 'flip']])
             ->assertRedirect();
+
+        $this->assertSame('flip', $section->fresh()->content['body_overflow']);
 
         // Vacío es "lo de Ajustes del sitio"; cualquier otra cosa se rechaza.
         $this->actingAs($admin)

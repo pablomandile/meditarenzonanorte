@@ -24,11 +24,27 @@ function closeUnlessSelecting() {
 /**
  * Qué hacer con una descripción que no entra junto al afiche: 'more' la corta y
  * "más…" despliega la ficha; 'scroll' la desplaza dentro del mismo alto y la
- * ficha no cambia de tamaño. La ficha puede elegir; si no, vale el de Ajustes
- * del sitio, y si tampoco hay, "más…".
+ * ficha no cambia de tamaño; 'flip' la pasa al dorso del afiche, que se da
+ * vuelta como el de las clases del ciclo. La ficha puede elegir; si no, vale el
+ * de Ajustes del sitio, y si tampoco hay, "más…".
  */
 const page = usePage<{ settings?: Record<string, string | null> }>();
-const scrolls = computed(() => (props.section.content.body_overflow || page.props.settings?.class_description_mode) === 'scroll');
+const mode = computed(() => props.section.content.body_overflow || page.props.settings?.class_description_mode || 'more');
+const scrolls = computed(() => mode.value === 'scroll');
+
+const bodyParagraphs = computed(() => paragraphs(props.section.content.body));
+
+/** Sin afiche no hay dorso: una ficha sin imagen se comporta como "más…". */
+const flipsBody = computed(() => mode.value === 'flip' && !!props.section.content.image && bodyParagraphs.value.length > 0);
+
+/** El dorso existe si hay clases del ciclo o si la descripción se pasó ahí. */
+const hasBack = computed(() => cycle.value.length > 0 || flipsBody.value);
+
+const backLabel = computed(() => {
+    if (flipsBody.value) return cycle.value.length ? 'descripción y ciclo' : 'descripción';
+
+    return 'clases del ciclo';
+});
 
 const expanded = ref(false);
 const body = ref<HTMLElement>();
@@ -90,11 +106,11 @@ watch(expanded, () => nextTick(measure));
                             :class="flipped ? '[transform:rotateY(180deg)]' : ''"
                         >
                             <component
-                                :is="cycle.length ? 'button' : 'div'"
-                                v-bind="cycle.length ? { type: 'button', 'aria-expanded': flipped, 'aria-label': 'Ver las clases del ciclo' } : {}"
+                                :is="hasBack ? 'button' : 'div'"
+                                v-bind="hasBack ? { type: 'button', 'aria-expanded': flipped, 'aria-label': `Ver ${backLabel}` } : {}"
                                 class="relative block w-full [backface-visibility:hidden]"
-                                :class="cycle.length ? 'group/flip cursor-pointer' : ''"
-                                @click="cycle.length && (flipped = true)"
+                                :class="hasBack ? 'group/flip cursor-pointer' : ''"
+                                @click="hasBack && (flipped = true)"
                             >
                                 <img
                                     :src="img(section.content.image)"
@@ -103,10 +119,10 @@ watch(expanded, () => nextTick(measure));
                                 />
 
                                 <span
-                                    v-if="cycle.length"
+                                    v-if="hasBack"
                                     class="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-brand-sky/95 px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-white shadow-md transition group-hover/flip:bg-brand-sky-dark"
                                 >
-                                    <RotateCw class="h-3.5 w-3.5" /> clases del ciclo
+                                    <RotateCw class="h-3.5 w-3.5" /> {{ backLabel }}
                                 </span>
                             </component>
 
@@ -116,13 +132,15 @@ watch(expanded, () => nextTick(measure));
                                 para el teclado y para que se vea que se puede cerrar.
                             -->
                             <div
-                                v-if="cycle.length"
-                                class="absolute inset-0 flex cursor-pointer flex-col overflow-y-auto rounded-t-xl bg-gradient-to-br from-brand-sky to-brand-sky-dark p-6 text-white [backface-visibility:hidden] [transform:rotateY(180deg)] md:rounded-l-xl md:rounded-tr-none md:p-8"
+                                v-if="hasBack"
+                                class="scroll-suave-claro absolute inset-0 flex cursor-pointer flex-col overflow-y-auto rounded-t-xl bg-gradient-to-br from-brand-sky to-brand-sky-dark p-6 text-white [backface-visibility:hidden] [transform:rotateY(180deg)] md:rounded-l-xl md:rounded-tr-none md:p-8"
                                 :aria-hidden="!flipped"
                                 @click="closeUnlessSelecting"
                             >
                                 <div class="flex items-start justify-between gap-3">
-                                    <h3 class="font-display text-2xl uppercase tracking-wide md:text-3xl">Clases del ciclo</h3>
+                                    <h3 class="font-display text-2xl uppercase tracking-wide md:text-3xl">
+                                        {{ flipsBody ? (section.content.heading ?? 'Descripción') : 'Clases del ciclo' }}
+                                    </h3>
                                     <button
                                         type="button"
                                         class="flex shrink-0 items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium uppercase tracking-wide transition hover:bg-white/30"
@@ -133,7 +151,18 @@ watch(expanded, () => nextTick(measure));
                                     </button>
                                 </div>
 
-                                <ol class="mt-5 space-y-3">
+                                <div v-if="flipsBody" class="mt-4 space-y-3 text-[15px] leading-relaxed text-white/95">
+                                    <p v-for="(p, i) in bodyParagraphs" :key="i" class="whitespace-pre-line">{{ p }}</p>
+                                </div>
+
+                                <h4
+                                    v-if="flipsBody && cycle.length"
+                                    class="mt-6 border-t border-white/25 pt-4 font-display text-lg uppercase tracking-wide"
+                                >
+                                    Clases del ciclo
+                                </h4>
+
+                                <ol v-if="cycle.length" class="mt-5 space-y-3">
                                     <li v-for="(item, i) in cycle" :key="i" class="flex items-start gap-3">
                                         <span
                                             class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-cream text-xs font-bold text-brand-sky-dark"
@@ -158,7 +187,7 @@ watch(expanded, () => nextTick(measure));
                         class="flex flex-col justify-center px-8 py-4 md:px-10 md:py-5"
                         :class="[
                             !section.content.image ? 'md:col-span-2' : '',
-                            section.content.image && !expanded ? 'md:absolute md:inset-y-0 md:right-0 md:w-1/2 md:overflow-hidden' : '',
+                            section.content.image && !expanded && !flipsBody ? 'md:absolute md:inset-y-0 md:right-0 md:w-1/2 md:overflow-hidden' : '',
                         ]"
                     >
                         <!--
@@ -186,7 +215,7 @@ watch(expanded, () => nextTick(measure));
                             mueve (absolute se iría con el contenido).
                         -->
                         <div
-                            v-if="paragraphs(section.content.body).length"
+                            v-if="bodyParagraphs.length && !flipsBody"
                             ref="body"
                             class="relative min-h-0"
                             :class="scrolls ? 'scroll-suave overflow-y-auto overscroll-contain pr-2 focus:outline-none' : 'overflow-hidden'"
@@ -194,7 +223,7 @@ watch(expanded, () => nextTick(measure));
                             :aria-label="scrolls && clipped ? 'Descripción' : undefined"
                             @scroll="scrolls && measure()"
                         >
-                            <p v-for="(p, i) in paragraphs(section.content.body)" :key="i" class="mt-4 whitespace-pre-line leading-relaxed text-brand-body">
+                            <p v-for="(p, i) in bodyParagraphs" :key="i" class="mt-4 whitespace-pre-line leading-relaxed text-brand-body">
                                 {{ p }}
                             </p>
 
