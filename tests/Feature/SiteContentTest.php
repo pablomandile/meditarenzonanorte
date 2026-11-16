@@ -1883,6 +1883,52 @@ class SiteContentTest extends TestCase
         $this->assertStringContainsString('Sábado 8 de agosto de 16 a 19 hs', $hints['schedule']);
     }
 
+    public function test_a_course_card_shows_as_finished_from_the_day_after_its_last_date(): void
+    {
+        $section = Section::whereHas('page', fn ($query) => $query->where('slug', 'cursos-y-retiros'))
+            ->where('key', 'curso')
+            ->firstOrFail();
+
+        $terminada = function (string $momento) {
+            $this->travelTo(Carbon::parse($momento, EventCalendar::TIMEZONE));
+            $valor = null;
+
+            $this->get('/cursos-y-retiros')->assertOk()->assertInertia(function (AssertableInertia $page) use (&$valor) {
+                $valor = collect($page->toArray()['props']['sections'])->firstWhere('key', 'curso')['content']['finished'] ?? null;
+            });
+
+            return $valor;
+        };
+
+        // Sin fechas no se sabe cuándo termina: sigue activa.
+        $section->update(['visible' => true, 'content' => [...$section->content, 'occurrences' => []]]);
+        $this->assertFalse($terminada('2030-01-01 12:00'));
+
+        // Un retiro del 28 al 30: el 30 sigue abierto, el 31 ya terminó.
+        $section->update(['content' => [...$section->content, 'occurrences' => [
+            ['type' => 'date', 'weekday' => null, 'date' => '2026-08-28', 'from' => null, 'until' => '2026-08-30', 'start' => '10:00', 'end' => '17:30', 'label' => null],
+        ]]]);
+
+        $this->assertFalse($terminada('2026-08-30 23:30'));
+        $this->assertTrue($terminada('2026-08-31 00:30'));
+        // A las 22 del 30 en Argentina ya es 31 en UTC: manda el día argentino.
+        $this->assertFalse($terminada('2026-08-30 22:00'));
+
+        // Un curso semanal sin "hasta" no termina nunca.
+        $section->update(['content' => [...$section->content, 'occurrences' => [
+            ['type' => 'weekly', 'weekday' => 3, 'date' => null, 'from' => null, 'until' => null, 'start' => '19:00', 'end' => '20:15', 'label' => null],
+        ]]]);
+        $this->assertFalse($terminada('2030-01-01 12:00'));
+
+        // Con "hasta", termina al día siguiente de esa fecha; vale la última regla.
+        $section->update(['content' => [...$section->content, 'occurrences' => [
+            ['type' => 'weekly', 'weekday' => 3, 'date' => null, 'from' => null, 'until' => '2026-09-30', 'start' => '19:00', 'end' => '20:15', 'label' => null],
+            ['type' => 'date', 'weekday' => null, 'date' => '2026-10-10', 'from' => null, 'until' => null, 'start' => null, 'end' => null, 'label' => null],
+        ]]]);
+        $this->assertFalse($terminada('2026-10-10 12:00'));
+        $this->assertTrue($terminada('2026-10-11 12:00'));
+    }
+
     public function test_class_card_can_have_an_anchor_to_link_straight_to_it(): void
     {
         $admin = $this->admin();

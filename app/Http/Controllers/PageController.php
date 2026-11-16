@@ -9,6 +9,7 @@ use App\Models\Section;
 use App\Models\Setting;
 use App\Support\EventCalendar;
 use App\Support\Occurrences;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -168,6 +169,15 @@ class PageController extends Controller
 
         if ($section->type === 'class_info' && blank($content['schedule'] ?? null)) {
             $content['schedule'] = Occurrences::schedule($content['occurrences'] ?? []);
+        }
+
+        // Pasada la última fecha (al día siguiente, en hora argentina), la ficha se
+        // ve como terminada: afiche en ocre y el botón de inscripción apagado.
+        if ($section->type === 'class_info') {
+            $content['finished'] = Occurrences::finished(
+                $content['occurrences'] ?? [],
+                CarbonImmutable::today(EventCalendar::TIMEZONE)->toDateString(),
+            );
         }
 
         return $content;

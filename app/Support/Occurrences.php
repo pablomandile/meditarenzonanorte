@@ -146,6 +146,67 @@ class Occurrences
     }
 
     /**
+     * El último día en que hay actividad, o null si no se puede saber: sin fechas
+     * usables, o con alguna regla semanal sin "hasta", que no termina nunca.
+     *
+     * @param  array<int, array<string, mixed>>  $rows
+     */
+    public static function lastDay(array $rows): ?string
+    {
+        $last = null;
+
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $until = self::date($row['until'] ?? null);
+
+            if (($row['type'] ?? 'weekly') === 'date') {
+                $date = self::date($row['date'] ?? null);
+
+                if (! $date) {
+                    continue;
+                }
+
+                // Igual que en datesOf: un "hasta" anterior a la fecha no cuenta.
+                $end = $until && $until->greaterThanOrEqualTo($date) ? $until : $date;
+            } else {
+                $weekday = filter_var($row['weekday'] ?? null, FILTER_VALIDATE_INT);
+
+                if ($weekday === false || $weekday < 1 || $weekday > 7) {
+                    continue;
+                }
+
+                if (! $until) {
+                    return null;
+                }
+
+                $end = $until;
+            }
+
+            if (! $last || $end->greaterThan($last)) {
+                $last = $end;
+            }
+        }
+
+        return $last?->toDateString();
+    }
+
+    /**
+     * Si ya terminó: desde el día siguiente al último. El día del cierre todavía
+     * cuenta como en curso (un retiro que termina hoy sigue abierto hasta la noche).
+     *
+     * @param  array<int, array<string, mixed>>  $rows
+     */
+    public static function finished(array $rows, string $today): bool
+    {
+        $last = self::lastDay($rows);
+
+        return $last !== null && $today > $last;
+    }
+
+    /**
      * @param  array<int, array<string, mixed>>  $rows
      * @return array<int, array{date: string, start: ?string, end: ?string, label: ?string}>
      */

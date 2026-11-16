@@ -6,6 +6,9 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 const props = defineProps<{ section: SectionData }>();
 
+/** Lo calcula el servidor: desde el día siguiente a la última fecha del calendario. */
+const finished = computed(() => props.section.content.finished === true);
+
 /** Una clase por línea; sin contenido no hay dorso ni giro. */
 const cycle = computed(() => lines(props.section.content.cycle));
 
@@ -117,7 +120,19 @@ watch(expanded, () => nextTick(measure));
                                     :src="img(section.content.image)"
                                     :alt="section.content.heading ?? ''"
                                     class="h-auto w-full rounded-t-xl md:rounded-l-xl md:rounded-tr-none"
+                                    :class="finished ? 'grayscale' : ''"
                                 />
+
+                                <!--
+                                    Terminado: el afiche en grises y un velo ocre
+                                    multiplicado encima, que lo tiñe parejo sin
+                                    tapar lo que dice.
+                                -->
+                                <span
+                                    v-if="finished"
+                                    class="pointer-events-none absolute inset-0 rounded-t-xl bg-[#C9962F]/60 mix-blend-multiply md:rounded-l-xl md:rounded-tr-none"
+                                    aria-hidden="true"
+                                ></span>
 
                                 <span
                                     v-if="hasBack"
@@ -277,8 +292,18 @@ watch(expanded, () => nextTick(measure));
                         </ul>
 
                         <div v-if="section.content.cta_label && section.content.cta_url" class="mt-7 shrink-0">
+                            <!-- Pasada la fecha ya no hay a dónde inscribirse: el botón queda, apagado. -->
+                            <span
+                                v-if="finished"
+                                role="link"
+                                aria-disabled="true"
+                                title="Este curso ya terminó"
+                                class="inline-block cursor-not-allowed rounded-full bg-brand-line/60 px-6 py-2.5 text-sm font-medium uppercase tracking-wide text-brand-muted"
+                            >
+                                {{ section.content.cta_label }}
+                            </span>
                             <Link
-                                v-if="isInternal(section.content.cta_url)"
+                                v-else-if="isInternal(section.content.cta_url)"
                                 :href="section.content.cta_url"
                                 class="inline-block rounded-full bg-brand-orange px-6 py-2.5 text-sm font-medium uppercase tracking-wide text-white transition hover:bg-brand-orange-dark"
                             >
