@@ -12,6 +12,9 @@ const finished = computed(() => props.section.content.finished === true);
 /** El ocre sobre el afiche se puede apagar por ficha; el botón se apaga igual. */
 const tinted = computed(() => finished.value && props.section.content.past_filter !== 'off');
 
+/** La pastilla "Evento finalizado", con su propio interruptor (independiente del ocre). */
+const badged = computed(() => finished.value && props.section.content.past_badge !== 'off');
+
 /** Una clase por línea; sin contenido no hay dorso ni giro. */
 const cycle = computed(() => lines(props.section.content.cycle));
 
@@ -136,6 +139,13 @@ watch(expanded, () => nextTick(measure));
                                     class="pointer-events-none absolute inset-0 rounded-t-xl bg-[#C9962F]/60 mix-blend-multiply md:rounded-l-xl md:rounded-tr-none"
                                     aria-hidden="true"
                                 ></span>
+
+                                <span
+                                    v-if="badged"
+                                    class="pointer-events-none absolute right-3 top-3 rounded-full bg-[#7A5612]/95 px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-white shadow-md"
+                                >
+                                    Evento finalizado
+                                </span>
 
                                 <span
                                     v-if="hasBack"

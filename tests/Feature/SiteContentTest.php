@@ -255,6 +255,18 @@ class SiteContentTest extends TestCase
         $this->actingAs($admin)
             ->put("/admin/sections/{$section->id}", ['content' => [...$section->content, 'past_filter' => 'sepia']])
             ->assertSessionHasErrors('content.past_filter');
+
+        // La pastilla "Evento finalizado" se guarda aparte, sin tocar el filtro.
+        $this->actingAs($admin)
+            ->put("/admin/sections/{$section->id}", ['content' => [...$section->fresh()->content, 'past_badge' => 'off']])
+            ->assertRedirect()->assertSessionHas('success');
+
+        $this->assertSame('off', $section->fresh()->content['past_badge']);
+        $this->assertSame('off', $section->fresh()->content['past_filter']);
+
+        $this->actingAs($admin)
+            ->put("/admin/sections/{$section->id}", ['content' => [...$section->content, 'past_badge' => 'grande']])
+            ->assertSessionHasErrors('content.past_badge');
     }
 
     public function test_the_site_wide_description_mode_is_saved_and_reaches_the_public_pages(): void

@@ -136,6 +136,16 @@ class SectionRegistry
                         'off' => 'Desactivado (la imagen queda con sus colores)',
                     ],
                 ],
+                // Independiente del filtro: se puede tener una, la otra o las dos.
+                [
+                    'key' => 'past_badge',
+                    'type' => 'select',
+                    'label' => 'Pastilla «Evento finalizado» sobre la imagen cuando ya pasó la fecha',
+                    'empty' => 'Activada',
+                    'options' => [
+                        'off' => 'Desactivada',
+                    ],
+                ],
                 ['key' => 'cycle', 'type' => 'textarea', 'label' => 'Clases del ciclo'],
                 [
                     'key' => 'anchor',
