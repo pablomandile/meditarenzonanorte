@@ -240,6 +240,23 @@ class SiteContentTest extends TestCase
             ->assertSessionHasErrors('content.body_overflow');
     }
 
+    public function test_a_class_can_turn_off_the_ochre_filter_of_a_past_date(): void
+    {
+        $admin = $this->admin();
+        $section = Section::where('type', 'class_info')->where('is_template', false)->firstOrFail();
+
+        $this->actingAs($admin)
+            ->put("/admin/sections/{$section->id}", ['content' => [...$section->content, 'past_filter' => 'off']])
+            ->assertRedirect()->assertSessionHas('success');
+
+        $this->assertSame('off', $section->fresh()->content['past_filter']);
+
+        // Vacío es "activado", que es lo de siempre; otra cosa se rechaza.
+        $this->actingAs($admin)
+            ->put("/admin/sections/{$section->id}", ['content' => [...$section->content, 'past_filter' => 'sepia']])
+            ->assertSessionHasErrors('content.past_filter');
+    }
+
     public function test_the_site_wide_description_mode_is_saved_and_reaches_the_public_pages(): void
     {
         $admin = $this->admin();

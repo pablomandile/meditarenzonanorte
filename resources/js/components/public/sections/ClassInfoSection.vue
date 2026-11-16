@@ -9,6 +9,9 @@ const props = defineProps<{ section: SectionData }>();
 /** Lo calcula el servidor: desde el día siguiente a la última fecha del calendario. */
 const finished = computed(() => props.section.content.finished === true);
 
+/** El ocre sobre el afiche se puede apagar por ficha; el botón se apaga igual. */
+const tinted = computed(() => finished.value && props.section.content.past_filter !== 'off');
+
 /** Una clase por línea; sin contenido no hay dorso ni giro. */
 const cycle = computed(() => lines(props.section.content.cycle));
 
@@ -120,7 +123,7 @@ watch(expanded, () => nextTick(measure));
                                     :src="img(section.content.image)"
                                     :alt="section.content.heading ?? ''"
                                     class="h-auto w-full rounded-t-xl md:rounded-l-xl md:rounded-tr-none"
-                                    :class="finished ? 'grayscale' : ''"
+                                    :class="tinted ? 'grayscale' : ''"
                                 />
 
                                 <!--
@@ -129,7 +132,7 @@ watch(expanded, () => nextTick(measure));
                                     tapar lo que dice.
                                 -->
                                 <span
-                                    v-if="finished"
+                                    v-if="tinted"
                                     class="pointer-events-none absolute inset-0 rounded-t-xl bg-[#C9962F]/60 mix-blend-multiply md:rounded-l-xl md:rounded-tr-none"
                                     aria-hidden="true"
                                 ></span>

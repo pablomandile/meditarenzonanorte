@@ -124,6 +124,18 @@ class SectionRegistry
                 ['key' => 'cta_label', 'type' => 'text', 'label' => 'Texto del botón'],
                 ['key' => 'cta_url', 'type' => 'url', 'label' => 'URL del botón'],
                 ['key' => 'image', 'type' => 'image', 'label' => 'Imagen'],
+                // Pasada la última fecha, el afiche se tiñe de ocre para que se
+                // distinga de lo que sigue vigente. El botón de inscripción se
+                // apaga igual: esto controla sólo la imagen.
+                [
+                    'key' => 'past_filter',
+                    'type' => 'select',
+                    'label' => 'Filtro ocre en la imagen cuando ya pasó la fecha',
+                    'empty' => 'Activado',
+                    'options' => [
+                        'off' => 'Desactivado (la imagen queda con sus colores)',
+                    ],
+                ],
                 ['key' => 'cycle', 'type' => 'textarea', 'label' => 'Clases del ciclo'],
                 [
                     'key' => 'anchor',
