@@ -64,7 +64,7 @@ class RecurringDataTest extends TestCase
         $props = $this->actingAs($admin)->get("/admin/sections/{$ficha->id}/edit")->assertOk()->viewData('page')['props'];
 
         $this->assertSame(['Kelsang Panchen'], $props['pools']['teachers']);
-        $this->assertContains(['key' => 'teachers', 'type' => 'tags', 'label' => 'Maestr@ (varios separados por coma)', 'pool' => 'teachers'], $props['fields']);
+        $this->assertContains(['key' => 'teachers', 'type' => 'tags', 'label' => 'Maestr@ (varios separados por coma)', 'pool' => 'teachers', 'group' => 'Contenido'], $props['fields']);
 
         // Y guardar la ficha sigue almacenando el texto tal cual (coma para varios).
         $this->actingAs($admin)->put("/admin/sections/{$ficha->id}", [

@@ -52,7 +52,7 @@ function moveItem(day: Day, index: number, direction: -1 | 1) {
     <div class="grid gap-3">
         <Label>{{ label }}</Label>
 
-        <div v-for="(day, i) in model" :key="i" class="grid gap-3 rounded-lg border p-4">
+        <div v-for="(day, i) in model" :key="i" class="grid gap-3 rounded-lg border bg-card p-4">
             <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-muted-foreground">Día {{ i + 1 }}</span>
                 <div class="flex items-center gap-1">

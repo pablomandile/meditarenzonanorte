@@ -35,7 +35,7 @@ function setFile(index: number, file: File | null) {
         <Label>{{ label }}</Label>
 
         <div class="grid gap-4 sm:grid-cols-2">
-            <div v-for="(path, i) in model" :key="i" class="relative rounded-lg border p-4">
+            <div v-for="(path, i) in model" :key="i" class="relative rounded-lg border bg-card p-4">
                 <Button type="button" variant="ghost" size="icon" class="absolute right-2 top-2 text-red-600" @click="remove(i)">
                     <Trash2 class="h-4 w-4" />
                 </Button>

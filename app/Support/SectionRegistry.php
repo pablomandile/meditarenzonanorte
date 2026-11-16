@@ -96,18 +96,21 @@ class SectionRegistry
         ],
         'class_info' => [
             'label' => 'Información de clase',
+            // 'group' reparte los campos en secciones del formulario (ver
+            // SectionForm.vue). Los tipos sin grupo se editan en una sola.
             'fields' => [
-                ['key' => 'heading', 'type' => 'text', 'label' => 'Título'],
+                ['key' => 'heading', 'type' => 'text', 'label' => 'Título', 'group' => 'Contenido'],
                 // 'tags' y 'suggest' se completan eligiendo de "Datos recurrentes"
                 // (o a mano). Se guardan igual que un texto: coma para varios.
-                ['key' => 'teachers', 'type' => 'tags', 'label' => 'Maestr@ (varios separados por coma)', 'pool' => 'teachers'],
-                ['key' => 'body', 'type' => 'textarea', 'label' => 'Descripción'],
+                ['key' => 'teachers', 'type' => 'tags', 'label' => 'Maestr@ (varios separados por coma)', 'pool' => 'teachers', 'group' => 'Contenido'],
+                ['key' => 'body', 'type' => 'textarea', 'label' => 'Descripción', 'group' => 'Contenido'],
                 // Sólo importa en desktop y con imagen: ahí el alto de la ficha lo
                 // fija el afiche y una descripción larga no entra. Manda el modo de
                 // Ajustes del sitio (class_description_mode) cuando hay uno elegido;
                 // esta elección vale sólo si ahí se dejó "que elija cada ficha".
                 [
                     'key' => 'body_overflow',
+                    'group' => 'Contenido',
                     'type' => 'select',
                     'label' => 'Si la descripción no entra junto al afiche (Ajustes del sitio puede pisar esto)',
                     'empty' => 'Sin elegir (se corta, con “más…”)',
@@ -117,18 +120,19 @@ class SectionRegistry
                         'flip' => 'Va en el dorso del afiche, que se da vuelta (necesita imagen)',
                     ],
                 ],
-                ['key' => 'schedule', 'type' => 'text', 'label' => 'Horario (opcional, se arma solo)'],
-                ['key' => 'occurrences', 'type' => 'occurrences', 'label' => 'Fechas para el calendario'],
-                ['key' => 'location', 'type' => 'suggest', 'label' => 'Lugar', 'pool' => 'venues'],
-                ['key' => 'price', 'type' => 'text', 'label' => 'Precio'],
-                ['key' => 'cta_label', 'type' => 'text', 'label' => 'Texto del botón'],
-                ['key' => 'cta_url', 'type' => 'url', 'label' => 'URL del botón'],
-                ['key' => 'image', 'type' => 'image', 'label' => 'Imagen'],
+                ['key' => 'schedule', 'type' => 'text', 'label' => 'Horario (opcional, se arma solo)', 'group' => 'Horario, fechas y lugar'],
+                ['key' => 'occurrences', 'type' => 'occurrences', 'label' => 'Fechas para el calendario', 'group' => 'Horario, fechas y lugar'],
+                ['key' => 'location', 'type' => 'suggest', 'label' => 'Lugar', 'pool' => 'venues', 'group' => 'Horario, fechas y lugar'],
+                ['key' => 'price', 'type' => 'text', 'label' => 'Precio', 'group' => 'Horario, fechas y lugar'],
+                ['key' => 'cta_label', 'type' => 'text', 'label' => 'Texto del botón', 'group' => 'Botón'],
+                ['key' => 'cta_url', 'type' => 'url', 'label' => 'URL del botón', 'group' => 'Botón'],
+                ['key' => 'image', 'type' => 'image', 'label' => 'Imagen', 'group' => 'Imagen'],
                 // Pasada la última fecha, el afiche se tiñe de ocre para que se
                 // distinga de lo que sigue vigente. El botón de inscripción se
                 // apaga igual: esto controla sólo la imagen.
                 [
                     'key' => 'past_filter',
+                    'group' => 'Imagen',
                     'type' => 'select',
                     'label' => 'Filtro ocre en la imagen cuando ya pasó la fecha',
                     'empty' => 'Activado',
@@ -139,6 +143,7 @@ class SectionRegistry
                 // Independiente del filtro: se puede tener una, la otra o las dos.
                 [
                     'key' => 'past_badge',
+                    'group' => 'Imagen',
                     'type' => 'select',
                     'label' => 'Pastilla «Evento finalizado» sobre la imagen cuando ya pasó la fecha',
                     'empty' => 'Activada',
@@ -146,9 +151,10 @@ class SectionRegistry
                         'off' => 'Desactivada',
                     ],
                 ],
-                ['key' => 'cycle', 'type' => 'textarea', 'label' => 'Clases del ciclo'],
+                ['key' => 'cycle', 'type' => 'textarea', 'label' => 'Clases del ciclo', 'group' => 'Otros'],
                 [
                     'key' => 'anchor',
+                    'group' => 'Otros',
                     'type' => 'text',
                     'label' => 'Ancla para enlazar (opcional)',
                     // Va en una URL después del #, así que sin espacios, acentos ni

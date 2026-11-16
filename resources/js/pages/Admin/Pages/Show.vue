@@ -1,12 +1,13 @@
 <script setup lang="ts">
+import AdminSection from '@/components/admin/AdminSection.vue';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useConfirm } from '@/composables/useConfirm';
 import AdminLayout from '@/layouts/AdminLayout.vue';
+import { ZEBRA } from '@/lib/admin';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, LoaderCircle, Lock, Pencil, Trash2 } from 'lucide-vue-next';
+import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, FileText, LayoutList, LoaderCircle, Lock, Pencil, Trash2 } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 const props = defineProps<{
@@ -120,7 +121,7 @@ async function destroy(section: { id: number; title: string | null; type_label: 
     <AdminLayout :breadcrumbs="breadcrumbs">
         <Head :title="`Secciones — ${page.title}`" />
 
-        <div class="flex flex-col gap-4 p-4">
+        <div class="admin-sections flex flex-col gap-4 p-4">
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <div>
                     <h1 class="text-xl font-semibold">{{ esLanding ? `Landing: ${page.title}` : page.title }}</h1>
@@ -154,164 +155,160 @@ async function destroy(section: { id: number; title: string | null; type_label: 
                 Datos de la página en sí. El slug no se edita —cambiarlo rompería
                 los enlaces— y el orden del menú se cambia con las flechas del listado.
             -->
-            <Card v-if="!esPlantilla">
-                <!-- [&>*]:min-w-0: sin esto, la vista previa con el enlace largo (truncate) desborda en mobile. -->
-                <CardContent class="grid gap-4 p-4 [&>*]:min-w-0">
-                    <div class="grid gap-1.5">
-                        <Label for="title">Título de la página</Label>
-                        <p class="text-sm text-muted-foreground">El nombre que se ve en la pestaña del navegador y como título en Google.</p>
-                        <Input id="title" v-model="datos.title" maxlength="255" />
-                        <p v-if="datos.errors.title" class="text-sm text-red-600">{{ datos.errors.title }}</p>
-                    </div>
+            <!-- [&>*]:min-w-0: sin esto, la vista previa con el enlace largo (truncate) desborda en mobile. -->
+            <AdminSection v-if="!esPlantilla" title="Datos de la página" :icon="FileText" body-class="grid gap-4 [&>*]:min-w-0">
+                <div class="grid gap-1.5">
+                    <Label for="title">Título de la página</Label>
+                    <p class="text-sm text-muted-foreground">El nombre que se ve en la pestaña del navegador y como título en Google.</p>
+                    <Input id="title" v-model="datos.title" maxlength="255" />
+                    <p v-if="datos.errors.title" class="text-sm text-red-600">{{ datos.errors.title }}</p>
+                </div>
 
-                    <div v-if="!esHome && esDelSitio" class="grid gap-1.5">
-                        <Label for="menu_label">Nombre en el menú</Label>
-                        <p class="text-sm text-muted-foreground">
-                            Cómo aparece esta página en el menú del sitio. Si lo dejás vacío sale del menú, aunque su dirección siga funcionando.
-                        </p>
-                        <Input id="menu_label" v-model="datos.menu_label" maxlength="255" placeholder="Ej.: Gratis" />
-                        <p v-if="datos.errors.menu_label" class="text-sm text-red-600">{{ datos.errors.menu_label }}</p>
-                    </div>
+                <div v-if="!esHome && esDelSitio" class="grid gap-1.5">
+                    <Label for="menu_label">Nombre en el menú</Label>
+                    <p class="text-sm text-muted-foreground">
+                        Cómo aparece esta página en el menú del sitio. Si lo dejás vacío sale del menú, aunque su dirección siga funcionando.
+                    </p>
+                    <Input id="menu_label" v-model="datos.menu_label" maxlength="255" placeholder="Ej.: Gratis" />
+                    <p v-if="datos.errors.menu_label" class="text-sm text-red-600">{{ datos.errors.menu_label }}</p>
+                </div>
 
-                    <div class="grid gap-1.5">
-                        <Label for="meta_description">Descripción para buscadores</Label>
-                        <p class="text-sm text-muted-foreground">
-                            Es el texto que se lee debajo del título en Google y al compartir el enlace por WhatsApp.
-                        </p>
+                <div class="grid gap-1.5">
+                    <Label for="meta_description">Descripción para buscadores</Label>
+                    <p class="text-sm text-muted-foreground">
+                        Es el texto que se lee debajo del título en Google y al compartir el enlace por WhatsApp.
+                    </p>
 
-                        <textarea
-                            id="meta_description"
-                            v-model="datos.meta_description"
-                            rows="3"
-                            maxlength="500"
-                            placeholder="Ej.: Clases de meditación kadampa en Zona Norte, abiertas a todo el mundo y sin experiencia previa."
-                            class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                        ></textarea>
+                    <textarea
+                        id="meta_description"
+                        v-model="datos.meta_description"
+                        rows="3"
+                        maxlength="500"
+                        placeholder="Ej.: Clases de meditación kadampa en Zona Norte, abiertas a todo el mundo y sin experiencia previa."
+                        class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    ></textarea>
 
-                        <p class="text-xs" :class="cortada ? 'text-amber-700' : 'text-muted-foreground'">
-                            {{ largo }} de {{ RECOMENDADOS }} caracteres recomendados<span v-if="cortada">
-                                — de acá en adelante los buscadores lo cortan</span
-                            >
-                        </p>
-                        <p v-if="datos.errors.meta_description" class="text-sm text-red-600">{{ datos.errors.meta_description }}</p>
-                    </div>
-
-                    <!-- Cómo se va a ver, con el título que acompaña a la descripción. -->
-                    <div class="rounded-lg border bg-muted/30 p-3">
-                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Vista previa</p>
-                        <p class="mt-1.5 truncate text-sm text-muted-foreground">{{ page.url }}</p>
-                        <p class="truncate font-medium text-blue-700 dark:text-blue-400">{{ previewTitle }}</p>
-                        <p class="line-clamp-2 text-sm text-muted-foreground">
-                            {{ datos.meta_description.trim() || 'Sin descripción: se comparte sólo el título y el enlace.' }}
-                        </p>
-                    </div>
-
-                    <div>
-                        <Button :disabled="datos.processing || !datos.isDirty" @click="guardar">
-                            <LoaderCircle v-if="datos.processing" class="mr-1 h-4 w-4 animate-spin" />
-                            Guardar cambios
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <!--
-                    En mobile cada sección es una ficha: el nombre arriba y los botones
-                    debajo. De lg para arriba vuelve a ser una fila de la lista.
-                -->
-                <CardContent class="p-3 lg:p-0">
-                    <div class="flex flex-col gap-3 lg:block lg:divide-y">
-                        <div
-                            v-for="(section, index) in sections"
-                            :key="section.id"
-                            class="flex flex-col gap-3 rounded-lg border p-3 lg:flex-row lg:items-center lg:rounded-none lg:border-0 lg:px-4 lg:py-3"
-                            :class="{ 'opacity-60': !section.visible }"
+                    <p class="text-xs" :class="cortada ? 'text-amber-700' : 'text-muted-foreground'">
+                        {{ largo }} de {{ RECOMENDADOS }} caracteres recomendados<span v-if="cortada">
+                            — de acá en adelante los buscadores lo cortan</span
                         >
-                            <div class="flex min-w-0 flex-1 items-center gap-3">
-                                <div class="flex shrink-0 flex-col">
-                                    <button
-                                        class="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"
-                                        :disabled="index === 0"
-                                        title="Subir"
-                                        @click="move(section.id, 'up')"
-                                    >
-                                        <ArrowUp class="h-4 w-4" />
-                                    </button>
-                                    <button
-                                        class="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"
-                                        :disabled="index === sections.length - 1"
-                                        title="Bajar"
-                                        @click="move(section.id, 'down')"
-                                    >
-                                        <ArrowDown class="h-4 w-4" />
-                                    </button>
-                                </div>
+                    </p>
+                    <p v-if="datos.errors.meta_description" class="text-sm text-red-600">{{ datos.errors.meta_description }}</p>
+                </div>
 
-                                <div class="min-w-0 flex-1">
-                                    <p class="truncate font-medium">{{ section.title || section.type_label }}</p>
-                                    <p class="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                        {{ section.type_label }}
-                                        <span
-                                            v-if="section.is_template"
-                                            class="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 font-medium"
-                                        >
-                                            <Lock class="h-3 w-3" /> Plantilla
-                                        </span>
-                                    </p>
-                                </div>
+                <!-- Cómo se va a ver, con el título que acompaña a la descripción. -->
+                <div class="rounded-lg border bg-card p-3">
+                    <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Vista previa</p>
+                    <p class="mt-1.5 truncate text-sm text-muted-foreground">{{ page.url }}</p>
+                    <p class="truncate font-medium text-blue-700 dark:text-blue-400">{{ previewTitle }}</p>
+                    <p class="line-clamp-2 text-sm text-muted-foreground">
+                        {{ datos.meta_description.trim() || 'Sin descripción: se comparte sólo el título y el enlace.' }}
+                    </p>
+                </div>
+
+                <div>
+                    <Button :disabled="datos.processing || !datos.isDirty" @click="guardar">
+                        <LoaderCircle v-if="datos.processing" class="mr-1 h-4 w-4 animate-spin" />
+                        Guardar cambios
+                    </Button>
+                </div>
+            </AdminSection>
+
+            <!--
+                En mobile cada sección es una ficha: el nombre arriba y los botones
+                debajo. De lg para arriba vuelve a ser una fila de la lista, cebra.
+            -->
+            <AdminSection title="Secciones de la página" :icon="LayoutList" flush>
+                <div class="flex flex-col gap-3 p-3 lg:block lg:divide-y lg:p-0" :class="`lg:${ZEBRA}`">
+                    <div
+                        v-for="(section, index) in sections"
+                        :key="section.id"
+                        class="flex flex-col gap-3 rounded-lg border bg-card p-3 lg:flex-row lg:items-center lg:rounded-none lg:border-0 lg:bg-transparent lg:px-4 lg:py-3"
+                        :class="{ 'opacity-60': !section.visible }"
+                    >
+                        <div class="flex min-w-0 flex-1 items-center gap-3">
+                            <div class="flex shrink-0 flex-col">
+                                <button
+                                    class="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"
+                                    :disabled="index === 0"
+                                    title="Subir"
+                                    @click="move(section.id, 'up')"
+                                >
+                                    <ArrowUp class="h-4 w-4" />
+                                </button>
+                                <button
+                                    class="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"
+                                    :disabled="index === sections.length - 1"
+                                    title="Bajar"
+                                    @click="move(section.id, 'down')"
+                                >
+                                    <ArrowDown class="h-4 w-4" />
+                                </button>
                             </div>
 
-                            <!--
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate font-medium">{{ section.title || section.type_label }}</p>
+                                <p class="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                    {{ section.type_label }}
+                                    <span
+                                        v-if="section.is_template"
+                                        class="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 font-medium"
+                                    >
+                                        <Lock class="h-3 w-3" /> Plantilla
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!--
                                 En mobile los botones bajan de línea si no entran; en desktop
                                 van a la derecha en una sola fila.
                             -->
-                            <div class="flex flex-wrap items-center gap-2 border-t pt-3 lg:shrink-0 lg:border-0 lg:pt-0">
-                                <!-- La plantilla no se muestra ni se elimina: es solo el molde para clonar. -->
-                                <span
-                                    v-if="section.is_template"
-                                    class="inline-flex items-center gap-1.5 px-2 text-xs text-muted-foreground"
-                                    title="La plantilla queda siempre oculta"
-                                >
-                                    <EyeOff class="h-4 w-4" /> Siempre oculta
-                                </span>
-                                <Button
-                                    v-else
-                                    variant="ghost"
-                                    size="sm"
-                                    :title="section.visible ? 'Ocultar sección' : 'Mostrar sección'"
-                                    @click="toggle(section.id)"
-                                >
-                                    <Eye v-if="section.visible" class="h-4 w-4" />
-                                    <EyeOff v-else class="h-4 w-4 text-red-500" />
-                                    <span class="ml-1.5">{{ section.visible ? 'Visible' : 'Oculta' }}</span>
-                                </Button>
+                        <div class="flex flex-wrap items-center gap-2 border-t pt-3 lg:shrink-0 lg:border-0 lg:pt-0">
+                            <!-- La plantilla no se muestra ni se elimina: es solo el molde para clonar. -->
+                            <span
+                                v-if="section.is_template"
+                                class="inline-flex items-center gap-1.5 px-2 text-xs text-muted-foreground"
+                                title="La plantilla queda siempre oculta"
+                            >
+                                <EyeOff class="h-4 w-4" /> Siempre oculta
+                            </span>
+                            <Button
+                                v-else
+                                variant="ghost"
+                                size="sm"
+                                :title="section.visible ? 'Ocultar sección' : 'Mostrar sección'"
+                                @click="toggle(section.id)"
+                            >
+                                <Eye v-if="section.visible" class="h-4 w-4" />
+                                <EyeOff v-else class="h-4 w-4 text-red-500" />
+                                <span class="ml-1.5">{{ section.visible ? 'Visible' : 'Oculta' }}</span>
+                            </Button>
 
-                                <Button variant="ghost" size="sm" title="Clonar sección" @click="duplicate(section)">
-                                    <Copy class="h-4 w-4" />
-                                    <span class="ml-1.5">Clonar</span>
-                                </Button>
+                            <Button variant="ghost" size="sm" title="Clonar sección" @click="duplicate(section)">
+                                <Copy class="h-4 w-4" />
+                                <span class="ml-1.5">Clonar</span>
+                            </Button>
 
-                                <Button as-child size="sm" variant="outline">
-                                    <Link :href="`/admin/sections/${section.id}/edit`"> <Pencil class="mr-1 h-4 w-4" /> Editar </Link>
-                                </Button>
+                            <Button as-child size="sm" variant="outline">
+                                <Link :href="`/admin/sections/${section.id}/edit`"> <Pencil class="mr-1 h-4 w-4" /> Editar </Link>
+                            </Button>
 
-                                <Button
-                                    v-if="!section.is_template"
-                                    variant="ghost"
-                                    size="sm"
-                                    class="text-red-600 hover:bg-red-50 hover:text-red-700"
-                                    title="Eliminar sección"
-                                    @click="destroy(section)"
-                                >
-                                    <Trash2 class="h-4 w-4" />
-                                    <span class="ml-1.5">Eliminar</span>
-                                </Button>
-                            </div>
+                            <Button
+                                v-if="!section.is_template"
+                                variant="ghost"
+                                size="sm"
+                                class="text-red-600 hover:bg-red-50 hover:text-red-700"
+                                title="Eliminar sección"
+                                @click="destroy(section)"
+                            >
+                                <Trash2 class="h-4 w-4" />
+                                <span class="ml-1.5">Eliminar</span>
+                            </Button>
                         </div>
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </AdminSection>
         </div>
     </AdminLayout>
 </template>

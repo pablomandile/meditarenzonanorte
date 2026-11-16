@@ -1,4 +1,5 @@
 ﻿<script setup lang="ts">
+import AdminSection from '@/components/admin/AdminSection.vue';
 import CardsField from '@/components/admin/fields/CardsField.vue';
 import FaqPickerField from '@/components/admin/fields/FaqPickerField.vue';
 import ImageField from '@/components/admin/fields/ImageField.vue';
@@ -15,6 +16,8 @@ import SuggestField from '@/components/admin/fields/SuggestField.vue';
 import TagsField from '@/components/admin/fields/TagsField.vue';
 import TextareaField from '@/components/admin/fields/TextareaField.vue';
 import TextField from '@/components/admin/fields/TextField.vue';
+import { CalendarDays, FileText, ImageIcon, LayoutList, MoreHorizontal, MousePointerClick } from 'lucide-vue-next';
+import { computed, type Component } from 'vue';
 
 export type FieldDef = {
     key: string;
@@ -27,10 +30,14 @@ export type FieldDef = {
     pool?: string;
     /** Para 'cards': sólo título y texto, sin imagen ni enlace (las tarjetas numeradas de la landing). */
     simple?: boolean;
+    /** Nombre de la sección del formulario en la que va el campo (ver SectionRegistry). */
+    group?: string;
 };
 
 const props = defineProps<{
     fields: FieldDef[];
+    /** El nombre del tipo de sección: título de la única sección cuando los campos no tienen grupo. */
+    title: string;
     errors: Record<string, string>;
     faqPool?: { id: number; question: string; visible: boolean }[];
     /** Listas de "Datos recurrentes" por nombre (teachers, venues). */
@@ -57,104 +64,142 @@ function fieldError(key: string): string | undefined {
 // content y files son contenedores reactivos que llenan los campos hijos (two-way).
 const content = defineModel<Record<string, any>>('content', { required: true });
 const files = defineModel<Record<string, any>>('files', { required: true });
+
+/** El ícono de cada grupo, por su nombre tal como lo escribe SectionRegistry. */
+const ICONS: Record<string, Component> = {
+    Contenido: FileText,
+    'Horario, fechas y lugar': CalendarDays,
+    Botón: MousePointerClick,
+    Imagen: ImageIcon,
+    Otros: MoreHorizontal,
+};
+
+/**
+ * Los campos, repartidos en secciones: los consecutivos con el mismo `group`
+ * van juntos. Sin grupos (la mayoría de los tipos), una sola sección con el
+ * nombre del tipo.
+ */
+const groups = computed(() => {
+    const result: { title: string; icon: Component; fields: FieldDef[] }[] = [];
+
+    for (const field of props.fields) {
+        const title = field.group ?? props.title;
+        const last = result[result.length - 1];
+
+        if (last && last.title === title) {
+            last.fields.push(field);
+        } else {
+            result.push({ title, icon: ICONS[title] ?? LayoutList, fields: [field] });
+        }
+    }
+
+    return result;
+});
 </script>
 
 <template>
-    <div class="grid gap-6">
-        <template v-for="field in fields" :key="field.key">
-            <TextField
-                v-if="field.type === 'text' || field.type === 'url'"
-                v-model="content[field.key]"
-                :label="field.label"
-                :hint="hints?.[field.key]"
-                :error="fieldError(field.key)"
-            />
+    <div class="admin-sections flex flex-col gap-4">
+        <AdminSection v-for="group in groups" :key="group.title" :title="group.title" :icon="group.icon" body-class="grid gap-6">
+            <template v-for="field in group.fields" :key="field.key">
+                <TextField
+                    v-if="field.type === 'text' || field.type === 'url'"
+                    v-model="content[field.key]"
+                    :label="field.label"
+                    :hint="hints?.[field.key]"
+                    :error="fieldError(field.key)"
+                />
 
-            <TagsField
-                v-else-if="field.type === 'tags'"
-                v-model="content[field.key]"
-                :label="field.label"
-                :options="pools?.[field.pool ?? ''] ?? []"
-                :error="fieldError(field.key)"
-            />
+                <TagsField
+                    v-else-if="field.type === 'tags'"
+                    v-model="content[field.key]"
+                    :label="field.label"
+                    :options="pools?.[field.pool ?? ''] ?? []"
+                    :error="fieldError(field.key)"
+                />
 
-            <SuggestField
-                v-else-if="field.type === 'suggest'"
-                v-model="content[field.key]"
-                :label="field.label"
-                :options="pools?.[field.pool ?? ''] ?? []"
-                :hint="hints?.[field.key]"
-                :error="fieldError(field.key)"
-            />
+                <SuggestField
+                    v-else-if="field.type === 'suggest'"
+                    v-model="content[field.key]"
+                    :label="field.label"
+                    :options="pools?.[field.pool ?? ''] ?? []"
+                    :hint="hints?.[field.key]"
+                    :error="fieldError(field.key)"
+                />
 
-            <TextareaField v-else-if="field.type === 'textarea'" v-model="content[field.key]" :label="field.label" :error="fieldError(field.key)" />
+                <TextareaField
+                    v-else-if="field.type === 'textarea'"
+                    v-model="content[field.key]"
+                    :label="field.label"
+                    :error="fieldError(field.key)"
+                />
 
-            <SelectField
-                v-else-if="field.type === 'select'"
-                v-model="content[field.key]"
-                :label="field.label"
-                :options="field.options ?? {}"
-                :empty="field.empty"
-                :error="fieldError(field.key)"
-            />
+                <SelectField
+                    v-else-if="field.type === 'select'"
+                    v-model="content[field.key]"
+                    :label="field.label"
+                    :options="field.options ?? {}"
+                    :empty="field.empty"
+                    :error="fieldError(field.key)"
+                />
 
-            <ImageField
-                v-else-if="field.type === 'image'"
-                v-model="content[field.key]"
-                v-model:file="files[field.key]"
-                :label="field.label"
-                gallery
-                :error="fieldError(field.key)"
-            />
+                <ImageField
+                    v-else-if="field.type === 'image'"
+                    v-model="content[field.key]"
+                    v-model:file="files[field.key]"
+                    :label="field.label"
+                    gallery
+                    :error="fieldError(field.key)"
+                />
 
-            <LinksField v-else-if="field.type === 'links'" v-model="content[field.key]" :label="field.label" :error="fieldError(field.key)" />
+                <LinksField v-else-if="field.type === 'links'" v-model="content[field.key]" :label="field.label" :error="fieldError(field.key)" />
 
-            <ItemsField v-else-if="field.type === 'items'" v-model="content[field.key]" :label="field.label" :error="fieldError(field.key)" />
+                <ItemsField v-else-if="field.type === 'items'" v-model="content[field.key]" :label="field.label" :error="fieldError(field.key)" />
 
-            <PlansField v-else-if="field.type === 'plans'" v-model="content[field.key]" :label="field.label" :error="fieldError(field.key)" />
+                <PlansField v-else-if="field.type === 'plans'" v-model="content[field.key]" :label="field.label" :error="fieldError(field.key)" />
 
-            <ReviewsField v-else-if="field.type === 'reviews'" v-model="content[field.key]" :label="field.label" :error="fieldError(field.key)" />
+                <ReviewsField v-else-if="field.type === 'reviews'" v-model="content[field.key]" :label="field.label" :error="fieldError(field.key)" />
 
-            <CardsField
-                v-else-if="field.type === 'cards'"
-                v-model="content[field.key]"
-                v-model:files="files[field.key]"
-                :label="field.label"
-                :simple="field.simple"
-                :error="fieldError(field.key)"
-            />
+                <CardsField
+                    v-else-if="field.type === 'cards'"
+                    v-model="content[field.key]"
+                    v-model:files="files[field.key]"
+                    :label="field.label"
+                    :simple="field.simple"
+                    :error="fieldError(field.key)"
+                />
 
-            <ProgramDaysField
-                v-else-if="field.type === 'program_days'"
-                v-model="content[field.key]"
-                :label="field.label"
-                :error="fieldError(field.key)"
-            />
+                <ProgramDaysField
+                    v-else-if="field.type === 'program_days'"
+                    v-model="content[field.key]"
+                    :label="field.label"
+                    :error="fieldError(field.key)"
+                />
 
-            <PricesField v-else-if="field.type === 'prices'" v-model="content[field.key]" :label="field.label" :error="fieldError(field.key)" />
+                <PricesField v-else-if="field.type === 'prices'" v-model="content[field.key]" :label="field.label" :error="fieldError(field.key)" />
 
-            <ImagesField
-                v-else-if="field.type === 'images'"
-                v-model="content[field.key]"
-                v-model:files="files[field.key]"
-                :label="field.label"
-                :error="fieldError(field.key)"
-            />
+                <ImagesField
+                    v-else-if="field.type === 'images'"
+                    v-model="content[field.key]"
+                    v-model:files="files[field.key]"
+                    :label="field.label"
+                    :error="fieldError(field.key)"
+                />
 
-            <OccurrencesField
-                v-else-if="field.type === 'occurrences'"
-                v-model="content[field.key]"
-                :label="field.label"
-                :error="fieldError(field.key)"
-            />
+                <OccurrencesField
+                    v-else-if="field.type === 'occurrences'"
+                    v-model="content[field.key]"
+                    :label="field.label"
+                    :error="fieldError(field.key)"
+                />
 
-            <FaqPickerField
-                v-else-if="field.type === 'faq_picker'"
-                v-model="content[field.key]"
-                :label="field.label"
-                :pool="faqPool ?? []"
-                :error="fieldError(field.key)"
-            />
-        </template>
+                <FaqPickerField
+                    v-else-if="field.type === 'faq_picker'"
+                    v-model="content[field.key]"
+                    :label="field.label"
+                    :pool="faqPool ?? []"
+                    :error="fieldError(field.key)"
+                />
+            </template>
+        </AdminSection>
     </div>
 </template>

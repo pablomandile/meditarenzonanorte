@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import AdminSection from '@/components/admin/AdminSection.vue';
 import ImageField from '@/components/admin/fields/ImageField.vue';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { CalendarDays, Check, ImageIcon, LoaderCircle } from 'lucide-vue-next';
+import { CalendarDays, Check, ImageIcon, LoaderCircle, Power, Repeat } from 'lucide-vue-next';
 
 type PopupValues = {
     enabled: boolean;
@@ -85,118 +85,109 @@ const cardClass = (active: boolean) => (active ? 'border-primary ring-1 ring-pri
                 </p>
             </div>
 
-            <form @submit.prevent="submit">
-                <Card>
-                    <CardContent class="grid gap-4 pt-6">
-                        <Label>Estado</Label>
-                        <div class="grid gap-3 sm:grid-cols-2">
-                            <button
-                                v-for="estado in estados"
-                                :key="String(estado.value)"
-                                type="button"
-                                class="grid gap-2 rounded-lg border p-4 text-left transition hover:bg-accent"
-                                :class="cardClass(form.enabled === estado.value)"
-                                @click="form.enabled = estado.value"
-                            >
-                                <div class="flex items-center justify-between gap-2">
-                                    <span class="text-sm font-medium">{{ estado.name }}</span>
-                                    <Check v-if="form.enabled === estado.value" class="h-4 w-4 shrink-0 text-primary" />
-                                </div>
-                                <span class="text-xs text-muted-foreground">{{ estado.note }}</span>
-                            </button>
-                        </div>
-                    </CardContent>
-                </Card>
+            <form class="admin-sections flex flex-col gap-4" @submit.prevent="submit">
+                <AdminSection title="Estado" :icon="Power" body-class="grid gap-4">
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <button
+                            v-for="estado in estados"
+                            :key="String(estado.value)"
+                            type="button"
+                            class="grid gap-2 rounded-lg border bg-card p-4 text-left transition hover:bg-accent"
+                            :class="cardClass(form.enabled === estado.value)"
+                            @click="form.enabled = estado.value"
+                        >
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-sm font-medium">{{ estado.name }}</span>
+                                <Check v-if="form.enabled === estado.value" class="h-4 w-4 shrink-0 text-primary" />
+                            </div>
+                            <span class="text-xs text-muted-foreground">{{ estado.note }}</span>
+                        </button>
+                    </div>
+                </AdminSection>
 
-                <Card class="mt-4">
-                    <CardContent class="grid gap-4 pt-6">
-                        <Label>Cuántas veces se muestra</Label>
-                        <div class="grid gap-3 sm:grid-cols-2">
-                            <button
-                                v-for="modo in modos"
-                                :key="modo.value"
-                                type="button"
-                                class="grid gap-2 rounded-lg border p-4 text-left transition hover:bg-accent"
-                                :class="cardClass(form.mode === modo.value)"
-                                @click="form.mode = modo.value"
-                            >
-                                <div class="flex items-center justify-between gap-2">
-                                    <span class="text-sm font-medium">{{ modo.name }}</span>
-                                    <Check v-if="form.mode === modo.value" class="h-4 w-4 shrink-0 text-primary" />
-                                </div>
-                                <span class="text-xs text-muted-foreground">{{ modo.note }}</span>
-                            </button>
-                        </div>
-                        <p class="text-xs text-muted-foreground">En los dos casos la ventana tiene una X para cerrarla.</p>
-                    </CardContent>
-                </Card>
+                <AdminSection title="Cuántas veces se muestra" :icon="Repeat" body-class="grid gap-4">
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <button
+                            v-for="modo in modos"
+                            :key="modo.value"
+                            type="button"
+                            class="grid gap-2 rounded-lg border bg-card p-4 text-left transition hover:bg-accent"
+                            :class="cardClass(form.mode === modo.value)"
+                            @click="form.mode = modo.value"
+                        >
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-sm font-medium">{{ modo.name }}</span>
+                                <Check v-if="form.mode === modo.value" class="h-4 w-4 shrink-0 text-primary" />
+                            </div>
+                            <span class="text-xs text-muted-foreground">{{ modo.note }}</span>
+                        </button>
+                    </div>
+                    <p class="text-xs text-muted-foreground">En los dos casos la ventana tiene una X para cerrarla.</p>
+                </AdminSection>
 
-                <Card class="mt-4">
-                    <CardContent class="grid gap-5 pt-6">
-                        <Label>Contenido</Label>
-                        <div class="grid gap-3 sm:grid-cols-2">
-                            <button
-                                v-for="tipo in tipos"
-                                :key="tipo.value"
-                                type="button"
-                                class="grid gap-2 rounded-lg border p-4 text-left transition hover:bg-accent"
-                                :class="cardClass(form.kind === tipo.value)"
-                                @click="form.kind = tipo.value"
-                            >
-                                <div class="flex items-center justify-between gap-2">
-                                    <span class="flex items-center gap-2 text-sm font-medium">
-                                        <component :is="tipo.icon" class="h-4 w-4 shrink-0" />
-                                        {{ tipo.name }}
-                                    </span>
-                                    <Check v-if="form.kind === tipo.value" class="h-4 w-4 shrink-0 text-primary" />
-                                </div>
-                                <span class="text-xs text-muted-foreground">{{ tipo.note }}</span>
-                            </button>
-                        </div>
+                <AdminSection title="Contenido" :icon="ImageIcon">
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <button
+                            v-for="tipo in tipos"
+                            :key="tipo.value"
+                            type="button"
+                            class="grid gap-2 rounded-lg border bg-card p-4 text-left transition hover:bg-accent"
+                            :class="cardClass(form.kind === tipo.value)"
+                            @click="form.kind = tipo.value"
+                        >
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="flex items-center gap-2 text-sm font-medium">
+                                    <component :is="tipo.icon" class="h-4 w-4 shrink-0" />
+                                    {{ tipo.name }}
+                                </span>
+                                <Check v-if="form.kind === tipo.value" class="h-4 w-4 shrink-0 text-primary" />
+                            </div>
+                            <span class="text-xs text-muted-foreground">{{ tipo.note }}</span>
+                        </button>
+                    </div>
 
-                        <ImageField
-                            v-if="form.kind === 'image'"
-                            v-model="form.image_path"
-                            v-model:file="form.files.image"
-                            label="Imagen"
-                            :error="form.errors['files.image' as keyof typeof form.errors]"
-                        />
+                    <ImageField
+                        v-if="form.kind === 'image'"
+                        v-model="form.image_path"
+                        v-model:file="form.files.image"
+                        label="Imagen"
+                        :error="form.errors['files.image' as keyof typeof form.errors]"
+                    />
 
-                        <div v-else class="grid gap-2">
-                            <Label for="popup_event">Evento</Label>
-                            <select
-                                id="popup_event"
-                                v-model="form.event_id"
-                                class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                            >
-                                <option :value="null" disabled>Elegí un evento…</option>
-                                <option v-for="event in events" :key="event.id" :value="event.id">
-                                    {{ event.title }}{{ event.date_label ? ` — ${event.date_label}` : '' }}
-                                </option>
-                            </select>
-                            <p class="text-xs text-muted-foreground">
-                                Se muestra con su imagen, su fecha y su botón. Solo aparecen los eventos visibles; si lo ocultás después, el pop-up
-                                deja de salir.
-                                <Link :href="route('admin.events.index')" class="underline underline-offset-2">Ir a Eventos</Link>
-                            </p>
-                            <p v-if="form.errors.event_id" class="text-sm text-red-600">{{ form.errors.event_id }}</p>
-                        </div>
+                    <div v-else class="grid gap-2">
+                        <Label for="popup_event">Evento</Label>
+                        <select
+                            id="popup_event"
+                            v-model="form.event_id"
+                            class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        >
+                            <option :value="null" disabled>Elegí un evento…</option>
+                            <option v-for="event in events" :key="event.id" :value="event.id">
+                                {{ event.title }}{{ event.date_label ? ` — ${event.date_label}` : '' }}
+                            </option>
+                        </select>
+                        <p class="text-xs text-muted-foreground">
+                            Se muestra con su imagen, su fecha y su botón. Solo aparecen los eventos visibles; si lo ocultás después, el pop-up deja
+                            de salir.
+                            <Link :href="route('admin.events.index')" class="underline underline-offset-2">Ir a Eventos</Link>
+                        </p>
+                        <p v-if="form.errors.event_id" class="text-sm text-red-600">{{ form.errors.event_id }}</p>
+                    </div>
 
-                        <div class="grid gap-2">
-                            <Label for="popup_text">Texto <span class="font-normal text-muted-foreground">(opcional)</span></Label>
-                            <textarea
-                                id="popup_text"
-                                v-model="form.text"
-                                rows="3"
-                                maxlength="1000"
-                                class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                            ></textarea>
-                            <p v-if="form.errors.text" class="text-sm text-red-600">{{ form.errors.text }}</p>
-                        </div>
-                    </CardContent>
-                </Card>
+                    <div class="grid gap-2">
+                        <Label for="popup_text">Texto <span class="font-normal text-muted-foreground">(opcional)</span></Label>
+                        <textarea
+                            id="popup_text"
+                            v-model="form.text"
+                            rows="3"
+                            maxlength="1000"
+                            class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        ></textarea>
+                        <p v-if="form.errors.text" class="text-sm text-red-600">{{ form.errors.text }}</p>
+                    </div>
+                </AdminSection>
 
-                <div class="mt-4">
+                <div>
                     <Button type="submit" :disabled="form.processing">
                         <LoaderCircle v-if="form.processing" class="mr-2 h-4 w-4 animate-spin" />
                         Guardar pop-up

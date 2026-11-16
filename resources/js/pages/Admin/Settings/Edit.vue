@@ -1,14 +1,31 @@
 <script setup lang="ts">
+import AdminSection from '@/components/admin/AdminSection.vue';
 import CardsField from '@/components/admin/fields/CardsField.vue';
 import ImageField from '@/components/admin/fields/ImageField.vue';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { type CardItem } from '@/lib/site';
 import { Head, useForm } from '@inertiajs/vue3';
-import { CalendarClock, Check, ChevronDown, Construction, Eye, Globe, Hand, KeyRound, ListChecks, LoaderCircle, Mail, RotateCw, ScrollText } from 'lucide-vue-next';
+import {
+    CalendarClock,
+    Check,
+    ChevronDown,
+    Construction,
+    Contact,
+    Eye,
+    Globe,
+    Hand,
+    KeyRound,
+    ListChecks,
+    LoaderCircle,
+    Mail,
+    PanelBottom,
+    RotateCw,
+    ScrollText,
+    Type,
+} from 'lucide-vue-next';
 import { computed } from 'vue';
 
 /** Una fuente del catálogo del servidor. Ver App\Support\Typography. */
@@ -106,10 +123,25 @@ const estados = [
 
 /** Cómo se muestra, por defecto, una descripción larga en las fichas de clase. */
 const modosDescripcion = [
-    { value: '', icon: ListChecks, name: 'Que elija cada ficha', note: 'Cada ficha usa el modo que tenga elegido en su edición; si no eligió, se corta con «más…».' },
-    { value: 'more', icon: ChevronDown, name: 'Cortada, con «más…»', note: 'Se muestra lo que entra junto al afiche y «más…» despliega el resto, estirando la ficha.' },
+    {
+        value: '',
+        icon: ListChecks,
+        name: 'Que elija cada ficha',
+        note: 'Cada ficha usa el modo que tenga elegido en su edición; si no eligió, se corta con «más…».',
+    },
+    {
+        value: 'more',
+        icon: ChevronDown,
+        name: 'Cortada, con «más…»',
+        note: 'Se muestra lo que entra junto al afiche y «más…» despliega el resto, estirando la ficha.',
+    },
     { value: 'scroll', icon: ScrollText, name: 'Con scroll', note: 'El texto se desplaza dentro de la ficha, que mantiene siempre el mismo alto.' },
-    { value: 'flip', icon: RotateCw, name: 'En el dorso del afiche', note: 'El afiche se da vuelta y la descripción ocupa su lugar. Las fichas sin imagen la muestran con «más…».' },
+    {
+        value: 'flip',
+        icon: RotateCw,
+        name: 'En el dorso del afiche',
+        note: 'El afiche se da vuelta y la descripción ocupa su lugar. Las fichas sin imagen la muestran con «más…».',
+    },
 ];
 
 /**
@@ -167,7 +199,7 @@ const textFields: { key: string; label: string; placeholder?: string; hint?: str
             <div v-if="cerrado" class="flex items-start gap-3 rounded-lg border border-brand-orange/40 bg-brand-cream px-4 py-3">
                 <Construction class="mt-0.5 h-5 w-5 shrink-0 text-brand-orange-dark" />
                 <div class="text-sm">
-                    <p class="font-medium text-brand-ink">El sitio está en construcción</p>
+                    <p class="font-medium text-foreground">El sitio está en construcción</p>
                     <p class="text-muted-foreground">
                         Las visitas ven el cartel en lugar de las páginas.
                         <a href="#estado-del-sitio" class="underline underline-offset-2">Cambiarlo abajo</a>.
@@ -175,316 +207,277 @@ const textFields: { key: string; label: string; placeholder?: string; hint?: str
                 </div>
             </div>
 
-            <form @submit.prevent="submit">
-                <Card>
-                    <CardContent class="grid gap-5 pt-6">
-                        <ImageField
-                            v-model="form.logo_path"
-                            v-model:file="form.files.logo"
-                            label="Logo del menú"
-                            :error="form.errors['files.logo']"
-                        />
+            <form class="admin-sections flex flex-col gap-4" @submit.prevent="submit">
+                <AdminSection title="Datos de contacto y logo" :icon="Contact">
+                    <ImageField v-model="form.logo_path" v-model:file="form.files.logo" label="Logo del menú" :error="form.errors['files.logo']" />
 
-                        <div class="grid gap-5 sm:grid-cols-2">
-                            <div v-for="field in textFields" :key="field.key" class="grid gap-2">
-                                <Label>{{ field.label }}</Label>
-                                <Input v-model="form[field.key]" :placeholder="field.placeholder" />
-                                <p v-if="field.hint" class="text-xs text-muted-foreground">{{ field.hint }}</p>
-                                <p v-if="form.errors[field.key]" class="text-sm text-red-600">{{ form.errors[field.key] }}</p>
-                            </div>
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        <div v-for="field in textFields" :key="field.key" class="grid gap-2">
+                            <Label>{{ field.label }}</Label>
+                            <Input v-model="form[field.key]" :placeholder="field.placeholder" />
+                            <p v-if="field.hint" class="text-xs text-muted-foreground">{{ field.hint }}</p>
+                            <p v-if="form.errors[field.key]" class="text-sm text-red-600">{{ form.errors[field.key] }}</p>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </AdminSection>
 
-                <Card class="mt-4">
-                    <CardContent class="grid gap-4 pt-6">
-                        <div class="grid gap-1">
-                            <Label>Fuente de los títulos</Label>
-                            <p class="text-xs text-muted-foreground">
-                                Cambia los títulos de sección del sitio público y el de la banda que encabeza cada página. El texto de los párrafos no
-                                se toca.
-                            </p>
-                        </div>
-
-                        <div class="grid gap-3 sm:grid-cols-2">
-                            <button
-                                v-for="card in fontCards"
-                                :key="card.key ?? 'actual'"
-                                type="button"
-                                class="grid gap-2 rounded-lg border p-4 text-left transition hover:bg-accent"
-                                :class="form.heading_font === card.key ? 'border-primary ring-1 ring-primary' : 'border-input'"
-                                @click="form.heading_font = card.key"
-                            >
-                                <div class="flex items-center justify-between gap-2">
-                                    <span class="text-sm font-medium">{{ card.name }}</span>
-                                    <Check v-if="form.heading_font === card.key" class="h-4 w-4 shrink-0 text-primary" />
-                                </div>
-                                <span class="text-2xl font-light leading-tight" :style="{ fontFamily: card.family }"> Clases semanales </span>
-                                <span class="text-xs text-muted-foreground">{{ card.note }}</span>
-                            </button>
-                        </div>
-
-                        <p v-if="form.errors.heading_font" class="text-sm text-red-600">{{ form.errors.heading_font }}</p>
-                    </CardContent>
-                </Card>
-
-                <Card class="mt-4">
-                    <CardContent class="grid gap-4 pt-6">
-                        <div class="grid gap-1">
-                            <Label>Descripción de las fichas de clase</Label>
-                            <p class="text-xs text-muted-foreground">
-                                Qué pasa con una descripción que no entra junto al afiche (en celular siempre se ve completa). Si elegís un modo,
-                                vale para todas las fichas y pisa lo que cada una tenga elegido; con «Que elija cada ficha» se respeta la elección de
-                                cada una.
-                            </p>
-                        </div>
-
-                        <div class="grid gap-3 sm:grid-cols-2">
-                            <button
-                                v-for="modo in modosDescripcion"
-                                :key="modo.value"
-                                type="button"
-                                class="grid gap-2 rounded-lg border p-4 text-left transition hover:bg-accent"
-                                :class="form.class_description_mode === modo.value ? 'border-primary ring-1 ring-primary' : 'border-input'"
-                                @click="form.class_description_mode = modo.value"
-                            >
-                                <div class="flex items-center justify-between gap-2">
-                                    <span class="flex items-center gap-2 font-medium">
-                                        <component :is="modo.icon" class="h-4 w-4" /> {{ modo.name }}
-                                    </span>
-                                    <Check v-if="form.class_description_mode === modo.value" class="h-4 w-4 text-primary" />
-                                </div>
-                                <span class="text-xs text-muted-foreground">{{ modo.note }}</span>
-                            </button>
-                        </div>
-
-                        <p v-if="form.errors.class_description_mode" class="text-sm text-red-600">{{ form.errors.class_description_mode }}</p>
-                    </CardContent>
-                </Card>
-
-                <Card class="mt-4">
-                    <CardContent class="grid gap-6 pt-6">
-                        <div class="grid gap-1">
-                            <ImageField
-                                v-model="form.footer_logo_path"
-                                v-model:file="form.files.footer_logo"
-                                label="Logo del pie de página"
-                                :error="form.errors['files.footer_logo']"
-                            />
-                            <p class="text-xs text-muted-foreground">
-                                Si lo dejás vacío, el pie usa el logo del menú. Con "Quitar" volvés a ese comportamiento.
-                            </p>
-                        </div>
-
-                        <CardsField
-                            v-model="form.footer_resources"
-                            v-model:files="form.files.footer_resources"
-                            label="Recursos del pie de página (libros / descargas)"
-                            :error="form.errors.footer_resources"
-                        />
-                    </CardContent>
-                </Card>
-
-                <Card class="mt-4">
-                    <CardContent class="grid gap-4 pt-6">
-                        <div class="grid gap-1">
-                            <Label class="flex items-center gap-2"><KeyRound class="h-4 w-4" /> Acceso con Google</Label>
-                            <p class="text-xs text-muted-foreground">
-                                Estas cuentas de Google pueden entrar con «Continuar con Google» en la pantalla de acceso. Cada una entra al
-                                <span class="font-medium text-brand-ink">panel completo</span>: puede editar todo el sitio. Agregá solo cuentas de
-                                confianza.
-                            </p>
-                        </div>
-
-                        <div
-                            v-if="!google.configured"
-                            class="rounded-lg border border-brand-orange/40 bg-brand-cream px-3 py-2 text-xs text-brand-ink"
+                <AdminSection
+                    title="Fuente de los títulos"
+                    :icon="Type"
+                    description="Cambia los títulos de sección del sitio público y el de la banda que encabeza cada página. El texto de los párrafos no se toca."
+                    body-class="grid gap-4"
+                >
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <button
+                            v-for="card in fontCards"
+                            :key="card.key ?? 'actual'"
+                            type="button"
+                            class="grid gap-2 rounded-lg border bg-card p-4 text-left transition hover:bg-accent"
+                            :class="form.heading_font === card.key ? 'border-primary ring-1 ring-primary' : 'border-input'"
+                            @click="form.heading_font = card.key"
                         >
-                            El login con Google todavía no está configurado en el servidor, así que el botón no aparece en la pantalla de acceso. La
-                            lista de acá abajo queda guardada y lista para cuando se active.
-                        </div>
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-sm font-medium">{{ card.name }}</span>
+                                <Check v-if="form.heading_font === card.key" class="h-4 w-4 shrink-0 text-primary" />
+                            </div>
+                            <span class="text-2xl font-light leading-tight" :style="{ fontFamily: card.family }"> Clases semanales </span>
+                            <span class="text-xs text-muted-foreground">{{ card.note }}</span>
+                        </button>
+                    </div>
 
-                        <div v-if="google.owner_emails.length" class="text-xs text-muted-foreground">
-                            Con acceso fijo (no se puede quitar desde acá):
-                            <span class="font-medium text-brand-ink">{{ google.owner_emails.join(', ') }}</span>
+                    <p v-if="form.errors.heading_font" class="text-sm text-red-600">{{ form.errors.heading_font }}</p>
+                </AdminSection>
+
+                <AdminSection
+                    title="Descripción de las fichas de clase"
+                    :icon="ListChecks"
+                    description="Qué pasa con una descripción que no entra junto al afiche (en celular siempre se ve completa). Si elegís un modo, vale para todas las fichas y pisa lo que cada una tenga elegido; con «Que elija cada ficha» se respeta la elección de cada una."
+                    body-class="grid gap-4"
+                >
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <button
+                            v-for="modo in modosDescripcion"
+                            :key="modo.value"
+                            type="button"
+                            class="grid gap-2 rounded-lg border bg-card p-4 text-left transition hover:bg-accent"
+                            :class="form.class_description_mode === modo.value ? 'border-primary ring-1 ring-primary' : 'border-input'"
+                            @click="form.class_description_mode = modo.value"
+                        >
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="flex items-center gap-2 font-medium">
+                                    <component :is="modo.icon" class="h-4 w-4" /> {{ modo.name }}
+                                </span>
+                                <Check v-if="form.class_description_mode === modo.value" class="h-4 w-4 text-primary" />
+                            </div>
+                            <span class="text-xs text-muted-foreground">{{ modo.note }}</span>
+                        </button>
+                    </div>
+
+                    <p v-if="form.errors.class_description_mode" class="text-sm text-red-600">{{ form.errors.class_description_mode }}</p>
+                </AdminSection>
+
+                <AdminSection title="Pie de página" :icon="PanelBottom" body-class="grid gap-6">
+                    <div class="grid gap-1">
+                        <ImageField
+                            v-model="form.footer_logo_path"
+                            v-model:file="form.files.footer_logo"
+                            label="Logo del pie de página"
+                            :error="form.errors['files.footer_logo']"
+                        />
+                        <p class="text-xs text-muted-foreground">
+                            Si lo dejás vacío, el pie usa el logo del menú. Con "Quitar" volvés a ese comportamiento.
+                        </p>
+                    </div>
+
+                    <CardsField
+                        v-model="form.footer_resources"
+                        v-model:files="form.files.footer_resources"
+                        label="Recursos del pie de página (libros / descargas)"
+                        :error="form.errors.footer_resources"
+                    />
+                </AdminSection>
+
+                <AdminSection title="Acceso con Google" :icon="KeyRound" body-class="grid gap-4">
+                    <template #description>
+                        Estas cuentas de Google pueden entrar con «Continuar con Google» en la pantalla de acceso. Cada una entra al
+                        <span class="font-medium text-foreground">panel completo</span>: puede editar todo el sitio. Agregá solo cuentas de confianza.
+                    </template>
+
+                    <div v-if="!google.configured" class="rounded-lg border border-brand-orange/40 bg-brand-cream px-3 py-2 text-xs text-foreground">
+                        El login con Google todavía no está configurado en el servidor, así que el botón no aparece en la pantalla de acceso. La lista
+                        de acá abajo queda guardada y lista para cuando se active.
+                    </div>
+
+                    <div v-if="google.owner_emails.length" class="text-xs text-muted-foreground">
+                        Con acceso fijo (no se puede quitar desde acá):
+                        <span class="font-medium text-foreground">{{ google.owner_emails.join(', ') }}</span>
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="google_allowed_emails">Cuentas habilitadas</Label>
+                        <textarea
+                            id="google_allowed_emails"
+                            v-model="form.google_allowed_emails"
+                            rows="3"
+                            placeholder="otra-persona@gmail.com&#10;tercera-persona@gmail.com"
+                            class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        ></textarea>
+                        <p class="text-xs text-muted-foreground">
+                            Una dirección por línea. Al entrar por primera vez, la cuenta se crea sola; para sacarle el acceso, borrala de la lista.
+                        </p>
+                        <p v-if="form.errors.google_allowed_emails" class="text-sm text-red-600">
+                            {{ form.errors.google_allowed_emails }}
+                        </p>
+                    </div>
+                </AdminSection>
+
+                <AdminSection
+                    id="newsletter"
+                    title="Newsletter"
+                    :icon="Mail"
+                    description="A quién se le manda y con qué nombre sale firmado. La clave de Mailchimp la configura el servidor y no se edita desde acá."
+                    body-class="grid gap-4"
+                >
+                    <div
+                        v-if="!props.newsletter.configured"
+                        class="rounded-lg border border-brand-orange/40 bg-brand-cream px-3 py-2 text-xs text-foreground"
+                    >
+                        Falta la clave de Mailchimp en el servidor (<span class="font-mono">MAILCHIMP_API_KEY</span>). Hasta que esté, no se puede
+                        elegir la audiencia ni enviar.
+                    </div>
+
+                    <div v-else-if="props.newsletter.error" class="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700">
+                        No se pudo leer la cuenta de Mailchimp: {{ props.newsletter.error }}
+                    </div>
+
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <button
+                            v-for="modo in modosEnvio"
+                            :key="modo.value"
+                            type="button"
+                            class="grid gap-2 rounded-lg border bg-card p-4 text-left transition hover:bg-accent"
+                            :class="form.newsletter_mode === modo.value ? 'border-primary ring-1 ring-primary' : 'border-input'"
+                            @click="form.newsletter_mode = modo.value"
+                        >
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="flex items-center gap-2 font-medium">
+                                    <component :is="modo.icon" class="h-4 w-4" /> {{ modo.name }}
+                                </span>
+                                <Check v-if="form.newsletter_mode === modo.value" class="h-4 w-4 text-primary" />
+                            </div>
+                            <span class="text-xs text-muted-foreground">{{ modo.note }}</span>
+                        </button>
+                    </div>
+
+                    <p class="text-xs text-muted-foreground">
+                        En manual, lo que ya esté programado <span class="font-medium text-foreground">no se pierde ni se cancela</span>: queda
+                        esperando en la lista con la leyenda de que está listo para que lo mandes.
+                    </p>
+
+                    <div class="grid gap-2 border-t pt-4">
+                        <Label for="newsletter_list_id">Audiencia</Label>
+                        <select
+                            id="newsletter_list_id"
+                            v-model="form.newsletter_list_id"
+                            :disabled="!props.newsletter.audiences.length"
+                            class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+                        >
+                            <option value="">— Elegir audiencia —</option>
+                            <option v-for="audiencia in props.newsletter.audiences" :key="audiencia.id" :value="audiencia.id">
+                                {{ audiencia.name }} ({{ audiencia.stats?.member_count ?? 0 }} suscriptores)
+                            </option>
+                        </select>
+                        <p class="text-xs text-muted-foreground">
+                            El envío semanal y el mensual usan la misma audiencia: cambian en el contenido y en el asunto, no en a quién le llegan.
+                        </p>
+                        <p v-if="form.errors.newsletter_list_id" class="text-sm text-red-600">{{ form.errors.newsletter_list_id }}</p>
+                    </div>
+
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid gap-2">
+                            <Label for="newsletter_from_name">Nombre del remitente</Label>
+                            <Input id="newsletter_from_name" v-model="form.newsletter_from_name" placeholder="Meditar en Zona Norte" />
+                            <p class="text-xs text-muted-foreground">Lo que se lee como remitente en la bandeja de entrada.</p>
+                            <p v-if="form.errors.newsletter_from_name" class="text-sm text-red-600">{{ form.errors.newsletter_from_name }}</p>
                         </div>
 
                         <div class="grid gap-2">
-                            <Label for="google_allowed_emails">Cuentas habilitadas</Label>
+                            <Label for="newsletter_reply_to">Casilla de respuesta</Label>
+                            <Input id="newsletter_reply_to" v-model="form.newsletter_reply_to" type="email" placeholder="info@tudominio.org" />
+                            <p class="text-xs text-muted-foreground">Adónde llega lo que responda quien reciba el correo.</p>
+                            <p v-if="form.errors.newsletter_reply_to" class="text-sm text-red-600">{{ form.errors.newsletter_reply_to }}</p>
+                        </div>
+                    </div>
+                </AdminSection>
+
+                <AdminSection
+                    id="estado-del-sitio"
+                    title="Estado del sitio"
+                    :icon="Globe"
+                    description="En construcción, las visitas ven un cartel en lugar de las páginas. Vos, con la sesión iniciada, seguís viendo el sitio completo, y el panel no se cierra nunca."
+                    body-class="grid gap-4"
+                >
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <button
+                            v-for="estado in estados"
+                            :key="String(estado.value)"
+                            type="button"
+                            class="grid gap-2 rounded-lg border bg-card p-4 text-left transition hover:bg-accent"
+                            :class="form.under_construction === estado.value ? 'border-primary ring-1 ring-primary' : 'border-input'"
+                            @click="form.under_construction = estado.value"
+                        >
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="flex items-center gap-2 text-sm font-medium">
+                                    <component :is="estado.icon" class="h-4 w-4 shrink-0" />
+                                    {{ estado.name }}
+                                </span>
+                                <Check v-if="form.under_construction === estado.value" class="h-4 w-4 shrink-0 text-primary" />
+                            </div>
+                            <span class="text-xs text-muted-foreground">{{ estado.note }}</span>
+                        </button>
+                    </div>
+
+                    <div class="grid gap-5 border-t pt-4">
+                        <div class="grid gap-2">
+                            <Label>Título del cartel</Label>
+                            <Input v-model="form.construction_title" :placeholder="construction.title" />
+                            <p v-if="form.errors.construction_title" class="text-sm text-red-600">
+                                {{ form.errors.construction_title }}
+                            </p>
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label>Mensaje del cartel</Label>
                             <textarea
-                                id="google_allowed_emails"
-                                v-model="form.google_allowed_emails"
+                                v-model="form.construction_message"
                                 rows="3"
-                                placeholder="otra-persona@gmail.com&#10;tercera-persona@gmail.com"
+                                :placeholder="construction.message"
                                 class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                             ></textarea>
                             <p class="text-xs text-muted-foreground">
-                                Una dirección por línea. Al entrar por primera vez, la cuenta se crea sola; para sacarle el acceso, borrala de la
-                                lista.
+                                Vacíos, el cartel usa los textos que se ven en gris. El teléfono, el WhatsApp y el resto del contacto salen solos de
+                                los datos de más arriba.
                             </p>
-                            <p v-if="form.errors.google_allowed_emails" class="text-sm text-red-600">
-                                {{ form.errors.google_allowed_emails }}
-                            </p>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card id="newsletter" class="mt-4 scroll-mt-4">
-                    <CardContent class="grid gap-4 pt-6">
-                        <div class="grid gap-1">
-                            <Label class="flex items-center gap-2"><Mail class="h-4 w-4" /> Newsletter</Label>
-                            <p class="text-xs text-muted-foreground">
-                                A quién se le manda y con qué nombre sale firmado. La clave de Mailchimp la configura el servidor y no se edita desde
-                                acá.
+                            <p v-if="form.errors.construction_message" class="text-sm text-red-600">
+                                {{ form.errors.construction_message }}
                             </p>
                         </div>
 
-                        <div
-                            v-if="!props.newsletter.configured"
-                            class="rounded-lg border border-brand-orange/40 bg-brand-cream px-3 py-2 text-xs text-brand-ink"
+                        <!-- Enlace común y no <Link>: el cartel es una página entera, va en otra pestaña. -->
+                        <a
+                            :href="route('admin.settings.construction')"
+                            target="_blank"
+                            rel="noopener"
+                            class="inline-flex w-fit items-center gap-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
                         >
-                            Falta la clave de Mailchimp en el servidor (<span class="font-mono">MAILCHIMP_API_KEY</span>). Hasta que esté, no se puede
-                            elegir la audiencia ni enviar.
-                        </div>
+                            <Eye class="h-4 w-4" />
+                            Ver cómo queda el cartel
+                            <span class="text-xs font-normal text-muted-foreground">(con lo último guardado)</span>
+                        </a>
+                    </div>
+                </AdminSection>
 
-                        <div v-else-if="props.newsletter.error" class="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700">
-                            No se pudo leer la cuenta de Mailchimp: {{ props.newsletter.error }}
-                        </div>
-
-                        <div class="grid gap-3 sm:grid-cols-2">
-                            <button
-                                v-for="modo in modosEnvio"
-                                :key="modo.value"
-                                type="button"
-                                class="grid gap-2 rounded-lg border p-4 text-left transition hover:bg-accent"
-                                :class="form.newsletter_mode === modo.value ? 'border-primary ring-1 ring-primary' : 'border-input'"
-                                @click="form.newsletter_mode = modo.value"
-                            >
-                                <div class="flex items-center justify-between gap-2">
-                                    <span class="flex items-center gap-2 font-medium">
-                                        <component :is="modo.icon" class="h-4 w-4" /> {{ modo.name }}
-                                    </span>
-                                    <Check v-if="form.newsletter_mode === modo.value" class="h-4 w-4 text-primary" />
-                                </div>
-                                <span class="text-xs text-muted-foreground">{{ modo.note }}</span>
-                            </button>
-                        </div>
-
-                        <p class="text-xs text-muted-foreground">
-                            En manual, lo que ya esté programado <span class="font-medium text-brand-ink">no se pierde ni se cancela</span>: queda
-                            esperando en la lista con la leyenda de que está listo para que lo mandes.
-                        </p>
-
-                        <div class="grid gap-2 border-t pt-4">
-                            <Label for="newsletter_list_id">Audiencia</Label>
-                            <select
-                                id="newsletter_list_id"
-                                v-model="form.newsletter_list_id"
-                                :disabled="!props.newsletter.audiences.length"
-                                class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
-                            >
-                                <option value="">— Elegir audiencia —</option>
-                                <option v-for="audiencia in props.newsletter.audiences" :key="audiencia.id" :value="audiencia.id">
-                                    {{ audiencia.name }} ({{ audiencia.stats?.member_count ?? 0 }} suscriptores)
-                                </option>
-                            </select>
-                            <p class="text-xs text-muted-foreground">
-                                El envío semanal y el mensual usan la misma audiencia: cambian en el contenido y en el asunto, no en a quién le
-                                llegan.
-                            </p>
-                            <p v-if="form.errors.newsletter_list_id" class="text-sm text-red-600">{{ form.errors.newsletter_list_id }}</p>
-                        </div>
-
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div class="grid gap-2">
-                                <Label for="newsletter_from_name">Nombre del remitente</Label>
-                                <Input id="newsletter_from_name" v-model="form.newsletter_from_name" placeholder="Meditar en Zona Norte" />
-                                <p class="text-xs text-muted-foreground">Lo que se lee como remitente en la bandeja de entrada.</p>
-                                <p v-if="form.errors.newsletter_from_name" class="text-sm text-red-600">{{ form.errors.newsletter_from_name }}</p>
-                            </div>
-
-                            <div class="grid gap-2">
-                                <Label for="newsletter_reply_to">Casilla de respuesta</Label>
-                                <Input id="newsletter_reply_to" v-model="form.newsletter_reply_to" type="email" placeholder="info@tudominio.org" />
-                                <p class="text-xs text-muted-foreground">Adónde llega lo que responda quien reciba el correo.</p>
-                                <p v-if="form.errors.newsletter_reply_to" class="text-sm text-red-600">{{ form.errors.newsletter_reply_to }}</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card id="estado-del-sitio" class="mt-4 scroll-mt-4">
-                    <CardContent class="grid gap-4 pt-6">
-                        <div class="grid gap-1">
-                            <Label>Estado del sitio</Label>
-                            <p class="text-xs text-muted-foreground">
-                                En construcción, las visitas ven un cartel en lugar de las páginas. Vos, con la sesión iniciada, seguís viendo el
-                                sitio completo, y el panel no se cierra nunca.
-                            </p>
-                        </div>
-
-                        <div class="grid gap-3 sm:grid-cols-2">
-                            <button
-                                v-for="estado in estados"
-                                :key="String(estado.value)"
-                                type="button"
-                                class="grid gap-2 rounded-lg border p-4 text-left transition hover:bg-accent"
-                                :class="form.under_construction === estado.value ? 'border-primary ring-1 ring-primary' : 'border-input'"
-                                @click="form.under_construction = estado.value"
-                            >
-                                <div class="flex items-center justify-between gap-2">
-                                    <span class="flex items-center gap-2 text-sm font-medium">
-                                        <component :is="estado.icon" class="h-4 w-4 shrink-0" />
-                                        {{ estado.name }}
-                                    </span>
-                                    <Check v-if="form.under_construction === estado.value" class="h-4 w-4 shrink-0 text-primary" />
-                                </div>
-                                <span class="text-xs text-muted-foreground">{{ estado.note }}</span>
-                            </button>
-                        </div>
-
-                        <div class="grid gap-5 border-t pt-4">
-                            <div class="grid gap-2">
-                                <Label>Título del cartel</Label>
-                                <Input v-model="form.construction_title" :placeholder="construction.title" />
-                                <p v-if="form.errors.construction_title" class="text-sm text-red-600">
-                                    {{ form.errors.construction_title }}
-                                </p>
-                            </div>
-
-                            <div class="grid gap-2">
-                                <Label>Mensaje del cartel</Label>
-                                <textarea
-                                    v-model="form.construction_message"
-                                    rows="3"
-                                    :placeholder="construction.message"
-                                    class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                                ></textarea>
-                                <p class="text-xs text-muted-foreground">
-                                    Vacíos, el cartel usa los textos que se ven en gris. El teléfono, el WhatsApp y el resto del contacto salen solos
-                                    de los datos de más arriba.
-                                </p>
-                                <p v-if="form.errors.construction_message" class="text-sm text-red-600">
-                                    {{ form.errors.construction_message }}
-                                </p>
-                            </div>
-
-                            <!-- Enlace común y no <Link>: el cartel es una página entera, va en otra pestaña. -->
-                            <a
-                                :href="route('admin.settings.construction')"
-                                target="_blank"
-                                rel="noopener"
-                                class="inline-flex w-fit items-center gap-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
-                            >
-                                <Eye class="h-4 w-4" />
-                                Ver cómo queda el cartel
-                                <span class="text-xs font-normal text-muted-foreground">(con lo último guardado)</span>
-                            </a>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <div class="mt-4">
+                <div>
                     <Button type="submit" :disabled="form.processing">
                         <LoaderCircle v-if="form.processing" class="mr-2 h-4 w-4 animate-spin" />
                         Guardar ajustes

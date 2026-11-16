@@ -72,6 +72,12 @@ export default {
                     DEFAULT: 'hsl(var(--destructive))',
                     foreground: 'hsl(var(--destructive-foreground))',
                 },
+                // Las secciones del panel admin: fondo alternado y franja de cabecera.
+                section: {
+                    tint: 'hsl(var(--section-tint))',
+                    head: 'hsl(var(--section-head))',
+                    'head-foreground': 'hsl(var(--section-head-foreground))',
+                },
                 border: 'hsl(var(--border))',
                 input: 'hsl(var(--input))',
                 ring: 'hsl(var(--ring))',

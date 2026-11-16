@@ -1,12 +1,13 @@
 <script setup lang="ts">
+import AdminSection from '@/components/admin/AdminSection.vue';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import AdminLayout from '@/layouts/AdminLayout.vue';
+import { ZEBRA } from '@/lib/admin';
 import { img, type EventData } from '@/lib/site';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { AlertCircle, Check, ExternalLink, LoaderCircle, Minus, Pencil } from 'lucide-vue-next';
+import { AlertCircle, CalendarRange, Check, ExternalLink, LoaderCircle, Minus, Pencil } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 type CalendarCard = {
@@ -143,7 +144,7 @@ function setAll(value: boolean) {
     <AdminLayout :breadcrumbs="breadcrumbs">
         <Head title="Calendario" />
 
-        <div class="flex flex-col gap-4 p-4">
+        <div class="admin-sections flex flex-col gap-4 p-4">
             <div class="flex flex-wrap items-start justify-between gap-2">
                 <div>
                     <h1 class="text-xl font-semibold">Calendario</h1>
@@ -154,70 +155,66 @@ function setAll(value: boolean) {
                 </Button>
             </div>
 
-            <Card>
-                <CardContent class="p-0">
-                    <div class="flex items-center gap-3 border-b bg-muted/40 px-3 py-3 sm:px-4">
-                        <Checkbox
-                            id="calendar-all"
-                            :checked="masterState"
-                            :disabled="bulk || !selectables.length"
-                            class="focus-visible:outline-none data-[state=indeterminate]:border-accent-foreground data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-primary-foreground"
-                            @update:checked="setAll"
-                        >
-                            <Minus v-if="masterState === 'indeterminate'" class="size-3.5 stroke-[3]" />
-                            <Check v-else class="size-3.5 stroke-[3]" />
-                        </Checkbox>
+            <AdminSection title="Qué se muestra" :icon="CalendarRange" flush>
+                <div class="flex items-center gap-3 border-b bg-section-tint px-3 py-3 sm:px-4">
+                    <Checkbox
+                        id="calendar-all"
+                        :checked="masterState"
+                        :disabled="bulk || !selectables.length"
+                        class="focus-visible:outline-none data-[state=indeterminate]:border-accent-foreground data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-primary-foreground"
+                        @update:checked="setAll"
+                    >
+                        <Minus v-if="masterState === 'indeterminate'" class="size-3.5 stroke-[3]" />
+                        <Check v-else class="size-3.5 stroke-[3]" />
+                    </Checkbox>
 
-                        <Label for="calendar-all" class="min-w-0 flex-1 cursor-pointer text-sm font-medium">
-                            Mostrar todo en el calendario
-                        </Label>
+                    <Label for="calendar-all" class="min-w-0 flex-1 cursor-pointer text-sm font-medium"> Mostrar todo en el calendario </Label>
 
-                        <span class="shrink-0 text-sm text-muted-foreground">{{ checkedCount }} de {{ selectables.length }}</span>
+                    <span class="shrink-0 text-sm text-muted-foreground">{{ checkedCount }} de {{ selectables.length }}</span>
+                </div>
+
+                <template v-for="group in groups" :key="group.title">
+                    <div class="border-b bg-section-tint/60 px-3 py-2 sm:px-4">
+                        <p class="text-sm font-medium">{{ group.title }}</p>
+                        <p class="text-xs text-muted-foreground">{{ group.hint }}</p>
                     </div>
 
-                    <template v-for="group in groups" :key="group.title">
-                        <div class="border-b bg-muted/20 px-3 py-2 sm:px-4">
-                            <p class="text-sm font-medium">{{ group.title }}</p>
-                            <p class="text-xs text-muted-foreground">{{ group.hint }}</p>
-                        </div>
+                    <p v-if="!group.rows.length" class="border-b px-4 py-4 text-sm text-muted-foreground">{{ group.empty }}</p>
 
-                        <p v-if="!group.rows.length" class="border-b px-4 py-4 text-sm text-muted-foreground">{{ group.empty }}</p>
+                    <div v-else class="divide-y border-b" :class="ZEBRA">
+                        <div v-for="row in group.rows" :key="row.key" class="flex items-start gap-3 px-3 py-3 sm:px-4">
+                            <Checkbox
+                                :id="`cal-${row.key}`"
+                                :checked="isOn(row)"
+                                :disabled="bulk || pending.has(row.key) || !row.selectable"
+                                class="mt-1 shrink-0 focus-visible:outline-none"
+                                @update:checked="(value) => setOne(row, value)"
+                            />
 
-                        <div v-else class="divide-y border-b">
-                            <div v-for="row in group.rows" :key="row.key" class="flex items-start gap-3 px-3 py-3 sm:px-4">
-                                <Checkbox
-                                    :id="`cal-${row.key}`"
-                                    :checked="isOn(row)"
-                                    :disabled="bulk || pending.has(row.key) || !row.selectable"
-                                    class="mt-1 shrink-0 focus-visible:outline-none"
-                                    @update:checked="(value) => setOne(row, value)"
-                                />
+                            <img v-if="row.image" :src="img(row.image)" alt="" class="h-12 w-12 shrink-0 rounded-md border object-cover" />
 
-                                <img v-if="row.image" :src="img(row.image)" alt="" class="h-12 w-12 shrink-0 rounded-md border object-cover" />
+                            <div class="min-w-0 flex-1">
+                                <p class="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{{ row.page }}</p>
+                                <Label :for="`cal-${row.key}`" class="block truncate font-medium" :class="row.selectable ? 'cursor-pointer' : ''">
+                                    {{ row.title }}
+                                </Label>
 
-                                <div class="min-w-0 flex-1">
-                                    <p class="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{{ row.page }}</p>
-                                    <Label :for="`cal-${row.key}`" class="block truncate font-medium" :class="row.selectable ? 'cursor-pointer' : ''">
-                                        {{ row.title }}
-                                    </Label>
-
-                                    <p v-if="row.warning" class="flex items-start gap-1.5 text-sm text-amber-700">
-                                        <AlertCircle class="mt-0.5 h-4 w-4 shrink-0" />
-                                        {{ row.warning }}
-                                    </p>
-                                    <p v-else class="truncate text-sm text-muted-foreground">{{ row.detail }}</p>
-                                </div>
-
-                                <LoaderCircle v-if="pending.has(row.key)" class="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
-
-                                <Button as-child size="sm" variant="outline" class="shrink-0">
-                                    <Link :href="row.editUrl" title="Editar"><Pencil class="h-4 w-4" /></Link>
-                                </Button>
+                                <p v-if="row.warning" class="flex items-start gap-1.5 text-sm text-amber-700">
+                                    <AlertCircle class="mt-0.5 h-4 w-4 shrink-0" />
+                                    {{ row.warning }}
+                                </p>
+                                <p v-else class="truncate text-sm text-muted-foreground">{{ row.detail }}</p>
                             </div>
+
+                            <LoaderCircle v-if="pending.has(row.key)" class="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
+
+                            <Button as-child size="sm" variant="outline" class="shrink-0">
+                                <Link :href="row.editUrl" title="Editar"><Pencil class="h-4 w-4" /></Link>
+                            </Button>
                         </div>
-                    </template>
-                </CardContent>
-            </Card>
+                    </div>
+                </template>
+            </AdminSection>
 
             <p class="text-sm text-muted-foreground">
                 Lo que está oculto en el sitio no se lista acá, porque tampoco puede aparecer en el calendario.

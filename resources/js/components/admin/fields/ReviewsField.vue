@@ -42,7 +42,7 @@ function move(index: number, delta: number) {
     <div class="grid gap-3">
         <Label>{{ label }}</Label>
 
-        <div v-for="(review, i) in model" :key="i" class="grid gap-3 rounded-lg border p-4">
+        <div v-for="(review, i) in model" :key="i" class="grid gap-3 rounded-lg border bg-card p-4">
             <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-muted-foreground">Reseña {{ i + 1 }}</span>
                 <div class="flex items-center">

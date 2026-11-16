@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import SectionForm, { type FieldDef } from '@/components/admin/SectionForm.vue';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
@@ -50,19 +49,16 @@ function submit() {
             </div>
 
             <form @submit.prevent="submit">
-                <Card>
-                    <CardContent class="pt-6">
-                        <SectionForm
-                            :fields="fields"
-                            v-model:content="form.content"
-                            v-model:files="form.files"
-                            :errors="form.errors as Record<string, string>"
-                            :faq-pool="faqPool"
-                            :pools="pools"
-                            :hints="hints"
-                        />
-                    </CardContent>
-                </Card>
+                <SectionForm
+                    :fields="fields"
+                    :title="section.type_label"
+                    v-model:content="form.content"
+                    v-model:files="form.files"
+                    :errors="form.errors as Record<string, string>"
+                    :faq-pool="faqPool"
+                    :pools="pools"
+                    :hints="hints"
+                />
 
                 <div class="mt-4 flex items-center gap-3">
                     <Button type="submit" :disabled="form.processing">

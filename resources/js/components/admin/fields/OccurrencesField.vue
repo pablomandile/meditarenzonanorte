@@ -34,10 +34,7 @@ const SELECT_CLASS =
     'flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
 function add() {
-    model.value = [
-        ...(model.value ?? []),
-        { type: 'weekly', weekday: 3, date: null, from: null, until: null, start: null, end: null, label: null },
-    ];
+    model.value = [...(model.value ?? []), { type: 'weekly', weekday: 3, date: null, from: null, until: null, start: null, end: null, label: null }];
 }
 
 function remove(index: number) {
@@ -54,7 +51,7 @@ function remove(index: number) {
             </p>
         </div>
 
-        <div v-for="(row, i) in model" :key="i" class="grid gap-3 rounded-lg border p-4">
+        <div v-for="(row, i) in model" :key="i" class="grid gap-3 rounded-lg border bg-card p-4">
             <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-muted-foreground">Fecha {{ i + 1 }}</span>
                 <Button type="button" variant="ghost" size="icon" class="text-red-600" title="Quitar" @click="remove(i)">
@@ -127,9 +124,7 @@ function remove(index: number) {
             </div>
         </div>
 
-        <Button type="button" variant="outline" size="sm" class="w-fit" @click="add">
-            <Plus class="mr-1 h-4 w-4" /> Agregar fecha
-        </Button>
+        <Button type="button" variant="outline" size="sm" class="w-fit" @click="add"> <Plus class="mr-1 h-4 w-4" /> Agregar fecha </Button>
         <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
     </div>
 </template>

@@ -1,13 +1,13 @@
 <script setup lang="ts">
+import AdminSection from '@/components/admin/AdminSection.vue';
 import NewsletterItemsField, { type NewsletterItem } from '@/components/admin/NewsletterItemsField.vue';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useConfirm } from '@/composables/useConfirm';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { CalendarClock, Eye, LoaderCircle, Send, Trash2, TriangleAlert } from 'lucide-vue-next';
+import { CalendarClock, Eye, LoaderCircle, Mail, Send, Trash2, TriangleAlert } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 type Newsletter = {
@@ -114,7 +114,7 @@ async function destroy() {
     <AdminLayout :breadcrumbs="breadcrumbs">
         <Head :title="props.newsletter.subject" />
 
-        <div class="flex flex-col gap-4 p-4">
+        <div class="admin-sections flex flex-col gap-4 p-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h1 class="text-xl font-semibold">{{ props.newsletter.subject }}</h1>
@@ -147,90 +147,84 @@ async function destroy() {
                 </ul>
             </div>
 
-            <Card>
-                <CardContent class="grid gap-4 pt-6">
-                    <div class="grid gap-3 sm:grid-cols-[10rem_1fr]">
-                        <div class="grid gap-1">
-                            <Label class="text-xs">Tipo</Label>
-                            <select
-                                v-model="form.type"
-                                class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                            >
-                                <option value="weekly">Semanal</option>
-                                <option value="monthly">Mensual</option>
-                            </select>
-                        </div>
-
-                        <div class="grid gap-1">
-                            <Label class="text-xs">Asunto</Label>
-                            <Input v-model="form.subject" />
-                            <p v-if="form.errors.subject" class="text-sm text-red-600">{{ form.errors.subject }}</p>
-                        </div>
+            <AdminSection title="Contenido del envío" :icon="Mail" body-class="grid gap-4">
+                <div class="grid gap-3 sm:grid-cols-[10rem_1fr]">
+                    <div class="grid gap-1">
+                        <Label class="text-xs">Tipo</Label>
+                        <select
+                            v-model="form.type"
+                            class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        >
+                            <option value="weekly">Semanal</option>
+                            <option value="monthly">Mensual</option>
+                        </select>
                     </div>
 
                     <div class="grid gap-1">
-                        <Label class="text-xs">Renglón de vista previa (opcional)</Label>
-                        <Input v-model="form.preview_text" placeholder="Lo que se lee debajo del asunto en la bandeja de entrada" />
-                        <p class="text-xs text-muted-foreground">Se ve en la lista de correos, junto al asunto, y no aparece dentro del mail.</p>
+                        <Label class="text-xs">Asunto</Label>
+                        <Input v-model="form.subject" />
+                        <p v-if="form.errors.subject" class="text-sm text-red-600">{{ form.errors.subject }}</p>
                     </div>
+                </div>
 
-                    <div class="grid gap-2 border-t pt-4">
-                        <Label class="text-xs">Qué va en este envío</Label>
-                        <NewsletterItemsField v-model="form.items" :pool="props.pool" />
-                        <p v-if="form.errors.items" class="text-sm text-red-600">{{ form.errors.items }}</p>
+                <div class="grid gap-1">
+                    <Label class="text-xs">Renglón de vista previa (opcional)</Label>
+                    <Input v-model="form.preview_text" placeholder="Lo que se lee debajo del asunto en la bandeja de entrada" />
+                    <p class="text-xs text-muted-foreground">Se ve en la lista de correos, junto al asunto, y no aparece dentro del mail.</p>
+                </div>
+
+                <div class="grid gap-2 border-t pt-4">
+                    <Label class="text-xs">Qué va en este envío</Label>
+                    <NewsletterItemsField v-model="form.items" :pool="props.pool" />
+                    <p v-if="form.errors.items" class="text-sm text-red-600">{{ form.errors.items }}</p>
+                </div>
+
+                <div class="flex items-center gap-2 border-t pt-4">
+                    <Button :disabled="form.processing" @click="save">
+                        <LoaderCircle v-if="form.processing" class="mr-1 h-4 w-4 animate-spin" />
+                        Guardar
+                    </Button>
+                    <span v-if="form.isDirty" class="text-xs text-muted-foreground">Hay cambios sin guardar.</span>
+                </div>
+            </AdminSection>
+
+            <AdminSection title="Probar y enviar" :icon="Send" body-class="grid gap-4">
+                <!-- La prueba va primero a propósito: es el paso que conviene no saltearse. -->
+                <div class="grid gap-1">
+                    <Label class="text-xs">Mandarme una prueba</Label>
+                    <div class="flex flex-wrap gap-2">
+                        <Input v-model="testEmail" type="email" placeholder="tu@correo.com" class="max-w-xs" />
+                        <Button variant="outline" :disabled="busy || !testEmail" @click="sendTest">Enviar prueba</Button>
                     </div>
+                    <p class="text-xs text-muted-foreground">
+                        Llega sólo a esa casilla. Conviene mirarla en el celular, que es donde se lee el correo.
+                    </p>
+                </div>
 
-                    <div class="flex items-center gap-2 border-t pt-4">
-                        <Button :disabled="form.processing" @click="save">
-                            <LoaderCircle v-if="form.processing" class="mr-1 h-4 w-4 animate-spin" />
-                            Guardar
+                <div class="grid gap-1 border-t pt-4">
+                    <Label class="text-xs">Programar el envío</Label>
+                    <div class="flex flex-wrap gap-2">
+                        <Input v-model="scheduledAt" type="datetime-local" class="max-w-xs" />
+                        <Button variant="outline" :disabled="busy || !!props.blocked" @click="schedule">
+                            <CalendarClock class="mr-1 h-4 w-4" />
+                            {{ props.newsletter.status === 'scheduled' ? 'Cambiar la fecha' : 'Programar' }}
                         </Button>
-                        <span v-if="form.isDirty" class="text-xs text-muted-foreground">Hay cambios sin guardar.</span>
+                        <Button v-if="props.newsletter.status === 'scheduled'" variant="ghost" @click="unschedule">Cancelar</Button>
                     </div>
-                </CardContent>
-            </Card>
+                    <p class="text-xs text-muted-foreground">
+                        Hora de Argentina. Al programarlo, el mail queda fijado tal como está ahora: si después cambiás una clase en el sitio, sale
+                        igual lo que se ve en la vista previa de hoy.
+                    </p>
+                    <p v-if="form.errors.scheduled_at" class="text-sm text-red-600">{{ form.errors.scheduled_at }}</p>
+                </div>
 
-            <Card>
-                <CardContent class="grid gap-4 pt-6">
-                    <h2 class="font-medium">Probar y enviar</h2>
-
-                    <!-- La prueba va primero a propósito: es el paso que conviene no saltearse. -->
-                    <div class="grid gap-1">
-                        <Label class="text-xs">Mandarme una prueba</Label>
-                        <div class="flex flex-wrap gap-2">
-                            <Input v-model="testEmail" type="email" placeholder="tu@correo.com" class="max-w-xs" />
-                            <Button variant="outline" :disabled="busy || !testEmail" @click="sendTest">Enviar prueba</Button>
-                        </div>
-                        <p class="text-xs text-muted-foreground">
-                            Llega sólo a esa casilla. Conviene mirarla en el celular, que es donde se lee el correo.
-                        </p>
-                    </div>
-
-                    <div class="grid gap-1 border-t pt-4">
-                        <Label class="text-xs">Programar el envío</Label>
-                        <div class="flex flex-wrap gap-2">
-                            <Input v-model="scheduledAt" type="datetime-local" class="max-w-xs" />
-                            <Button variant="outline" :disabled="busy || !!props.blocked" @click="schedule">
-                                <CalendarClock class="mr-1 h-4 w-4" />
-                                {{ props.newsletter.status === 'scheduled' ? 'Cambiar la fecha' : 'Programar' }}
-                            </Button>
-                            <Button v-if="props.newsletter.status === 'scheduled'" variant="ghost" @click="unschedule">Cancelar</Button>
-                        </div>
-                        <p class="text-xs text-muted-foreground">
-                            Hora de Argentina. Al programarlo, el mail queda fijado tal como está ahora: si después cambiás una clase en el sitio,
-                            sale igual lo que se ve en la vista previa de hoy.
-                        </p>
-                        <p v-if="form.errors.scheduled_at" class="text-sm text-red-600">{{ form.errors.scheduled_at }}</p>
-                    </div>
-
-                    <div class="border-t pt-4">
-                        <Button variant="destructive" :disabled="busy || !!props.blocked" @click="sendNow">
-                            <Send class="mr-1 h-4 w-4" /> Enviar ahora
-                        </Button>
-                        <p class="mt-1 text-xs text-muted-foreground">Sale en este momento a toda la audiencia. No se puede deshacer.</p>
-                    </div>
-                </CardContent>
-            </Card>
+                <div class="border-t pt-4">
+                    <Button variant="destructive" :disabled="busy || !!props.blocked" @click="sendNow">
+                        <Send class="mr-1 h-4 w-4" /> Enviar ahora
+                    </Button>
+                    <p class="mt-1 text-xs text-muted-foreground">Sale en este momento a toda la audiencia. No se puede deshacer.</p>
+                </div>
+            </AdminSection>
         </div>
     </AdminLayout>
 </template>

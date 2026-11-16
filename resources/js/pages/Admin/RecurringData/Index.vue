@@ -2,6 +2,7 @@
 import NameListCard from '@/components/admin/NameListCard.vue';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { Head } from '@inertiajs/vue3';
+import { MapPin, Users } from 'lucide-vue-next';
 
 defineProps<{
     teachers: { id: number; name: string }[];
@@ -15,7 +16,7 @@ const breadcrumbs = [{ title: 'Datos recurrentes', href: '/admin/datos-recurrent
     <AdminLayout :breadcrumbs="breadcrumbs">
         <Head title="Datos recurrentes" />
 
-        <div class="mx-auto flex w-full max-w-3xl flex-col gap-4 p-4">
+        <div class="admin-sections mx-auto flex w-full max-w-3xl flex-col gap-4 p-4">
             <div>
                 <h1 class="text-xl font-semibold">Datos recurrentes</h1>
                 <p class="text-sm text-muted-foreground">
@@ -26,6 +27,7 @@ const breadcrumbs = [{ title: 'Datos recurrentes', href: '/admin/datos-recurrent
 
             <NameListCard
                 title="Maestr@s"
+                :icon="Users"
                 description="Aparecen para elegir en el campo “Maestr@” de cada ficha de clase."
                 :items="teachers"
                 store-route="admin.recurring.teachers.store"
@@ -36,6 +38,7 @@ const breadcrumbs = [{ title: 'Datos recurrentes', href: '/admin/datos-recurrent
 
             <NameListCard
                 title="Lugares"
+                :icon="MapPin"
                 description="Aparecen para elegir en el campo “Lugar” de cada ficha de clase. Poné la dirección tal como querés que se lea."
                 :items="venues"
                 store-route="admin.recurring.venues.store"

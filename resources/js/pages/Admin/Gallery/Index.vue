@@ -1,13 +1,13 @@
 <script setup lang="ts">
+import AdminSection from '@/components/admin/AdminSection.vue';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useConfirm } from '@/composables/useConfirm';
 import { useMediaLibrary } from '@/composables/useMediaLibrary';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { AlertCircle, Lock, Trash2 } from 'lucide-vue-next';
+import { AlertCircle, Images, Lock, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 type GalleryImage = {
@@ -82,7 +82,7 @@ function kb(size: number) {
     <AdminLayout :breadcrumbs="breadcrumbs">
         <Head title="Galería" />
 
-        <div class="flex flex-col gap-4 p-4">
+        <div class="admin-sections flex flex-col gap-4 p-4">
             <div>
                 <h1 class="text-xl font-semibold">Galería</h1>
                 <p class="text-sm text-muted-foreground">
@@ -111,12 +111,12 @@ function kb(size: number) {
                 <span class="text-sm text-muted-foreground">{{ filtered.length }} de {{ images.length }}</span>
             </div>
 
-            <Card>
-                <CardContent class="p-4">
+            <AdminSection title="Imágenes" :icon="Images" flush>
+                <div class="p-4">
                     <p v-if="!filtered.length" class="py-8 text-center text-sm text-muted-foreground">{{ vacio }}</p>
 
                     <div v-else class="grid auto-rows-min grid-cols-2 content-start gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                        <div v-for="image in filtered" :key="image.path" class="overflow-hidden rounded-md border">
+                        <div v-for="image in filtered" :key="image.path" class="overflow-hidden rounded-md border bg-card">
                             <button type="button" class="block w-full" :title="`Ver «${image.name}» en grande`" @click="preview = image">
                                 <img :src="image.url" :alt="image.name" loading="lazy" class="h-40 w-full bg-muted object-cover" />
                             </button>
@@ -152,8 +152,8 @@ function kb(size: number) {
                             </div>
                         </div>
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </AdminSection>
         </div>
 
         <Dialog :open="!!preview" @update:open="(open) => !open && (preview = null)">

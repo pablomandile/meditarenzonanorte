@@ -1,14 +1,14 @@
 <script setup lang="ts">
+import AdminSection from '@/components/admin/AdminSection.vue';
 import ImageField from '@/components/admin/fields/ImageField.vue';
 import SuggestField from '@/components/admin/fields/SuggestField.vue';
 import TextareaField from '@/components/admin/fields/TextareaField.vue';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { type EventData } from '@/lib/site';
 import { Link, useForm } from '@inertiajs/vue3';
-import { ExternalLink, LoaderCircle, Pencil } from 'lucide-vue-next';
+import { CalendarDays, ExternalLink, FileText, ImageIcon, Link2, LoaderCircle, Pencil } from 'lucide-vue-next';
 import { watch } from 'vue';
 
 /** La landing del evento, si ya tiene una (ver Admin\EventController::landing). */
@@ -77,167 +77,169 @@ function submit() {
 </script>
 
 <template>
-    <form @submit.prevent="submit">
-        <Card>
-            <CardContent class="grid gap-5 pt-6">
+    <form class="admin-sections flex flex-col gap-4" @submit.prevent="submit">
+        <AdminSection title="Datos del evento" :icon="FileText">
+            <div class="grid gap-2">
+                <Label>Título *</Label>
+                <Input v-model="form.title" required />
+                <p v-if="form.errors.title" class="text-sm text-red-600">{{ form.errors.title }}</p>
+            </div>
+
+            <TextareaField v-model="form.description" label="Descripción" :error="form.errors.description" />
+        </AdminSection>
+
+        <AdminSection title="Fecha, horario y lugar" :icon="CalendarDays">
+            <!--
+                El texto de la fecha se arma con los campos de abajo; este campo
+                queda sólo para lo que no se puede expresar con una fecha y una
+                hora ("consultar horario", "todos los sábados de agosto").
+            -->
+            <div class="grid gap-2">
+                <Label>Fecha y horario (opcional, se arma solo)</Label>
+                <Input v-model="form.date_text" :placeholder="props.event?.date_auto ?? 'Se arma con la fecha y la hora de abajo'" />
+                <p v-if="props.event?.date_auto" class="text-xs text-muted-foreground">
+                    Vacío se publica <span class="font-medium">“{{ props.event.date_auto }}”</span>. Escribí algo sólo si querés otro texto.
+                </p>
+                <p v-else class="text-xs text-muted-foreground">Completá la fecha y la hora de inicio abajo y el texto se arma solo.</p>
+                <p v-if="form.errors.date_text" class="text-sm text-red-600">{{ form.errors.date_text }}</p>
+            </div>
+
+            <!--
+                Estos cuatro campos son los que ubican el evento en el calendario
+                del sitio: el texto de arriba es lo que se lee en las tarjetas.
+            -->
+            <div class="grid gap-5 sm:grid-cols-2">
                 <div class="grid gap-2">
-                    <Label>Título *</Label>
-                    <Input v-model="form.title" required />
-                    <p v-if="form.errors.title" class="text-sm text-red-600">{{ form.errors.title }}</p>
+                    <Label>Fecha de inicio</Label>
+                    <Input v-model="form.starts_at" type="date" />
+                    <p class="text-xs text-muted-foreground">Ordena los eventos y lo ubica en el calendario.</p>
+                    <p v-if="form.errors.starts_at" class="text-sm text-red-600">{{ form.errors.starts_at }}</p>
                 </div>
-
-                <TextareaField v-model="form.description" label="Descripción" :error="form.errors.description" />
-
-                <!--
-                    El texto de la fecha se arma con los campos de abajo; este campo
-                    queda sólo para lo que no se puede expresar con una fecha y una
-                    hora ("consultar horario", "todos los sábados de agosto").
-                -->
                 <div class="grid gap-2">
-                    <Label>Fecha y horario (opcional, se arma solo)</Label>
-                    <Input v-model="form.date_text" :placeholder="props.event?.date_auto ?? 'Se arma con la fecha y la hora de abajo'" />
-                    <p v-if="props.event?.date_auto" class="text-xs text-muted-foreground">
-                        Vacío se publica <span class="font-medium">“{{ props.event.date_auto }}”</span>. Escribí algo sólo si querés otro texto.
-                    </p>
-                    <p v-else class="text-xs text-muted-foreground">Completá la fecha y la hora de inicio abajo y el texto se arma solo.</p>
-                    <p v-if="form.errors.date_text" class="text-sm text-red-600">{{ form.errors.date_text }}</p>
+                    <Label>Fecha de fin (si dura varios días)</Label>
+                    <Input v-model="form.ends_at" type="date" />
+                    <p class="text-xs text-muted-foreground">Vacía si empieza y termina el mismo día.</p>
+                    <p v-if="form.errors.ends_at" class="text-sm text-red-600">{{ form.errors.ends_at }}</p>
                 </div>
-
-                <!--
-                    Estos cuatro campos son los que ubican el evento en el calendario
-                    del sitio: el texto de arriba es lo que se lee en las tarjetas.
-                -->
-                <div class="grid gap-5 sm:grid-cols-2">
-                    <div class="grid gap-2">
-                        <Label>Fecha de inicio</Label>
-                        <Input v-model="form.starts_at" type="date" />
-                        <p class="text-xs text-muted-foreground">Ordena los eventos y lo ubica en el calendario.</p>
-                        <p v-if="form.errors.starts_at" class="text-sm text-red-600">{{ form.errors.starts_at }}</p>
-                    </div>
-                    <div class="grid gap-2">
-                        <Label>Fecha de fin (si dura varios días)</Label>
-                        <Input v-model="form.ends_at" type="date" />
-                        <p class="text-xs text-muted-foreground">Vacía si empieza y termina el mismo día.</p>
-                        <p v-if="form.errors.ends_at" class="text-sm text-red-600">{{ form.errors.ends_at }}</p>
-                    </div>
-                    <div class="grid gap-2">
-                        <Label>Hora de inicio</Label>
-                        <Input v-model="form.start_time" type="time" />
-                        <p v-if="form.errors.start_time" class="text-sm text-red-600">{{ form.errors.start_time }}</p>
-                    </div>
-                    <div class="grid gap-2">
-                        <Label>Hora de fin</Label>
-                        <Input v-model="form.end_time" type="time" />
-                        <p v-if="form.errors.end_time" class="text-sm text-red-600">{{ form.errors.end_time }}</p>
-                    </div>
-                </div>
-
-                <div class="grid gap-5 sm:grid-cols-2">
-                    <SuggestField v-model="form.location" label="Lugar" :options="venues ?? []" :error="form.errors.location" />
-                    <div class="grid gap-2">
-                        <Label>Precio</Label>
-                        <Input v-model="form.price" placeholder="$5.000 / GRATUITO" />
-                    </div>
-                </div>
-
-                <!-- A dónde lleva el evento: una URL de afuera o su propia landing. -->
                 <div class="grid gap-2">
-                    <Label>Enlace del evento</Label>
-                    <div class="inline-flex w-fit rounded-lg border bg-muted/40 p-1" role="radiogroup" aria-label="Tipo de enlace">
-                        <button
-                            type="button"
-                            role="radio"
-                            :aria-checked="form.link_type === 'external'"
-                            class="rounded-md px-4 py-1.5 text-sm font-medium transition"
-                            :class="form.link_type === 'external' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'"
-                            @click="form.link_type = 'external'"
-                        >
-                            Link externo
-                        </button>
-                        <button
-                            type="button"
-                            role="radio"
-                            :aria-checked="form.link_type === 'internal'"
-                            class="rounded-md px-4 py-1.5 text-sm font-medium transition"
-                            :class="form.link_type === 'internal' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'"
-                            @click="form.link_type = 'internal'"
-                        >
-                            Link interno
-                        </button>
-                    </div>
-                    <p class="text-xs text-muted-foreground">
-                        <template v-if="form.link_type === 'external'"
-                            >El afiche y el botón llevan a una página de afuera (un formulario, Instagram…).</template
-                        >
-                        <template v-else>
-                            El afiche y el botón llevan a una landing propia del evento, armada con la plantilla. Los botones de inscripción se
-                            configuran dentro de la landing.
-                        </template>
-                    </p>
+                    <Label>Hora de inicio</Label>
+                    <Input v-model="form.start_time" type="time" />
+                    <p v-if="form.errors.start_time" class="text-sm text-red-600">{{ form.errors.start_time }}</p>
+                </div>
+                <div class="grid gap-2">
+                    <Label>Hora de fin</Label>
+                    <Input v-model="form.end_time" type="time" />
+                    <p v-if="form.errors.end_time" class="text-sm text-red-600">{{ form.errors.end_time }}</p>
+                </div>
+            </div>
+
+            <div class="grid gap-5 sm:grid-cols-2">
+                <SuggestField v-model="form.location" label="Lugar" :options="venues ?? []" :error="form.errors.location" />
+                <div class="grid gap-2">
+                    <Label>Precio</Label>
+                    <Input v-model="form.price" placeholder="$5.000 / GRATUITO" />
+                </div>
+            </div>
+        </AdminSection>
+
+        <AdminSection title="Enlace y botón" :icon="Link2">
+            <!-- A dónde lleva el evento: una URL de afuera o su propia landing. -->
+            <div class="grid gap-2">
+                <Label>Enlace del evento</Label>
+                <div class="inline-flex w-fit rounded-lg border bg-muted/40 p-1" role="radiogroup" aria-label="Tipo de enlace">
+                    <button
+                        type="button"
+                        role="radio"
+                        :aria-checked="form.link_type === 'external'"
+                        class="rounded-md px-4 py-1.5 text-sm font-medium transition"
+                        :class="form.link_type === 'external' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+                        @click="form.link_type = 'external'"
+                    >
+                        Link externo
+                    </button>
+                    <button
+                        type="button"
+                        role="radio"
+                        :aria-checked="form.link_type === 'internal'"
+                        class="rounded-md px-4 py-1.5 text-sm font-medium transition"
+                        :class="form.link_type === 'internal' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+                        @click="form.link_type = 'internal'"
+                    >
+                        Link interno
+                    </button>
+                </div>
+                <p class="text-xs text-muted-foreground">
+                    <template v-if="form.link_type === 'external'"
+                        >El afiche y el botón llevan a una página de afuera (un formulario, Instagram…).</template
+                    >
+                    <template v-else>
+                        El afiche y el botón llevan a una landing propia del evento, armada con la plantilla. Los botones de inscripción se configuran
+                        dentro de la landing.
+                    </template>
+                </p>
+            </div>
+
+            <div v-if="form.link_type === 'external'" class="grid gap-5 sm:grid-cols-2">
+                <div class="grid gap-2">
+                    <Label>Texto del botón</Label>
+                    <Input v-model="form.cta_label" placeholder="Inscripción aquí" />
+                </div>
+                <div class="grid gap-2">
+                    <Label>URL del botón</Label>
+                    <Input v-model="form.cta_url" placeholder="https://forms.gle/..." />
+                    <p v-if="form.errors.cta_url" class="text-sm text-red-600">{{ form.errors.cta_url }}</p>
+                </div>
+            </div>
+
+            <div v-else class="grid gap-4 rounded-lg border bg-card p-4">
+                <div class="grid gap-2 sm:max-w-sm">
+                    <Label>Texto del botón</Label>
+                    <Input v-model="form.cta_label" placeholder="Más información" />
                 </div>
 
-                <div v-if="form.link_type === 'external'" class="grid gap-5 sm:grid-cols-2">
-                    <div class="grid gap-2">
-                        <Label>Texto del botón</Label>
-                        <Input v-model="form.cta_label" placeholder="Inscripción aquí" />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label>URL del botón</Label>
-                        <Input v-model="form.cta_url" placeholder="https://forms.gle/..." />
-                        <p v-if="form.errors.cta_url" class="text-sm text-red-600">{{ form.errors.cta_url }}</p>
-                    </div>
+                <div v-if="event?.landing" class="flex flex-wrap items-center gap-2">
+                    <Button as-child size="sm">
+                        <Link :href="`/admin/pages/${event.landing.id}`"><Pencil class="mr-1 h-4 w-4" /> Editar landing</Link>
+                    </Button>
+                    <Button as-child size="sm" variant="outline">
+                        <a :href="event.landing.url" target="_blank"><ExternalLink class="mr-1 h-4 w-4" /> Ver</a>
+                    </Button>
+                    <span class="text-xs text-muted-foreground">{{ event.landing.url }}</span>
                 </div>
+                <p v-else class="text-sm text-muted-foreground">
+                    Al guardar se crea la landing del evento copiando la plantilla, con el título, la fecha, el lugar y el precio que cargues acá.
+                    Después vas directo a editarla.
+                </p>
+            </div>
+        </AdminSection>
 
-                <div v-else class="grid gap-4 rounded-lg border p-4">
-                    <div class="grid gap-2 sm:max-w-sm">
-                        <Label>Texto del botón</Label>
-                        <Input v-model="form.cta_label" placeholder="Más información" />
-                    </div>
+        <AdminSection title="Imagen y visibilidad" :icon="ImageIcon">
+            <ImageField v-model="form.image_path" v-model:file="form.image" label="Imagen / afiche" :error="form.errors.image" />
 
-                    <div v-if="event?.landing" class="flex flex-wrap items-center gap-2">
-                        <Button as-child size="sm">
-                            <Link :href="`/admin/pages/${event.landing.id}`"><Pencil class="mr-1 h-4 w-4" /> Editar landing</Link>
-                        </Button>
-                        <Button as-child size="sm" variant="outline">
-                            <a :href="event.landing.url" target="_blank"><ExternalLink class="mr-1 h-4 w-4" /> Ver</a>
-                        </Button>
-                        <span class="text-xs text-muted-foreground">{{ event.landing.url }}</span>
-                    </div>
-                    <p v-else class="text-sm text-muted-foreground">
-                        Al guardar se crea la landing del evento copiando la plantilla, con el título, la fecha, el lugar y el precio que cargues acá.
-                        Después vas directo a editarla.
-                    </p>
-                </div>
+            <div v-if="form.link_type === 'external'" class="grid gap-2">
+                <Label>URL de la imagen (opcional)</Label>
+                <Input v-model="form.image_url" placeholder="https://instagram.com/p/..." />
+                <p class="text-xs text-muted-foreground">A dónde lleva el click sobre el afiche. Si se deja vacía, va al mismo lugar que el botón.</p>
+                <p v-if="form.errors.image_url" class="text-sm text-red-600">{{ form.errors.image_url }}</p>
+            </div>
 
-                <ImageField v-model="form.image_path" v-model:file="form.image" label="Imagen / afiche" :error="form.errors.image" />
+            <div class="flex flex-wrap gap-6">
+                <label class="flex items-center gap-2 text-sm">
+                    <input v-model="form.visible" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
+                    Visible en el sitio
+                </label>
+                <label class="flex items-center gap-2 text-sm">
+                    <input v-model="form.show_on_home" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
+                    Destacar en la página de inicio
+                </label>
+                <label class="flex items-center gap-2 text-sm">
+                    <input v-model="form.show_on_calendar" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
+                    Mostrar en el calendario
+                </label>
+            </div>
+        </AdminSection>
 
-                <div v-if="form.link_type === 'external'" class="grid gap-2">
-                    <Label>URL de la imagen (opcional)</Label>
-                    <Input v-model="form.image_url" placeholder="https://instagram.com/p/..." />
-                    <p class="text-xs text-muted-foreground">
-                        A dónde lleva el click sobre el afiche. Si se deja vacía, va al mismo lugar que el botón.
-                    </p>
-                    <p v-if="form.errors.image_url" class="text-sm text-red-600">{{ form.errors.image_url }}</p>
-                </div>
-
-                <div class="flex flex-wrap gap-6">
-                    <label class="flex items-center gap-2 text-sm">
-                        <input v-model="form.visible" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
-                        Visible en el sitio
-                    </label>
-                    <label class="flex items-center gap-2 text-sm">
-                        <input v-model="form.show_on_home" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
-                        Destacar en la página de inicio
-                    </label>
-                    <label class="flex items-center gap-2 text-sm">
-                        <input v-model="form.show_on_calendar" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
-                        Mostrar en el calendario
-                    </label>
-                </div>
-            </CardContent>
-        </Card>
-
-        <div class="mt-4 flex items-center gap-3">
+        <div class="flex items-center gap-3">
             <Button type="submit" :disabled="form.processing">
                 <LoaderCircle v-if="form.processing" class="mr-2 h-4 w-4 animate-spin" />
                 {{ props.event ? 'Guardar cambios' : 'Crear evento' }}

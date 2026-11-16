@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import AdminSection from '@/components/admin/AdminSection.vue';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AdminLayout from '@/layouts/AdminLayout.vue';
+import { ZEBRA } from '@/lib/admin';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { Copy, Eye, Hand, Mail, Plus, ShieldCheck, TriangleAlert } from 'lucide-vue-next';
 
@@ -56,7 +57,7 @@ function duplicate(row: Row) {
     <AdminLayout :breadcrumbs="breadcrumbs">
         <Head title="Newsletter" />
 
-        <div class="flex flex-col gap-4 p-4">
+        <div class="admin-sections flex flex-col gap-4 p-4">
             <div>
                 <h1 class="text-xl font-semibold">Newsletter</h1>
                 <p class="text-sm text-muted-foreground">
@@ -99,86 +100,80 @@ function duplicate(row: Row) {
             </div>
 
             <p v-if="props.sent_this_month" class="text-xs text-muted-foreground">
-                Este mes llevás <span class="font-medium text-brand-ink">{{ props.sent_this_month }}</span> correos enviados. Mailchimp cuenta lo
+                Este mes llevás <span class="font-medium text-foreground">{{ props.sent_this_month }}</span> correos enviados. Mailchimp cuenta lo
                 mismo si mandás desde acá o desde su editor.
             </p>
 
-            <Card>
-                <CardContent class="p-0">
-                    <p v-if="!props.newsletters.length" class="px-4 py-10 text-center text-sm text-muted-foreground">
-                        Todavía no hay ningún newsletter. Creá el primero más abajo.
-                    </p>
+            <AdminSection title="Envíos" :icon="Mail" flush>
+                <p v-if="!props.newsletters.length" class="px-4 py-10 text-center text-sm text-muted-foreground">
+                    Todavía no hay ningún newsletter. Creá el primero más abajo.
+                </p>
 
-                    <div v-else class="divide-y">
-                        <div v-for="row in props.newsletters" :key="row.id" class="flex flex-wrap items-center gap-3 px-4 py-3">
-                            <span class="rounded-full px-2 py-0.5 text-xs font-medium" :class="estados[row.status].class">
-                                {{ estados[row.status].label }}
-                            </span>
+                <div v-else class="divide-y" :class="ZEBRA">
+                    <div v-for="row in props.newsletters" :key="row.id" class="flex flex-wrap items-center gap-3 px-4 py-3">
+                        <span class="rounded-full px-2 py-0.5 text-xs font-medium" :class="estados[row.status].class">
+                            {{ estados[row.status].label }}
+                        </span>
 
-                            <div class="min-w-0 flex-1">
-                                <p class="truncate font-medium">{{ row.subject }}</p>
-                                <p class="text-xs text-muted-foreground">
-                                    {{ row.type === 'weekly' ? 'Semanal' : 'Mensual' }}
-                                    · {{ row.items_count }} {{ row.items_count === 1 ? 'actividad' : 'actividades' }}
-                                    <template v-if="row.status === 'sent'">
-                                        · enviado el {{ row.sent_label }} a {{ row.recipient_count }} suscriptores
-                                    </template>
-                                    <template v-else-if="row.scheduled_label"> · programado para el {{ row.scheduled_label }}</template>
-                                </p>
-                                <!--
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate font-medium">{{ row.subject }}</p>
+                            <p class="text-xs text-muted-foreground">
+                                {{ row.type === 'weekly' ? 'Semanal' : 'Mensual' }}
+                                · {{ row.items_count }} {{ row.items_count === 1 ? 'actividad' : 'actividades' }}
+                                <template v-if="row.status === 'sent'">
+                                    · enviado el {{ row.sent_label }} a {{ row.recipient_count }} suscriptores
+                                </template>
+                                <template v-else-if="row.scheduled_label"> · programado para el {{ row.scheduled_label }}</template>
+                            </p>
+                            <!--
                                     Ya le pasó la hora y sigue ahí. No se perdió: espera
                                     a que lo manden. Se dice por qué, que es lo que uno
                                     se pregunta al verlo.
                                 -->
-                                <p v-if="row.waiting" class="mt-1 flex items-center gap-1 text-xs font-medium text-brand-sky-dark">
-                                    <Hand class="h-3.5 w-3.5" />
-                                    {{
-                                        props.mode === 'manual'
-                                            ? 'Le llegó la hora y está listo para que lo mandes.'
-                                            : 'Le pasó la hora y todavía no salió: revisá que el cron esté corriendo.'
-                                    }}
-                                </p>
-                                <p v-if="row.error" class="mt-1 text-xs text-red-600">{{ row.error }}</p>
-                            </div>
-
-                            <a :href="row.preview_url" target="_blank" rel="noopener">
-                                <Button variant="ghost" size="sm" title="Ver el mail"><Eye class="h-4 w-4" /></Button>
-                            </a>
-                            <Button variant="ghost" size="sm" title="Duplicar" @click="duplicate(row)"><Copy class="h-4 w-4" /></Button>
-                            <Link v-if="row.status !== 'sent'" :href="route('admin.newsletters.edit', row.id)">
-                                <Button variant="outline" size="sm">Editar</Button>
-                            </Link>
+                            <p v-if="row.waiting" class="mt-1 flex items-center gap-1 text-xs font-medium text-brand-sky-dark">
+                                <Hand class="h-3.5 w-3.5" />
+                                {{
+                                    props.mode === 'manual'
+                                        ? 'Le llegó la hora y está listo para que lo mandes.'
+                                        : 'Le pasó la hora y todavía no salió: revisá que el cron esté corriendo.'
+                                }}
+                            </p>
+                            <p v-if="row.error" class="mt-1 text-xs text-red-600">{{ row.error }}</p>
                         </div>
+
+                        <a :href="row.preview_url" target="_blank" rel="noopener">
+                            <Button variant="ghost" size="sm" title="Ver el mail"><Eye class="h-4 w-4" /></Button>
+                        </a>
+                        <Button variant="ghost" size="sm" title="Duplicar" @click="duplicate(row)"><Copy class="h-4 w-4" /></Button>
+                        <Link v-if="row.status !== 'sent'" :href="route('admin.newsletters.edit', row.id)">
+                            <Button variant="outline" size="sm">Editar</Button>
+                        </Link>
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </AdminSection>
 
-            <Card>
-                <CardContent class="grid gap-3 pt-6">
-                    <h2 class="flex items-center gap-2 font-medium"><Mail class="h-4 w-4" /> Nuevo newsletter</h2>
-
-                    <div class="grid gap-3 sm:grid-cols-[10rem_1fr]">
-                        <div class="grid gap-1">
-                            <Label class="text-xs">Tipo</Label>
-                            <select
-                                v-model="createForm.type"
-                                class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                            >
-                                <option value="weekly">Semanal</option>
-                                <option value="monthly">Mensual</option>
-                            </select>
-                        </div>
-
-                        <div class="grid gap-1">
-                            <Label class="text-xs">Asunto</Label>
-                            <Input v-model="createForm.subject" placeholder="Clases y actividades de esta semana" />
-                            <p v-if="createForm.errors.subject" class="text-sm text-red-600">{{ createForm.errors.subject }}</p>
-                        </div>
+            <AdminSection title="Nuevo newsletter" :icon="Plus" body-class="grid gap-3">
+                <div class="grid gap-3 sm:grid-cols-[10rem_1fr]">
+                    <div class="grid gap-1">
+                        <Label class="text-xs">Tipo</Label>
+                        <select
+                            v-model="createForm.type"
+                            class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        >
+                            <option value="weekly">Semanal</option>
+                            <option value="monthly">Mensual</option>
+                        </select>
                     </div>
 
-                    <Button class="w-fit" :disabled="createForm.processing" @click="store"> <Plus class="mr-1 h-4 w-4" /> Crear </Button>
-                </CardContent>
-            </Card>
+                    <div class="grid gap-1">
+                        <Label class="text-xs">Asunto</Label>
+                        <Input v-model="createForm.subject" placeholder="Clases y actividades de esta semana" />
+                        <p v-if="createForm.errors.subject" class="text-sm text-red-600">{{ createForm.errors.subject }}</p>
+                    </div>
+                </div>
+
+                <Button class="w-fit" :disabled="createForm.processing" @click="store"> <Plus class="mr-1 h-4 w-4" /> Crear </Button>
+            </AdminSection>
         </div>
     </AdminLayout>
 </template>

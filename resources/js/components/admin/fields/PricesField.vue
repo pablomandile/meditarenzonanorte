@@ -23,7 +23,7 @@ function remove(index: number) {
     <div class="grid gap-3">
         <Label>{{ label }}</Label>
 
-        <div v-for="(price, i) in model" :key="i" class="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_10rem_auto] sm:items-end">
+        <div v-for="(price, i) in model" :key="i" class="grid gap-2 rounded-lg border bg-card p-3 sm:grid-cols-[1fr_10rem_auto] sm:items-end">
             <div class="grid gap-1">
                 <Label class="text-xs">Aclaración (ej. “Precio promocional hasta el 26 de noviembre”)</Label>
                 <Input :model-value="price.note ?? ''" @update:model-value="price.note = ($event as string) || null" />
