@@ -9,11 +9,16 @@ const props = defineProps<{ section: SectionData }>();
 /** Lo calcula el servidor: desde el día siguiente a la última fecha del calendario. */
 const finished = computed(() => props.section.content.finished === true);
 
-/** El ocre sobre el afiche se puede apagar por ficha; el botón se apaga igual. */
+/** El velo sobre el afiche se puede apagar por ficha; el botón se apaga igual. */
 const tinted = computed(() => finished.value && props.section.content.past_filter !== 'off');
 
-/** La pastilla "Evento finalizado", con su propio interruptor (independiente del ocre). */
+/** La pastilla "Evento finalizado", con su propio interruptor (independiente del velo). */
 const badged = computed(() => finished.value && props.section.content.past_badge !== 'off');
+
+type Tint = { veil: string | null; opacity: number; badge: string };
+
+/** El ocre de siempre, por si la prop compartida no llega. */
+const OCRE: Tint = { veil: '#C9962F', opacity: 0.6, badge: '#7A5612' };
 
 /** Una clase por línea; sin contenido no hay dorso ni giro. */
 const cycle = computed(() => lines(props.section.content.cycle));
@@ -38,8 +43,15 @@ function closeUnlessSelecting() {
  * modo elegido vale para todas las fichas; si no (cada ficha elige), vale el de
  * la ficha, y si tampoco hay, "más…".
  */
-const page = usePage<{ settings?: Record<string, string | null> }>();
+const page = usePage<{ settings?: Record<string, any> }>();
 const mode = computed(() => page.props.settings?.class_description_mode || props.section.content.body_overflow || 'more');
+
+/**
+ * El color de las fichas terminadas se elige en Ajustes del sitio y llega ya
+ * resuelto (ver App\Support\PastTint). Va por style: son colores que llegan en
+ * tiempo de ejecución, y Tailwind no compila clases armadas al vuelo.
+ */
+const tint = computed<Tint>(() => page.props.settings?.past_tint_colors ?? OCRE);
 const scrolls = computed(() => mode.value === 'scroll');
 
 const bodyParagraphs = computed(() => paragraphs(props.section.content.body));
@@ -130,19 +142,22 @@ watch(expanded, () => nextTick(measure));
                                 />
 
                                 <!--
-                                    Terminado: el afiche en grises y un velo ocre
-                                    multiplicado encima, que lo tiñe parejo sin
-                                    tapar lo que dice.
+                                    Terminado: el afiche en grises y un velo del color
+                                    elegido en Ajustes, multiplicado encima, que lo
+                                    tiñe parejo sin tapar lo que dice. En gris no hay
+                                    velo: quedan sólo los grises.
                                 -->
                                 <span
-                                    v-if="tinted"
-                                    class="pointer-events-none absolute inset-0 rounded-t-xl bg-[#C9962F]/60 mix-blend-multiply md:rounded-l-xl md:rounded-tr-none"
+                                    v-if="tinted && tint.veil"
+                                    class="pointer-events-none absolute inset-0 rounded-t-xl mix-blend-multiply md:rounded-l-xl md:rounded-tr-none"
+                                    :style="{ backgroundColor: tint.veil, opacity: tint.opacity }"
                                     aria-hidden="true"
                                 ></span>
 
                                 <span
                                     v-if="badged"
-                                    class="pointer-events-none absolute right-3 top-3 rounded-full bg-[#7A5612]/95 px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-white shadow-md"
+                                    class="pointer-events-none absolute right-3 top-3 rounded-full px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-white shadow-md"
+                                    :style="{ backgroundColor: tint.badge }"
                                 >
                                     Evento finalizado
                                 </span>

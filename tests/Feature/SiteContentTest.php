@@ -286,6 +286,36 @@ class SiteContentTest extends TestCase
         $this->assertEmpty(Setting::get('class_description_mode'));
     }
 
+    public function test_the_finished_cards_tint_is_chosen_in_settings_and_reaches_the_public_pages(): void
+    {
+        $admin = $this->admin();
+
+        // Sin elegir, las fichas terminadas siguen en ocre, como siempre.
+        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('settings.past_tint_colors.key', 'ocre')
+            ->where('settings.past_tint_colors.veil', '#C9962F'));
+
+        $this->actingAs($admin)->post('/admin/settings', ['past_tint' => 'celeste'])->assertRedirect();
+        $this->assertSame('celeste', Setting::get('past_tint'));
+
+        // La ficha recibe los colores ya resueltos, no la clave.
+        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('settings.past_tint_colors.veil', '#259ACF')
+            ->where('settings.past_tint_colors.badge', '#155E80'));
+
+        // Gris: sin velo, el afiche queda sólo en grises.
+        $this->actingAs($admin)->post('/admin/settings', ['past_tint' => 'gris'])->assertRedirect();
+        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page->where('settings.past_tint_colors.veil', null));
+
+        // El valor termina en un style: nada fuera del catálogo.
+        $this->actingAs($admin)->post('/admin/settings', ['past_tint' => 'fucsia'])->assertSessionHasErrors('past_tint');
+        $this->assertSame('gris', Setting::get('past_tint'));
+
+        // Vacío vuelve al ocre.
+        $this->actingAs($admin)->post('/admin/settings', ['past_tint' => ''])->assertRedirect();
+        $this->get('/')->assertInertia(fn (AssertableInertia $page) => $page->where('settings.past_tint_colors.key', 'ocre'));
+    }
+
     public function test_missing_section_seeder_inserts_the_cover_without_touching_edited_sections(): void
     {
         $page = Page::where('slug', 'clases-semanales')->firstOrFail();

@@ -21,6 +21,7 @@ import {
     ListChecks,
     LoaderCircle,
     Mail,
+    Palette,
     PanelBottom,
     RotateCw,
     ScrollText,
@@ -31,9 +32,14 @@ import { computed } from 'vue';
 /** Una fuente del catálogo del servidor. Ver App\Support\Typography. */
 type FontOption = { key: string; name: string; family: string; stack: string; pageTitleStack: string; url: string };
 
+/** Un color de las fichas terminadas: el velo (null en gris) y el fondo de la pastilla. */
+type PastTintOption = { key: string; name: string; veil: string | null; opacity: number; badge: string };
+
 const props = defineProps<{
     settings: Record<string, any>;
     fonts: FontOption[];
+    /** Los colores de las fichas terminadas. Ver App\Support\PastTint. */
+    pastTints: PastTintOption[];
     /** Los textos de fábrica del cartel de obra. Ver App\Support\Construction. */
     construction: { title: string; message: string };
     /** Estado del login con Google. Ver App\Support\GoogleAccess. */
@@ -60,6 +66,8 @@ const form = useForm<Record<string, any>>({
     heading_font: (props.settings.heading_font ?? null) as string | null,
     // Vacío = que elija cada ficha.
     class_description_mode: ['more', 'scroll', 'flip'].includes(props.settings.class_description_mode) ? props.settings.class_description_mode : '',
+    // Sin elegir (o una clave que ya no existe) es el ocre de siempre.
+    past_tint: props.pastTints.some((tono) => tono.key === props.settings.past_tint) ? props.settings.past_tint : 'ocre',
     // El ajuste se guarda como '1' o nada, así que la comparación exacta alcanza.
     under_construction: props.settings.under_construction === '1',
     construction_title: props.settings.construction_title ?? '',
@@ -274,6 +282,52 @@ const textFields: { key: string; label: string; placeholder?: string; hint?: str
                     </div>
 
                     <p v-if="form.errors.class_description_mode" class="text-sm text-red-600">{{ form.errors.class_description_mode }}</p>
+                </AdminSection>
+
+                <AdminSection
+                    title="Fichas terminadas"
+                    :icon="Palette"
+                    description="El color del afiche y de la pastilla «Evento finalizado» en las fichas que ya pasaron su última fecha. Vale para todas; cada ficha puede apagar el filtro desde su edición."
+                    body-class="grid gap-4"
+                >
+                    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <button
+                            v-for="tono in pastTints"
+                            :key="tono.key"
+                            type="button"
+                            class="grid gap-3 rounded-lg border bg-card p-4 text-left transition hover:bg-accent"
+                            :class="form.past_tint === tono.key ? 'border-primary ring-1 ring-primary' : 'border-input'"
+                            @click="form.past_tint = tono.key"
+                        >
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-sm font-medium">{{ tono.name }}</span>
+                                <Check v-if="form.past_tint === tono.key" class="h-4 w-4 shrink-0 text-primary" />
+                            </div>
+
+                            <!--
+                                La muestra: un degradado de grises, que es como queda el
+                                afiche, con el velo multiplicado encima y la pastilla,
+                                igual que en la ficha pública.
+                            -->
+                            <span
+                                class="relative block h-20 overflow-hidden rounded-md bg-gradient-to-br from-neutral-200 via-neutral-500 to-neutral-800"
+                            >
+                                <span
+                                    v-if="tono.veil"
+                                    class="absolute inset-0 mix-blend-multiply"
+                                    :style="{ backgroundColor: tono.veil, opacity: tono.opacity }"
+                                ></span>
+                                <span
+                                    class="absolute right-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white shadow"
+                                    :style="{ backgroundColor: tono.badge }"
+                                >
+                                    Evento finalizado
+                                </span>
+                            </span>
+                        </button>
+                    </div>
+
+                    <p v-if="form.errors.past_tint" class="text-sm text-red-600">{{ form.errors.past_tint }}</p>
                 </AdminSection>
 
                 <AdminSection title="Pie de página" :icon="PanelBottom" body-class="grid gap-6">

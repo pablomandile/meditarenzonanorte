@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Page;
 use App\Models\Setting;
+use App\Support\PastTint;
 use App\Support\SiteMeta;
 use App\Support\WhatsApp;
 use Closure;
@@ -89,6 +90,9 @@ class HandleInertiaRequests extends Middleware
                 // El botón flotante recibe el link ya armado con el mensaje adentro;
                 // el número y el mensaje se editan por separado en Ajustes.
                 $settings['whatsapp_url'] = WhatsApp::link();
+                // Las fichas terminadas reciben el color ya resuelto (velo y pastilla),
+                // no la clave: así los colores viven sólo en App\Support\PastTint.
+                $settings['past_tint_colors'] = PastTint::current();
 
                 return $settings;
             },

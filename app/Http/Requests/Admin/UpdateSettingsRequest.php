@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Support\GoogleAccess;
+use App\Support\PastTint;
 use App\Support\Typography;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -36,6 +37,9 @@ class UpdateSettingsRequest extends FormRequest
             // (en el dorso del afiche). Pisa lo que cada ficha tenga elegido; vacío
             // = que elija cada ficha.
             'class_description_mode' => ['nullable', 'in:more,scroll,flip'],
+            // El color de las fichas terminadas. Termina en un style, así que sólo
+            // una clave del catálogo. Vacío = ocre. Ver App\Support\PastTint.
+            'past_tint' => ['nullable', Rule::in(array_keys(PastTint::TINTS))],
             // El cartel de "En construcción". Los textos vacíos no borran nada: el
             // cartel cae en los de fábrica. Ver App\Support\Construction.
             'under_construction' => ['nullable', 'boolean'],

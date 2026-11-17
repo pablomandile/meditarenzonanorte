@@ -9,6 +9,7 @@ use App\Support\Construction;
 use App\Support\GoogleAccess;
 use App\Support\ImageStorage;
 use App\Support\Mailchimp;
+use App\Support\PastTint;
 use App\Support\Typography;
 use App\Support\WhatsApp;
 use Illuminate\Http\RedirectResponse;
@@ -30,6 +31,7 @@ class SettingController extends Controller
         'address',
         'heading_font',
         'class_description_mode',
+        'past_tint',
         'construction_title',
         'construction_message',
         'newsletter_mode',
@@ -51,6 +53,8 @@ class SettingController extends Controller
             // Las fuentes salen del catálogo y no del front, así que los nombres
             // viven en un solo lado. Ver App\Support\Typography.
             'fonts' => Typography::options(),
+            // Ídem los colores de las fichas terminadas, para las muestras. Ver App\Support\PastTint.
+            'pastTints' => PastTint::options(),
             // Ídem los textos de fábrica del cartel de "En construcción": el panel
             // los pinta como marca de agua de los campos vacíos, así lo que se ve
             // ahí es lo que va a salir publicado. Ver App\Support\Construction.

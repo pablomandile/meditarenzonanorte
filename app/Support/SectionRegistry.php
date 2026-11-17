@@ -127,14 +127,15 @@ class SectionRegistry
                 ['key' => 'cta_label', 'type' => 'text', 'label' => 'Texto del botón', 'group' => 'Botón'],
                 ['key' => 'cta_url', 'type' => 'url', 'label' => 'URL del botón', 'group' => 'Botón'],
                 ['key' => 'image', 'type' => 'image', 'label' => 'Imagen', 'group' => 'Imagen'],
-                // Pasada la última fecha, el afiche se tiñe de ocre para que se
-                // distinga de lo que sigue vigente. El botón de inscripción se
-                // apaga igual: esto controla sólo la imagen.
+                // Pasada la última fecha, el afiche se tiñe para que se distinga de
+                // lo que sigue vigente. Acá se decide si se tiñe; el color se elige
+                // en Ajustes del sitio (App\Support\PastTint). El botón de
+                // inscripción se apaga igual: esto controla sólo la imagen.
                 [
                     'key' => 'past_filter',
                     'group' => 'Imagen',
                     'type' => 'select',
-                    'label' => 'Filtro ocre en la imagen cuando ya pasó la fecha',
+                    'label' => 'Filtro de color en la imagen cuando ya pasó la fecha (el color se elige en Ajustes del sitio)',
                     'empty' => 'Activado',
                     'options' => [
                         'off' => 'Desactivado (la imagen queda con sus colores)',
