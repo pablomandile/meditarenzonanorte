@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TeacherNames from '@/components/public/TeacherNames.vue';
 import { img, isInternal, joinNames, lines, mapsUrl, paragraphs, type SectionData } from '@/lib/site';
 import { Link, usePage } from '@inertiajs/vue3';
 import { ChevronDown, Clock, MapPin, RotateCcw, RotateCw, Ticket } from 'lucide-vue-next';
@@ -23,7 +24,7 @@ const OCRE: Tint = { veil: '#C9962F', opacity: 0.6, badge: '#7A5612' };
 /** Una clase por línea; sin contenido no hay dorso ni giro. */
 const cycle = computed(() => lines(props.section.content.cycle));
 
-/** "Ana, Luis" → "con Ana y Luis". Vacío no muestra nada. */
+/** Si hay maestr@s: los nombres los arma TeacherNames ("Ana y Luis", con su ventanita). */
 const teachers = computed(() => joinNames(props.section.content.teachers));
 const flipped = ref(false);
 
@@ -249,8 +250,8 @@ watch(expanded, () => nextTick(measure));
                             -->
                             {{ section.content.heading
                             }}<span v-if="teachers" class="ml-0.5 whitespace-normal text-base font-normal text-brand-orange md:text-lg"
-                                >&nbsp;con {{ teachers }}</span
-                            >
+                                >&nbsp;con <TeacherNames :names="section.content.teachers" :profiles="section.content.teacher_profiles"
+                            /></span>
                         </h2>
 
                         <!--

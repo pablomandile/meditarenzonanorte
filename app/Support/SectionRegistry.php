@@ -9,6 +9,10 @@ namespace App\Support;
  * Field primitive types:
  *  - text, textarea, url, select: scalar strings stored in content JSON.
  *  - checkbox: booleano (el FormData lo manda "1"/"0").
+ *  - teacher: id de un maestr@ de "Datos recurrentes" (o null).
+ *
+ * 'unless' => 'otra_clave' esconde el campo en el formulario mientras esa otra
+ * clave tenga valor (ver SectionForm.vue).
  *  - image: storage path string in content; replacement file arrives under files[key].
  *  - links: repeater of {label, url}.
  *  - cards: repeater of {image, title, text, url}; card image files arrive under files[key][i][image].
@@ -181,10 +185,15 @@ class SectionRegistry
             'label' => 'Maestro / persona',
             'fields' => [
                 ['key' => 'role', 'type' => 'text', 'label' => 'Rol (ej. Fundador, Directora)'],
-                ['key' => 'name', 'type' => 'text', 'label' => 'Nombre'],
+                // Elegido un maestr@ de "Datos recurrentes", el nombre, la biografía
+                // y la foto salen de ahí (PageController::content) y los tres campos
+                // de abajo se esconden ('unless'). Lo que tengan guardado queda como
+                // respaldo: vuelve a verse si se lo destilda o se lo borra de la lista.
+                ['key' => 'teacher_id', 'type' => 'teacher', 'label' => 'Maestr@ de Datos recurrentes'],
+                ['key' => 'name', 'type' => 'text', 'label' => 'Nombre', 'unless' => 'teacher_id'],
                 ['key' => 'subtitle', 'type' => 'text', 'label' => 'Cargo / subtítulo'],
-                ['key' => 'body', 'type' => 'textarea', 'label' => 'Biografía'],
-                ['key' => 'image', 'type' => 'image', 'label' => 'Foto'],
+                ['key' => 'body', 'type' => 'textarea', 'label' => 'Biografía', 'unless' => 'teacher_id'],
+                ['key' => 'image', 'type' => 'image', 'label' => 'Foto', 'unless' => 'teacher_id'],
                 ['key' => 'image_side', 'type' => 'select', 'label' => 'Lado de la foto', 'options' => ['left' => 'Izquierda', 'right' => 'Derecha']],
             ],
         ],
@@ -434,6 +443,7 @@ class SectionRegistry
                 'url' => $rules["content.$key"] = ['nullable', 'string', 'max:500'],
                 'select' => $rules["content.$key"] = ['nullable', 'string', 'in:'.implode(',', array_keys($field['options'] ?? []))],
                 'checkbox' => $rules["content.$key"] = ['nullable', 'boolean'],
+                'teacher' => $rules["content.$key"] = ['nullable', 'integer', 'exists:teachers,id'],
                 'image' => [
                     $rules["content.$key"] = ['nullable', 'string', 'max:500'],
                     $rules["files.$key"] = $imageRule,

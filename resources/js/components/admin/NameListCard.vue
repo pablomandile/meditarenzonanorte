@@ -7,7 +7,7 @@ import { router, useForm } from '@inertiajs/vue3';
 import { Plus, Trash2 } from 'lucide-vue-next';
 import { ref, watch, type Component } from 'vue';
 
-type Item = { id: number; name: string };
+type Item = { id: number; name: string; [key: string]: unknown };
 
 const props = defineProps<{
     title: string;
@@ -67,8 +67,12 @@ async function remove(item: Item) {
         </template>
 
         <ul v-if="items.length" class="divide-y rounded-lg border bg-card">
-            <li v-for="item in items" :key="item.id" class="flex items-center justify-between gap-2 px-3 py-2 text-sm">
-                <span class="min-w-0 truncate">{{ item.name }}</span>
+            <li v-for="item in items" :key="item.id" class="flex items-center gap-2 px-3 py-2 text-sm">
+                <!-- `item-before`: lo que va antes del nombre (la foto del maestr@, por ejemplo). -->
+                <slot name="item-before" :item="item" />
+                <span class="min-w-0 flex-1 truncate">{{ item.name }}</span>
+                <!-- `item-actions`: botones propios de la lista, antes de Eliminar. -->
+                <slot name="item-actions" :item="item" />
                 <Button
                     variant="ghost"
                     size="icon"

@@ -13,13 +13,13 @@ class ImageStorage
      * Seeded images (seed/...) are never deleted: they may be shared
      * between sections and are restored by the seeder.
      */
-    private const DELETABLE_PREFIXES = ['sections/', 'events/', 'settings/'];
+    private const DELETABLE_PREFIXES = ['sections/', 'events/', 'settings/', 'teachers/'];
 
     /**
      * Folders the image gallery lists and this class recognises. A submitted
      * path outside them is rejected: nothing in the panel produces one.
      */
-    public const PICKABLE_PREFIXES = ['sections/', 'events/', 'settings/', 'seed/'];
+    public const PICKABLE_PREFIXES = ['sections/', 'events/', 'settings/', 'teachers/', 'seed/'];
 
     public static function store(UploadedFile $file, string $folder): string
     {

@@ -38,7 +38,7 @@ class SectionController extends Controller
                 'visible' => $section->visible,
                 'content' => $section->content ?? [],
             ],
-            'fields' => SectionRegistry::fields($section->type),
+            'fields' => self::formFields($section->type),
             'page' => [
                 'id' => $section->page->id,
                 'title' => $section->page->title,
@@ -90,6 +90,24 @@ class SectionController extends Controller
         return Inertia::render('Admin/Sections/Edit', $props);
     }
 
+    /**
+     * Los campos tal como los dibuja el formulario: el de maestr@ lleva la lista
+     * de "Datos recurrentes" ({id, name}, en orden alfabético; un objeto id =>
+     * nombre lo reordenaría JavaScript por id).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function formFields(string $type): array
+    {
+        return array_map(function (array $field) {
+            if ($field['type'] === 'teacher') {
+                $field['choices'] = Teacher::ordered()->get(['id', 'name'])->all();
+            }
+
+            return $field;
+        }, SectionRegistry::fields($type));
+    }
+
     public function update(UpdateSectionRequest $request, Section $section): RedirectResponse
     {
         $content = $request->validated()['content'] ?? [];
@@ -105,6 +123,10 @@ class SectionController extends Controller
                 // es verdadero.
                 case 'checkbox':
                     $content[$key] = filter_var($content[$key] ?? false, FILTER_VALIDATE_BOOLEAN);
+                    break;
+
+                case 'teacher':
+                    $content[$key] = is_numeric($content[$key] ?? null) ? (int) $content[$key] : null;
                     break;
 
                 case 'image':

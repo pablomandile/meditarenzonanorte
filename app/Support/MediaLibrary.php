@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\Event;
 use App\Models\Section;
 use App\Models\Setting;
+use App\Models\Teacher;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -120,6 +121,10 @@ class MediaLibrary
 
         foreach (Event::all() as $event) {
             $add($event->image_path, 'Evento: '.$event->title);
+        }
+
+        foreach (Teacher::all() as $teacher) {
+            $add($teacher->photo, 'Datos recurrentes: '.$teacher->name);
         }
 
         $add(Setting::get('logo_path'), 'Ajustes: logo del menú');

@@ -7,9 +7,11 @@ use App\Models\Faq;
 use App\Models\Page;
 use App\Models\Section;
 use App\Models\Setting;
+use App\Models\Teacher;
 use App\Support\EventCalendar;
 use App\Support\Occurrences;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -75,6 +77,12 @@ class PageController extends Controller
         $sections = $page->sections()->visible()->orderBy('position')->get();
         $types = $sections->pluck('type');
 
+        // Los maestr@s de "Datos recurrentes", para las fichas (su ventanita) y
+        // las secciones "Maestro / persona" que eligen uno. Una sola consulta.
+        $teachers = $types->intersect(['class_info', 'free_classes', 'person'])->isNotEmpty()
+            ? Teacher::all()
+            : new Collection;
+
         $props = [
             'page' => [
                 'slug' => $page->slug,
@@ -89,7 +97,7 @@ class PageController extends Controller
                     'id' => $section->id,
                     'type' => $section->type,
                     'key' => $section->key,
-                    'content' => self::content($section),
+                    'content' => self::content($section, $teachers),
                 ])->values(),
         ];
 
@@ -187,6 +195,58 @@ class PageController extends Controller
     }
 
     /**
+     * Una sección "Maestro / persona" con un maestr@ elegido muestra el nombre, la
+     * descripción y la foto de "Datos recurrentes". Si al maestr@ le falta la
+     * descripción o la foto, queda la de la sección; si ya no existe, la sección
+     * entera vuelve a lo suyo.
+     *
+     * @param  array<string, mixed>  $content
+     * @return array<string, mixed>
+     */
+    private static function withTeacher(array $content, Collection $teachers): array
+    {
+        $teacher = $teachers->firstWhere('id', $content['teacher_id'] ?? null);
+
+        if (! $teacher) {
+            return $content;
+        }
+
+        return [
+            ...$content,
+            'name' => $teacher->name,
+            'body' => filled($teacher->description) ? $teacher->description : ($content['body'] ?? null),
+            'image' => filled($teacher->photo) ? $teacher->photo : ($content['image'] ?? null),
+        ];
+    }
+
+    /**
+     * @return array<string, array{name: string, description: ?string, photo: ?string}>|\stdClass
+     */
+    private static function teacherProfiles(mixed $names, Collection $teachers): array|\stdClass
+    {
+        $byName = $teachers
+            ->filter(fn (Teacher $teacher) => $teacher->hasProfile())
+            ->keyBy(fn (Teacher $teacher) => Teacher::key($teacher->name));
+
+        $profiles = [];
+
+        foreach (explode(',', is_string($names) ? $names : '') as $name) {
+            $teacher = $byName->get(Teacher::key($name));
+
+            if ($teacher) {
+                $profiles[Teacher::key($name)] = [
+                    'name' => $teacher->name,
+                    'description' => $teacher->description,
+                    'photo' => $teacher->photo,
+                ];
+            }
+        }
+
+        // Vacío va como objeto: un [] de JSON no es un mapa.
+        return $profiles ?: new \stdClass;
+    }
+
+    /**
      * El contenido que recibe la vista. En las fichas de clase, el "Horario" se
      * arma con las "Fechas para el calendario" cuando está vacío: así no hay que
      * escribir la misma cosa dos veces. Lo guardado no se toca — sólo se completa
@@ -194,9 +254,19 @@ class PageController extends Controller
      *
      * @return array<string, mixed>
      */
-    private static function content(Section $section): array
+    private static function content(Section $section, Collection $teachers): array
     {
         $content = $section->content ?? [];
+
+        if ($section->type === 'person') {
+            $content = self::withTeacher($content, $teachers);
+        }
+
+        // Los maestr@s de la ficha que tienen descripción o foto, por nombre
+        // normalizado: al tocar su nombre se abre una ventanita con eso.
+        if ($section->type === 'class_info') {
+            $content['teacher_profiles'] = self::teacherProfiles($content['teachers'] ?? null, $teachers);
+        }
 
         if ($section->type === 'class_info' && blank($content['schedule'] ?? null)) {
             $content['schedule'] = Occurrences::schedule($content['occurrences'] ?? []);

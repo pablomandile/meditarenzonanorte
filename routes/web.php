@@ -77,6 +77,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::get('datos-recurrentes', [RecurringDataController::class, 'index'])->name('recurring.index');
     Route::post('datos-recurrentes/maestros', [RecurringDataController::class, 'storeTeacher'])->name('recurring.teachers.store');
+    Route::put('datos-recurrentes/maestros/{teacher}', [RecurringDataController::class, 'updateTeacher'])->name('recurring.teachers.update');
     Route::delete('datos-recurrentes/maestros/{teacher}', [RecurringDataController::class, 'destroyTeacher'])->name('recurring.teachers.destroy');
     Route::post('datos-recurrentes/lugares', [RecurringDataController::class, 'storeVenue'])->name('recurring.venues.store');
     Route::delete('datos-recurrentes/lugares/{venue}', [RecurringDataController::class, 'destroyVenue'])->name('recurring.venues.destroy');

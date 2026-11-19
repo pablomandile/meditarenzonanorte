@@ -7,8 +7,8 @@ import { img } from '@/lib/site';
 import { Images, Trash2, Upload } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
-// gallery: habilita "Elegir de galería". Solo lo usan los campos de secciones,
-// porque su guardado se apropia de la imagen elegida (ImageStorage::adopt).
+// gallery: habilita "Elegir de galería". Solo lo usan los campos cuyo guardado se
+// apropia de la imagen elegida (ImageStorage::adopt): secciones y maestr@s.
 withDefaults(defineProps<{ label: string; error?: string; gallery?: boolean }>(), { gallery: false });
 
 const model = defineModel<string | null>();

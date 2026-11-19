@@ -15,6 +15,7 @@ import ReviewsField from '@/components/admin/fields/ReviewsField.vue';
 import SelectField from '@/components/admin/fields/SelectField.vue';
 import SuggestField from '@/components/admin/fields/SuggestField.vue';
 import TagsField from '@/components/admin/fields/TagsField.vue';
+import TeacherField from '@/components/admin/fields/TeacherField.vue';
 import TextareaField from '@/components/admin/fields/TextareaField.vue';
 import TextField from '@/components/admin/fields/TextField.vue';
 import { CalendarDays, FileText, ImageIcon, LayoutList, MoreHorizontal, MousePointerClick } from 'lucide-vue-next';
@@ -33,6 +34,10 @@ export type FieldDef = {
     simple?: boolean;
     /** Nombre de la sección del formulario en la que va el campo (ver SectionRegistry). */
     group?: string;
+    /** El campo se esconde mientras esta otra clave tenga valor. */
+    unless?: string;
+    /** Para 'teacher': los maestr@s de "Datos recurrentes". */
+    choices?: { id: number; name: string }[];
 };
 
 const props = defineProps<{
@@ -102,8 +107,10 @@ const groups = computed(() => {
     <div class="admin-sections flex flex-col gap-4">
         <AdminSection v-for="group in groups" :key="group.title" :title="group.title" :icon="group.icon" body-class="grid gap-6">
             <template v-for="field in group.fields" :key="field.key">
+                <template v-if="field.unless && content[field.unless]" />
+
                 <TextField
-                    v-if="field.type === 'text' || field.type === 'url'"
+                    v-else-if="field.type === 'text' || field.type === 'url'"
                     v-model="content[field.key]"
                     :label="field.label"
                     :hint="hints?.[field.key]"
@@ -123,6 +130,15 @@ const groups = computed(() => {
                     v-model="content[field.key]"
                     :label="field.label"
                     :options="pools?.[field.pool ?? ''] ?? []"
+                    :hint="hints?.[field.key]"
+                    :error="fieldError(field.key)"
+                />
+
+                <TeacherField
+                    v-else-if="field.type === 'teacher'"
+                    v-model="content[field.key]"
+                    :label="field.label"
+                    :choices="field.choices ?? []"
                     :hint="hints?.[field.key]"
                     :error="fieldError(field.key)"
                 />
