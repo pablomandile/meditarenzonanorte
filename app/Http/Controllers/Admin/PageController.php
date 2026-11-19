@@ -87,6 +87,7 @@ class PageController extends Controller
                 'id' => $section->id,
                 'type' => $section->type,
                 'type_label' => SectionRegistry::label($section->type),
+                'auto' => SectionRegistry::isAuto($section->type),
                 'key' => $section->key,
                 'title' => Str::limit(
                     str_replace("\n", ' ', $section->content['heading'] ?? $section->content['quote'] ?? $section->content['reviews'][0]['quote'] ?? ''),

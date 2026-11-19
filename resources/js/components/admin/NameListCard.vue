@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { useConfirm } from '@/composables/useConfirm';
 import { router, useForm } from '@inertiajs/vue3';
 import { Plus, Trash2 } from 'lucide-vue-next';
-import type { Component } from 'vue';
+import { ref, watch, type Component } from 'vue';
 
 type Item = { id: number; name: string };
 
@@ -25,6 +25,17 @@ const props = defineProps<{
 const { confirm } = useConfirm();
 
 const form = useForm({ name: '' });
+
+// Arranca plegada: la página muestra las listas como un índice. Un error de
+// validación la abre, para que el mensaje no quede escondido.
+const open = ref(false);
+
+watch(
+    () => form.errors.name,
+    (error) => {
+        if (error) open.value = true;
+    },
+);
 
 function add() {
     form.post(route(props.storeRoute), {
@@ -48,7 +59,13 @@ async function remove(item: Item) {
 </script>
 
 <template>
-    <AdminSection :title="title" :icon="icon" :description="description" body-class="grid gap-3">
+    <AdminSection v-model:open="open" collapsible :title="title" :icon="icon" :description="description" body-class="grid gap-3">
+        <template #actions>
+            <span class="rounded-full bg-white/20 px-2 py-0.5 text-xs font-semibold tabular-nums" :title="`${items.length} en la lista`">
+                {{ items.length }}
+            </span>
+        </template>
+
         <ul v-if="items.length" class="divide-y rounded-lg border bg-card">
             <li v-for="item in items" :key="item.id" class="flex items-center justify-between gap-2 px-3 py-2 text-sm">
                 <span class="min-w-0 truncate">{{ item.name }}</span>

@@ -29,6 +29,8 @@ const props = defineProps<{
         id: number;
         type: string;
         type_label: string;
+        /** Se arma sola al publicar (las fichas gratuitas de /gratis): no tiene formulario. */
+        auto: boolean;
         key: string;
         title: string | null;
         position: number;
@@ -257,6 +259,10 @@ async function destroy(section: { id: number; title: string | null; type_label: 
                                         <Lock class="h-3 w-3" /> Plantilla
                                     </span>
                                 </p>
+                                <p v-if="section.auto" class="mt-1 text-xs text-muted-foreground">
+                                    Se arma sola con las fichas de Clases semanales y Cursos y Retiros que tienen tildado «Gratuito». Se editan en su
+                                    página.
+                                </p>
                             </div>
                         </div>
 
@@ -285,12 +291,12 @@ async function destroy(section: { id: number; title: string | null; type_label: 
                                 <span class="ml-1.5">{{ section.visible ? 'Visible' : 'Oculta' }}</span>
                             </Button>
 
-                            <Button variant="ghost" size="sm" title="Clonar sección" @click="duplicate(section)">
+                            <Button v-if="!section.auto" variant="ghost" size="sm" title="Clonar sección" @click="duplicate(section)">
                                 <Copy class="h-4 w-4" />
                                 <span class="ml-1.5">Clonar</span>
                             </Button>
 
-                            <Button as-child size="sm" variant="outline">
+                            <Button v-if="!section.auto" as-child size="sm" variant="outline">
                                 <Link :href="`/admin/sections/${section.id}/edit`"> <Pencil class="mr-1 h-4 w-4" /> Editar </Link>
                             </Button>
 

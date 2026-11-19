@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Price;
 use App\Models\Section;
 use App\Models\Teacher;
 use App\Models\Venue;
@@ -10,7 +11,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
- * Llena "Datos recurrentes" con los maestr@s y lugares que ya están escritos en
+ * Llena "Datos recurrentes" con los maestr@s, lugares y precios que ya están escritos en
  * las fichas de clase del sitio, así la lista no arranca vacía. Idempotente: un
  * nombre que ya está no se duplica, y no toca las fichas.
  *
@@ -20,7 +21,7 @@ class DatosRecurrentesSeeder extends Seeder
 {
     /** Textos de relleno de la ficha plantilla, que no son datos de verdad. */
     private const PLACEHOLDERS = [
-        'quién lo dicta', 'quién la dicta', 'dirección donde se dicta',
+        'quién lo dicta', 'quién la dicta', 'dirección donde se dicta', 'precio o bono',
     ];
 
     public function run(): void
@@ -36,6 +37,11 @@ class DatosRecurrentesSeeder extends Seeder
             ->map(fn (Section $section) => (string) ($section->content['location'] ?? ''))
             ->pipe(fn ($names) => $this->clean($names))
             ->each(fn (string $name) => Venue::firstOrCreate(['name' => $name]));
+
+        $sections
+            ->map(fn (Section $section) => (string) ($section->content['price'] ?? ''))
+            ->pipe(fn ($names) => $this->clean($names))
+            ->each(fn (string $name) => Price::firstOrCreate(['name' => $name]));
     }
 
     /**

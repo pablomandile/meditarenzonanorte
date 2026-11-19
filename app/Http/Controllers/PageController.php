@@ -81,12 +81,16 @@ class PageController extends Controller
                 'title' => $page->title,
                 'meta_description' => $page->meta_description,
             ],
-            'sections' => $sections->map(fn ($section) => [
-                'id' => $section->id,
-                'type' => $section->type,
-                'key' => $section->key,
-                'content' => self::content($section),
-            ])->values(),
+            // El bloque de fichas gratuitas no se publica como tal: en su lugar van
+            // las fichas que espeja, así la vista las dibuja como cualquier otra.
+            'sections' => $sections
+                ->flatMap(fn ($section) => $section->type === 'free_classes' ? self::freeClasses($page) : [$section])
+                ->map(fn ($section) => [
+                    'id' => $section->id,
+                    'type' => $section->type,
+                    'key' => $section->key,
+                    'content' => self::content($section),
+                ])->values(),
         ];
 
         if ($types->contains('event_strip')) {
@@ -156,6 +160,33 @@ class PageController extends Controller
     }
 
     /**
+     * Las fichas de clase con "Gratuito" tildado de las demás páginas publicadas,
+     * en el orden del menú y, dentro de cada página, en el suyo. Se leen del
+     * original cada vez: no hay copia que mantener, y destildarla la saca de acá.
+     *
+     * @return \Illuminate\Support\Collection<int, Section>
+     */
+    private static function freeClasses(Page $page)
+    {
+        return Section::query()
+            ->select('sections.*')
+            ->join('pages', 'pages.id', '=', 'sections.page_id')
+            ->where('sections.type', 'class_info')
+            ->where('sections.visible', true)
+            ->where('sections.is_template', false)
+            ->where('sections.page_id', '!=', $page->id)
+            ->where('pages.visible', true)
+            ->where('pages.kind', Page::KIND_PAGE)
+            ->orderByRaw('pages.menu_order is null')
+            ->orderBy('pages.menu_order')
+            ->orderBy('pages.id')
+            ->orderBy('sections.position')
+            ->get()
+            ->filter(fn (Section $section) => ($section->content['free'] ?? false) === true)
+            ->values();
+    }
+
+    /**
      * El contenido que recibe la vista. En las fichas de clase, el "Horario" se
      * arma con las "Fechas para el calendario" cuando está vacío: así no hay que
      * escribir la misma cosa dos veces. Lo guardado no se toca — sólo se completa
@@ -169,6 +200,11 @@ class PageController extends Controller
 
         if ($section->type === 'class_info' && blank($content['schedule'] ?? null)) {
             $content['schedule'] = Occurrences::schedule($content['occurrences'] ?? []);
+        }
+
+        // Una ficha gratuita sin precio escrito dice que es gratuita.
+        if ($section->type === 'class_info') {
+            $content['price'] = Section::publishedPrice($content);
         }
 
         // Pasada la última fecha (al día siguiente, en hora argentina), la ficha se

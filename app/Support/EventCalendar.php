@@ -189,7 +189,7 @@ class EventCalendar
                     'end' => $occurrence['end'],
                     'time_text' => self::blank($content['schedule'] ?? null),
                     'location' => self::blank($content['location'] ?? null),
-                    'price' => self::blank($content['price'] ?? null),
+                    'price' => Section::publishedPrice($content),
                     'cta_label' => self::blank($content['cta_label'] ?? null),
                     'cta_url' => self::blank($content['cta_url'] ?? null),
                     'image_path' => self::blank($content['image'] ?? null),

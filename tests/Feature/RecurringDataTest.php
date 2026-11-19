@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Price;
 use App\Models\Section;
 use App\Models\Teacher;
 use App\Models\User;
@@ -132,5 +133,67 @@ class RecurringDataTest extends TestCase
                 ->where('teachers.0.name', 'Kelsang Panchen')
                 ->where('venues.0.name', 'Rosario'),
         );
+    }
+
+    public function test_admin_can_add_and_delete_prices(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->post('/admin/datos-recurrentes/precios', ['name' => '$5.000 (Bono 4 clases $15.000)'])
+            ->assertRedirect()->assertSessionHas('success');
+        $this->assertDatabaseHas('prices', ['name' => '$5.000 (Bono 4 clases $15.000)']);
+
+        // Repetido: rechazado.
+        $this->actingAs($admin)->post('/admin/datos-recurrentes/precios', ['name' => '$5.000 (Bono 4 clases $15.000)'])
+            ->assertSessionHasErrors('name');
+        $this->assertSame(1, Price::count());
+
+        $this->actingAs($admin)->get('/admin/datos-recurrentes')->assertInertia(
+            fn (AssertableInertia $page) => $page->where('prices.0.name', '$5.000 (Bono 4 clases $15.000)'),
+        );
+
+        $price = Price::firstOrFail();
+        $this->actingAs($admin)->delete("/admin/datos-recurrentes/precios/{$price->id}")->assertRedirect();
+        $this->assertDatabaseMissing('prices', ['id' => $price->id]);
+
+        // Sin sesión, nada.
+        auth()->logout();
+        $this->post('/admin/datos-recurrentes/precios', ['name' => 'Colado'])->assertRedirect('/login');
+        $this->assertSame(0, Price::count());
+    }
+
+    public function test_the_class_info_price_suggests_the_recurring_prices_and_still_saves_free_text(): void
+    {
+        $this->seed(ContentSeeder::class);
+        $admin = $this->admin();
+        Price::create(['name' => '$6.000']);
+        Price::create(['name' => 'Aporte voluntario']);
+
+        $ficha = Section::whereHas('page', fn ($q) => $q->where('slug', 'clases-semanales'))
+            ->where('key', 'clase-principal')->firstOrFail();
+
+        $this->actingAs($admin)->get("/admin/sections/{$ficha->id}/edit")->assertInertia(
+            fn (AssertableInertia $page) => $page->where('pools.prices', ['$6.000', 'Aporte voluntario']),
+        );
+
+        $this->actingAs($admin)->put("/admin/sections/{$ficha->id}", [
+            'content' => [...$ficha->content, 'price' => 'Un precio que no está en la lista'],
+        ])->assertRedirect()->assertSessionHas('success');
+
+        $this->assertSame('Un precio que no está en la lista', $ficha->fresh()->content['price']);
+    }
+
+    public function test_seeder_fills_the_prices_from_the_existing_class_cards(): void
+    {
+        $this->seed(ContentSeeder::class);
+        $this->seed(DatosRecurrentesSeeder::class);
+
+        $this->assertTrue(Price::where('name', '$5.000 (Bono 4 clases $15.000)')->exists());
+        // El texto de relleno de la plantilla no es un precio.
+        $this->assertFalse(Price::where('name', 'Precio o bono')->exists());
+
+        $before = Price::count();
+        $this->seed(DatosRecurrentesSeeder::class);
+        $this->assertSame($before, Price::count());
     }
 }

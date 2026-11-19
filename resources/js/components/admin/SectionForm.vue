@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import AdminSection from '@/components/admin/AdminSection.vue';
 import CardsField from '@/components/admin/fields/CardsField.vue';
+import CheckboxField from '@/components/admin/fields/CheckboxField.vue';
 import FaqPickerField from '@/components/admin/fields/FaqPickerField.vue';
 import ImageField from '@/components/admin/fields/ImageField.vue';
 import ImagesField from '@/components/admin/fields/ImagesField.vue';
@@ -40,7 +41,7 @@ const props = defineProps<{
     title: string;
     errors: Record<string, string>;
     faqPool?: { id: number; question: string; visible: boolean }[];
-    /** Listas de "Datos recurrentes" por nombre (teachers, venues). */
+    /** Listas de "Datos recurrentes" por nombre (teachers, venues, prices). */
     pools?: Record<string, string[]>;
     /** Aclaraciones por clave de campo, que el servidor calcula (ej. el horario). */
     hints?: Record<string, string>;
@@ -122,6 +123,14 @@ const groups = computed(() => {
                     v-model="content[field.key]"
                     :label="field.label"
                     :options="pools?.[field.pool ?? ''] ?? []"
+                    :hint="hints?.[field.key]"
+                    :error="fieldError(field.key)"
+                />
+
+                <CheckboxField
+                    v-else-if="field.type === 'checkbox'"
+                    v-model="content[field.key]"
+                    :label="field.label"
                     :hint="hints?.[field.key]"
                     :error="fieldError(field.key)"
                 />

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateSectionRequest;
 use App\Models\Faq;
+use App\Models\Price;
 use App\Models\Section;
 use App\Models\Teacher;
 use App\Models\Venue;
@@ -20,8 +21,14 @@ use Inertia\Response;
 
 class SectionController extends Controller
 {
-    public function edit(Section $section): Response
+    public function edit(Section $section): Response|RedirectResponse
     {
+        // Las que se arman solas (las fichas gratuitas de /gratis) no tienen
+        // formulario: lo que muestran se edita en cada ficha original.
+        if (SectionRegistry::isAuto($section->type)) {
+            return redirect()->route('admin.pages.show', $section->page);
+        }
+
         $props = [
             'section' => [
                 'id' => $section->id,
@@ -54,6 +61,9 @@ class SectionController extends Controller
         if ($pools->contains('venues')) {
             $props['pools']['venues'] = Venue::ordered()->pluck('name');
         }
+        if ($pools->contains('prices')) {
+            $props['pools']['prices'] = Price::ordered()->pluck('name');
+        }
 
         // Aclaraciones por campo, debajo del input.
         if ($section->type === 'class_info') {
@@ -71,6 +81,9 @@ class SectionController extends Controller
                 'anchor' => filled($anchor)
                     ? "Para enlazar directo a esta ficha: {$path}#{$anchor}"
                     : "Una palabra o un número, sin espacios ni acentos, para enlazar directo a esta ficha: {$path}#lo-que-pongas",
+                'free' => $section->page->slug === 'gratis'
+                    ? 'Esta ficha ya está en la página Gratis: la casilla sirve en las fichas de las otras páginas.'
+                    : 'Tildada, la ficha se muestra también en la página Gratis (la de allá se actualiza sola con lo que cambies acá). Si el precio queda vacío, se publica “Gratuito”.',
             ];
         }
 
@@ -88,6 +101,12 @@ class SectionController extends Controller
             $key = $field['key'];
 
             switch ($field['type']) {
+                // Llega "1"/"0" del FormData; se guarda booleano porque "0" en JS
+                // es verdadero.
+                case 'checkbox':
+                    $content[$key] = filter_var($content[$key] ?? false, FILTER_VALIDATE_BOOLEAN);
+                    break;
+
                 case 'image':
                     if (isset($files[$key])) {
                         $content[$key] = ImageStorage::replace($files[$key], 'sections', $old[$key] ?? null);

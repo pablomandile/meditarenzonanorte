@@ -475,6 +475,13 @@ return [
                 ],
             ],
             [
+                // Se llena sola con las fichas de las otras páginas que tienen
+                // tildado "Gratuito" (PageController::freeClasses).
+                'type' => 'free_classes',
+                'key' => 'gratuitas-de-otras-paginas',
+                'content' => [],
+            ],
+            [
                 'type' => 'text_image',
                 'key' => 'invitacion',
                 'content' => [

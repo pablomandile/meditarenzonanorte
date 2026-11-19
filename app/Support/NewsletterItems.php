@@ -166,7 +166,7 @@ class NewsletterItems
             'image' => self::imageUrl($content['image'] ?? null),
             'when' => self::sectionWhen($content),
             'location' => self::text($content['location'] ?? null),
-            'price' => self::text($content['price'] ?? null),
+            'price' => self::text(Section::publishedPrice($content)),
             'cta_label' => self::text($content['cta_label'] ?? null) ?? 'Ver más',
             'cta_url' => self::link($content['cta_url'] ?? null) ?? self::sectionUrl($section),
         ];

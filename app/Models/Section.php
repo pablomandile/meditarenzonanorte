@@ -63,4 +63,22 @@ class Section extends Model
     {
         return $query->where('show_on_calendar', true);
     }
+
+    /**
+     * El precio que se publica de una ficha de clase: el escrito, o "Gratuito"
+     * si está tildada como gratuita y no tiene uno. Lo usan la ficha, el
+     * calendario y el newsletter, para que digan lo mismo.
+     *
+     * @param  array<string, mixed>  $content
+     */
+    public static function publishedPrice(array $content): ?string
+    {
+        $price = is_string($content['price'] ?? null) ? trim($content['price']) : '';
+
+        if ($price !== '') {
+            return $content['price'];
+        }
+
+        return ($content['free'] ?? false) === true ? 'Gratuito' : null;
+    }
 }

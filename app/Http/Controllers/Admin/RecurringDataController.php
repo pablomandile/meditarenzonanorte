@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Price;
 use App\Models\Teacher;
 use App\Models\Venue;
 use Illuminate\Http\RedirectResponse;
@@ -12,9 +13,9 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * "Datos recurrentes": las listas de maestr@s y de lugares que después se eligen
- * en los campos "Maestr@" y "Lugar" de las fichas de clase. Sólo se agregan y se
- * borran; el orden es alfabético.
+ * "Datos recurrentes": las listas de maestr@s, lugares y precios que después se
+ * eligen en los campos "Maestr@", "Lugar" y "Precio" de las fichas de clase.
+ * Sólo se agregan y se borran; el orden es alfabético.
  */
 class RecurringDataController extends Controller
 {
@@ -23,6 +24,7 @@ class RecurringDataController extends Controller
         return Inertia::render('Admin/RecurringData/Index', [
             'teachers' => Teacher::ordered()->get(['id', 'name']),
             'venues' => Venue::ordered()->get(['id', 'name']),
+            'prices' => Price::ordered()->get(['id', 'name']),
         ]);
     }
 
@@ -52,6 +54,20 @@ class RecurringDataController extends Controller
         $venue->delete();
 
         return back()->with('success', 'Lugar eliminado.');
+    }
+
+    public function storePrice(Request $request): RedirectResponse
+    {
+        Price::create($this->validateName($request, 'prices'));
+
+        return back()->with('success', 'Precio agregado.');
+    }
+
+    public function destroyPrice(Price $price): RedirectResponse
+    {
+        $price->delete();
+
+        return back()->with('success', 'Precio eliminado.');
     }
 
     /**

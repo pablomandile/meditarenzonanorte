@@ -8,6 +8,7 @@ namespace App\Support;
  *
  * Field primitive types:
  *  - text, textarea, url, select: scalar strings stored in content JSON.
+ *  - checkbox: booleano (el FormData lo manda "1"/"0").
  *  - image: storage path string in content; replacement file arrives under files[key].
  *  - links: repeater of {label, url}.
  *  - cards: repeater of {image, title, text, url}; card image files arrive under files[key][i][image].
@@ -123,7 +124,11 @@ class SectionRegistry
                 ['key' => 'schedule', 'type' => 'text', 'label' => 'Horario (opcional, se arma solo)', 'group' => 'Horario, fechas y lugar'],
                 ['key' => 'occurrences', 'type' => 'occurrences', 'label' => 'Fechas para el calendario', 'group' => 'Horario, fechas y lugar'],
                 ['key' => 'location', 'type' => 'suggest', 'label' => 'Lugar', 'pool' => 'venues', 'group' => 'Horario, fechas y lugar'],
-                ['key' => 'price', 'type' => 'text', 'label' => 'Precio', 'group' => 'Horario, fechas y lugar'],
+                ['key' => 'price', 'type' => 'suggest', 'label' => 'Precio', 'pool' => 'prices', 'group' => 'Horario, fechas y lugar'],
+                // Tildada, la ficha aparece también en la página Gratis, en el bloque
+                // 'free_classes' (ver PageController::render). Sin precio escrito se
+                // publica "Gratuito".
+                ['key' => 'free', 'type' => 'checkbox', 'label' => 'Gratuito (aparece también en la página Gratis)', 'group' => 'Horario, fechas y lugar'],
                 ['key' => 'cta_label', 'type' => 'text', 'label' => 'Texto del botón', 'group' => 'Botón'],
                 ['key' => 'cta_url', 'type' => 'url', 'label' => 'URL del botón', 'group' => 'Botón'],
                 ['key' => 'image', 'type' => 'image', 'label' => 'Imagen', 'group' => 'Imagen'],
@@ -163,6 +168,14 @@ class SectionRegistry
                     'rules' => ['nullable', 'string', 'max:60', 'regex:/^[A-Za-z0-9][A-Za-z0-9_-]*$/'],
                 ],
             ],
+        ],
+        // Se llena sola al publicar: las fichas de clase de las otras páginas que
+        // tienen tildado "Gratuito", leídas del original (PageController::render).
+        // No tiene nada que editar; se mueve u oculta como cualquier sección.
+        'free_classes' => [
+            'label' => 'Fichas gratuitas de otras páginas',
+            'auto' => true,
+            'fields' => [],
         ],
         'person' => [
             'label' => 'Maestro / persona',
@@ -350,6 +363,12 @@ class SectionRegistry
         return self::TYPES[$type]['label'] ?? $type;
     }
 
+    /** Las secciones que se arman solas al publicar y no tienen nada que editar. */
+    public static function isAuto(string $type): bool
+    {
+        return self::TYPES[$type]['auto'] ?? false;
+    }
+
     /**
      * Every storage path stored in a section's content, sin importar el tipo:
      * el campo simple, las galerías y las imágenes de las tarjetas.
@@ -414,6 +433,7 @@ class SectionRegistry
                 'textarea' => $rules["content.$key"] = ['nullable', 'string', 'max:10000'],
                 'url' => $rules["content.$key"] = ['nullable', 'string', 'max:500'],
                 'select' => $rules["content.$key"] = ['nullable', 'string', 'in:'.implode(',', array_keys($field['options'] ?? []))],
+                'checkbox' => $rules["content.$key"] = ['nullable', 'boolean'],
                 'image' => [
                     $rules["content.$key"] = ['nullable', 'string', 'max:500'],
                     $rules["files.$key"] = $imageRule,

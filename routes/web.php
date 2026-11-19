@@ -80,6 +80,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::delete('datos-recurrentes/maestros/{teacher}', [RecurringDataController::class, 'destroyTeacher'])->name('recurring.teachers.destroy');
     Route::post('datos-recurrentes/lugares', [RecurringDataController::class, 'storeVenue'])->name('recurring.venues.store');
     Route::delete('datos-recurrentes/lugares/{venue}', [RecurringDataController::class, 'destroyVenue'])->name('recurring.venues.destroy');
+    Route::post('datos-recurrentes/precios', [RecurringDataController::class, 'storePrice'])->name('recurring.prices.store');
+    Route::delete('datos-recurrentes/precios/{price}', [RecurringDataController::class, 'destroyPrice'])->name('recurring.prices.destroy');
 
     Route::get('popup', [PopupController::class, 'edit'])->name('popup.edit');
     Route::post('popup', [PopupController::class, 'update'])->name('popup.update');
