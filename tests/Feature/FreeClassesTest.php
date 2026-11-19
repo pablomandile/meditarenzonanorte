@@ -201,4 +201,29 @@ class FreeClassesTest extends TestCase
         $this->assertSame(1, count(array_keys($keys, 'gratuitas-de-otras-paginas')));
         $this->assertSame('gratuitas-de-otras-paginas', $keys[array_search('oferta-sabados', $keys) + 1]);
     }
+
+    public function test_the_seeder_moves_the_block_below_the_header_when_it_ended_up_above_it(): void
+    {
+        // Como en los servidores: 'oferta-sabados' ya no existe, así que el bloque
+        // entraba en el primer lugar, arriba del título.
+        $gratis = Page::where('slug', 'gratis')->firstOrFail();
+        Section::where('page_id', $gratis->id)->whereIn('key', ['oferta-sabados', 'gratuitas-de-otras-paginas'])->delete();
+
+        $this->seed(GratisEspejoSeeder::class);
+
+        $keys = Section::where('page_id', $gratis->id)->orderBy('position')->pluck('key')->all();
+        $this->assertSame(['titulo', 'oferta-miercoles-jueves', 'gratuitas-de-otras-paginas'], array_slice($keys, 0, 3));
+        // Las posiciones quedan seguidas.
+        $this->assertSame(range(1, count($keys)), Section::where('page_id', $gratis->id)->orderBy('position')->pluck('position')->all());
+
+        // Y el sitio la publica en ese lugar.
+        $ficha = $this->ficha();
+        $this->markFree($ficha);
+        $ids = array_column($this->gratisSections(), 'id');
+        $this->assertSame([$this->ficha('gratis', 'titulo')->id, $this->ficha('gratis', 'oferta-miercoles-jueves')->id, $ficha->id], array_slice($ids, 0, 3));
+
+        // Repetirlo no cambia nada.
+        $this->seed(GratisEspejoSeeder::class);
+        $this->assertSame($keys, Section::where('page_id', $gratis->id)->orderBy('position')->pluck('key')->all());
+    }
 }

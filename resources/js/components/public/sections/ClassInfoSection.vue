@@ -258,12 +258,17 @@ watch(expanded, () => nextTick(measure));
                             Con scroll, el tabindex deja desplazarlo con el teclado, y el
                             degradado va sticky para quedarse al pie mientras el texto se
                             mueve (absolute se iría con el contenido).
+
+                            La caja con scroll es sólo desde md: en el celular el texto
+                            no se recorta, y una caja overflow-y-auto + overscroll-contain
+                            igual atrapaba el dedo y la página dejaba de desplazarse al
+                            llegar a la descripción.
                         -->
                         <div
                             v-if="bodyParagraphs.length && !flipsBody"
                             ref="body"
                             class="relative min-h-0"
-                            :class="scrolls ? 'scroll-suave overflow-y-auto overscroll-contain pr-2 focus:outline-none' : 'overflow-hidden'"
+                            :class="scrolls ? 'scroll-suave focus:outline-none md:overflow-y-auto md:overscroll-contain md:pr-2' : 'overflow-hidden'"
                             :tabindex="scrolls && clipped ? 0 : undefined"
                             :aria-label="scrolls && clipped ? 'Descripción' : undefined"
                             @scroll="scrolls && measure()"

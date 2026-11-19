@@ -59,7 +59,7 @@ async function remove(item: Item) {
 </script>
 
 <template>
-    <AdminSection v-model:open="open" collapsible :title="title" :icon="icon" :description="description" body-class="grid gap-3">
+    <AdminSection v-model:open="open" collapsible :title="title" :icon="icon" :description="description" body-class="grid grid-cols-1 gap-3">
         <template #actions>
             <span class="rounded-full bg-white/20 px-2 py-0.5 text-xs font-semibold tabular-nums" :title="`${items.length} en la lista`">
                 {{ items.length }}
@@ -70,7 +70,8 @@ async function remove(item: Item) {
             <li v-for="item in items" :key="item.id" class="flex items-center gap-2 px-3 py-2 text-sm">
                 <!-- `item-before`: lo que va antes del nombre (la foto del maestr@, por ejemplo). -->
                 <slot name="item-before" :item="item" />
-                <span class="min-w-0 flex-1 truncate">{{ item.name }}</span>
+                <!-- Baja de renglón en vez de cortarse: un precio largo se tiene que poder leer entero. -->
+                <span class="min-w-0 flex-1 break-words">{{ item.name }}</span>
                 <!-- `item-actions`: botones propios de la lista, antes de Eliminar. -->
                 <slot name="item-actions" :item="item" />
                 <Button

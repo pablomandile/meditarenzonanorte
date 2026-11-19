@@ -31,6 +31,14 @@ const props = withDefaults(
 );
 
 const open = defineModel<boolean>('open', { default: true });
+
+/**
+ * grid-cols-1 es minmax(0, 1fr). Con la columna implícita de un `grid` solo
+ * (auto), un texto largo que no corta —un precio truncado, una URL— ensancha la
+ * tarjeta y en el celular empuja los botones fuera de la pantalla. Va en la base
+ * para todas; una tarjeta que pida columnas (sm:grid-cols-2) las sigue teniendo.
+ */
+const BODY = 'p-4 sm:p-6 grid-cols-1';
 </script>
 
 <template>
@@ -50,7 +58,7 @@ const open = defineModel<boolean>('open', { default: true });
             </header>
 
             <CollapsibleContent>
-                <div class="admin-section__body" :class="flush ? '' : cn('p-4 sm:p-6', props.bodyClass)">
+                <div class="admin-section__body" :class="flush ? '' : cn(BODY, props.bodyClass)">
                     <p v-if="description || $slots.description" class="text-xs text-muted-foreground" :class="{ 'px-4 pt-4': flush }">
                         <slot name="description">{{ description }}</slot>
                     </p>
@@ -66,7 +74,7 @@ const open = defineModel<boolean>('open', { default: true });
                 <div v-if="$slots.actions" class="ml-auto flex shrink-0 items-center gap-2"><slot name="actions" /></div>
             </header>
 
-            <div class="admin-section__body" :class="flush ? '' : cn('p-4 sm:p-6', props.bodyClass)">
+            <div class="admin-section__body" :class="flush ? '' : cn(BODY, props.bodyClass)">
                 <p v-if="description || $slots.description" class="text-xs text-muted-foreground" :class="{ 'px-4 pt-4': flush }">
                     <slot name="description">{{ description }}</slot>
                 </p>
