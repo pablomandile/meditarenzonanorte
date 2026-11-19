@@ -23,10 +23,13 @@ class Teacher extends Model
 
     /**
      * Las fichas guardan el nombre como texto ("Ana, Luis"), así que se las cruza
-     * con la lista por nombre, sin distinguir mayúsculas ni espacios de más.
+     * con la lista por nombre, sin distinguir mayúsculas, acentos ni espacios de
+     * más. Sin acentos porque así compara MySQL (utf8mb4_unicode_ci): para la
+     * base "María" y "Maria" son el mismo nombre y el índice único no deja
+     * cargar los dos.
      */
     public static function key(string $name): string
     {
-        return Str::lower(trim($name));
+        return Str::lower(Str::ascii(trim($name)));
     }
 }

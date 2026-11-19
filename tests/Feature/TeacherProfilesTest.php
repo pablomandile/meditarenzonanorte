@@ -144,7 +144,7 @@ class TeacherProfilesTest extends TestCase
 
         $profiles = $this->publicContent('clases-semanales', $ficha->id)['teacher_profiles'];
 
-        $this->assertSame(['kelsang panchen' => ['name' => 'kelsang panchen', 'description' => 'Maestro residente.', 'photo' => 'teachers/p.jpg']], $profiles);
+        $this->assertSame(['Kelsang Panchen' => ['name' => 'kelsang panchen', 'description' => 'Maestro residente.', 'photo' => 'teachers/p.jpg']], $profiles);
     }
 
     public function test_a_person_section_shows_the_chosen_teacher_and_falls_back_to_its_own_content(): void
@@ -207,5 +207,27 @@ class TeacherProfilesTest extends TestCase
 
         // Y la página se ve igual que antes.
         $this->assertSame('Guenla Dekyong', $this->publicContent('quienes-somos', $directora->id)['name']);
+    }
+
+    public function test_names_match_without_accents_like_mysql_does(): void
+    {
+        // En producción la lista tenía "Maria" y la sección "María": para MySQL
+        // son el mismo nombre, y crear el segundo cortaba el seeder entero.
+        $teacher = Teacher::create(['name' => 'Maria Florencia Kais']);
+        $section = $this->person('directora-argentina');
+        $section->update(['content' => [...$section->content, 'name' => 'María Florencia Kais']]);
+
+        $this->seed(MaestrosPerfilesSeeder::class);
+
+        $this->assertSame($teacher->id, $section->fresh()->content['teacher_id']);
+        $this->assertSame(0, Teacher::where('name', 'María Florencia Kais')->count());
+        $this->assertNotNull($teacher->fresh()->description);
+        // Y siguió hasta el final: Kelsang Panchen también quedó completo.
+        $this->assertNotNull(Teacher::where('name', 'Kelsang Panchen')->value('description'));
+
+        // La ficha que lo escribe con acento también lo encuentra.
+        $ficha = $this->ficha();
+        $ficha->update(['content' => [...$ficha->content, 'teachers' => 'María Florencia Kais']]);
+        $this->assertArrayHasKey('María Florencia Kais', $this->publicContent('clases-semanales', $ficha->id)['teacher_profiles']);
     }
 }

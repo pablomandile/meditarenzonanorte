@@ -8,7 +8,8 @@ export type TeacherProfile = { name: string; description: string | null; photo: 
 /**
  * "Ana, Luis" → "Ana y Luis", con cada nombre que tiene descripción o foto en
  * "Datos recurrentes" como botón que abre una ventanita con eso. Los perfiles
- * llegan del servidor por nombre en minúsculas (PageController::teacherProfiles).
+ * llegan del servidor por el nombre tal como está escrito en la ficha
+ * (PageController::teacherProfiles).
  */
 const props = defineProps<{ names?: string | null; profiles?: Record<string, TeacherProfile> | null }>();
 
@@ -17,7 +18,7 @@ const list = computed(() =>
         .split(',')
         .map((name) => name.trim())
         .filter(Boolean)
-        .map((name) => ({ name, profile: props.profiles?.[name.toLowerCase()] ?? null })),
+        .map((name) => ({ name, profile: props.profiles?.[name] ?? null })),
 );
 
 const open = ref<TeacherProfile | null>(null);

@@ -230,11 +230,13 @@ class PageController extends Controller
 
         $profiles = [];
 
+        // Por el nombre tal como está escrito en la ficha: la vista busca con ese
+        // mismo texto y no tiene que saber cómo se normaliza.
         foreach (explode(',', is_string($names) ? $names : '') as $name) {
             $teacher = $byName->get(Teacher::key($name));
 
             if ($teacher) {
-                $profiles[Teacher::key($name)] = [
+                $profiles[trim($name)] = [
                     'name' => $teacher->name,
                     'description' => $teacher->description,
                     'photo' => $teacher->photo,
@@ -262,8 +264,8 @@ class PageController extends Controller
             $content = self::withTeacher($content, $teachers);
         }
 
-        // Los maestr@s de la ficha que tienen descripción o foto, por nombre
-        // normalizado: al tocar su nombre se abre una ventanita con eso.
+        // Los maestr@s de la ficha que tienen descripción o foto, por el nombre
+        // como está escrito: al tocarlo se abre una ventanita con eso.
         if ($section->type === 'class_info') {
             $content['teacher_profiles'] = self::teacherProfiles($content['teachers'] ?? null, $teachers);
         }
