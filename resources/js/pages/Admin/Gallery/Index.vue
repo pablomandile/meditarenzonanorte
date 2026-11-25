@@ -7,7 +7,7 @@ import { useConfirm } from '@/composables/useConfirm';
 import { useMediaLibrary } from '@/composables/useMediaLibrary';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { AlertCircle, Images, Lock, Trash2 } from 'lucide-vue-next';
+import { AlertCircle, Check, Images, Link2, Lock, Trash2, Upload } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 type GalleryImage = {
@@ -18,6 +18,7 @@ type GalleryImage = {
     size: number;
     used_by: string[];
     deletable: boolean;
+    standalone: boolean;
 };
 
 const props = defineProps<{ images: GalleryImage[] }>();
@@ -25,7 +26,11 @@ const props = defineProps<{ images: GalleryImage[] }>();
 const breadcrumbs = [{ title: 'Galería', href: '/admin/gallery' }];
 
 const page = usePage();
-const error = computed(() => (page.props.errors as Record<string, string>)?.image);
+const error = computed(() => {
+    const errors = (page.props.errors ?? {}) as Record<string, string>;
+
+    return errors.image ?? errors.images ?? Object.entries(errors).find(([key]) => key.startsWith('images.'))?.[1];
+});
 
 const { confirm } = useConfirm();
 // El selector cachea la lista en memoria: al borrar acá queda vieja.
@@ -73,6 +78,55 @@ async function remove(image: GalleryImage) {
     });
 }
 
+// Subida de imágenes sueltas: no quedan ligadas a ningún curso ni sección, se
+// usan afuera (una publicidad, un posteo) copiando su enlace.
+const fileInput = ref<HTMLInputElement | null>(null);
+const uploading = ref(false);
+
+function upload(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+
+    if (!files.length) return;
+
+    router.post(
+        route('admin.gallery.store'),
+        { images: files },
+        {
+            forceFormData: true,
+            preserveScroll: true,
+            onStart: () => (uploading.value = true),
+            onFinish: () => {
+                uploading.value = false;
+                input.value = '';
+            },
+            onSuccess: () => {
+                invalidate();
+                filter.value = 'todas';
+                search.value = '';
+            },
+        },
+    );
+}
+
+const copied = ref<string | null>(null);
+let copiedTimer: ReturnType<typeof setTimeout> | undefined;
+
+async function copyLink(image: GalleryImage) {
+    const url = new URL(image.url, window.location.origin).href;
+
+    try {
+        await navigator.clipboard.writeText(url);
+    } catch {
+        window.prompt('Copiá el enlace de la imagen:', url);
+        return;
+    }
+
+    copied.value = image.path;
+    clearTimeout(copiedTimer);
+    copiedTimer = setTimeout(() => (copied.value = null), 2000);
+}
+
 function kb(size: number) {
     return `${Math.round(size / 1024)} KB`;
 }
@@ -83,12 +137,24 @@ function kb(size: number) {
         <Head title="Galería" />
 
         <div class="admin-sections flex flex-col gap-4 p-4">
-            <div>
-                <h1 class="text-xl font-semibold">Galería</h1>
-                <p class="text-sm text-muted-foreground">
-                    Todas las imágenes cargadas al sitio: {{ images.length }} en total, {{ inUse }} en uso. Las que están en uso o vienen del
-                    contenido del sitio no se pueden borrar.
-                </p>
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div class="min-w-0 flex-1">
+                    <h1 class="text-xl font-semibold">Galería</h1>
+                    <p class="text-sm text-muted-foreground">
+                        Todas las imágenes cargadas al sitio: {{ images.length }} en total, {{ inUse }} en uso. Las que están en uso o vienen del
+                        contenido del sitio no se pueden borrar.
+                    </p>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                        ¿Necesitás una imagen para una publicidad o un posteo? Subila acá y usá «Copiar enlace»: queda alojada en el sitio sin estar
+                        ligada a ningún curso.
+                    </p>
+                </div>
+
+                <input ref="fileInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple class="hidden" @change="upload" />
+                <Button :disabled="uploading" @click="fileInput?.click()">
+                    <Upload class="mr-1 h-4 w-4" />
+                    {{ uploading ? 'Subiendo…' : 'Subir imágenes' }}
+                </Button>
             </div>
 
             <div v-if="error" class="flex items-start gap-2 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700">
@@ -123,7 +189,9 @@ function kb(size: number) {
 
                             <div class="space-y-1 p-2">
                                 <p class="truncate text-xs font-medium" :title="image.name">{{ image.name }}</p>
-                                <p class="text-[11px] text-muted-foreground">{{ image.seeded ? 'Del sitio' : 'Subida' }} · {{ kb(image.size) }}</p>
+                                <p class="text-[11px] text-muted-foreground">
+                                    {{ image.seeded ? 'Del sitio' : image.standalone ? 'Suelta' : 'Subida' }} · {{ kb(image.size) }}
+                                </p>
 
                                 <p v-if="image.used_by.length" class="text-[11px] leading-snug text-amber-700">
                                     <span class="font-medium">En uso:</span>
@@ -132,7 +200,16 @@ function kb(size: number) {
                                 <p v-else-if="image.seeded" class="text-[11px] leading-snug text-muted-foreground">
                                     Sin usar, pero el seeder la restaura.
                                 </p>
+                                <p v-else-if="image.standalone" class="text-[11px] leading-snug text-muted-foreground">
+                                    Subida a la galería para usar por su enlace.
+                                </p>
                                 <p v-else class="text-[11px] text-muted-foreground">Sin usar en ninguna parte.</p>
+
+                                <Button variant="ghost" size="sm" class="w-full" @click="copyLink(image)">
+                                    <Check v-if="copied === image.path" class="mr-1 h-4 w-4 text-emerald-600" />
+                                    <Link2 v-else class="mr-1 h-4 w-4" />
+                                    {{ copied === image.path ? '¡Enlace copiado!' : 'Copiar enlace' }}
+                                </Button>
 
                                 <Button v-if="image.deletable" variant="ghost" size="sm" class="w-full text-red-600" @click="remove(image)">
                                     <Trash2 class="mr-1 h-4 w-4" /> Eliminar
@@ -169,7 +246,14 @@ function kb(size: number) {
 
                 <img :src="preview.url" :alt="preview.name" class="max-h-[70vh] w-full rounded-md bg-muted object-contain" />
 
-                <p class="truncate text-xs text-muted-foreground" :title="preview.path">{{ preview.path }}</p>
+                <div class="flex items-center gap-2">
+                    <p class="min-w-0 flex-1 truncate text-xs text-muted-foreground" :title="preview.url">{{ preview.url }}</p>
+                    <Button variant="outline" size="sm" class="shrink-0" @click="copyLink(preview)">
+                        <Check v-if="copied === preview.path" class="mr-1 h-4 w-4 text-emerald-600" />
+                        <Link2 v-else class="mr-1 h-4 w-4" />
+                        {{ copied === preview.path ? 'Copiado' : 'Copiar enlace' }}
+                    </Button>
+                </div>
             </DialogContent>
         </Dialog>
     </AdminLayout>

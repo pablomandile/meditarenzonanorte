@@ -28,6 +28,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::get('media', [MediaController::class, 'index'])->name('media.index');
 
     Route::get('gallery', [GalleryController::class, 'index'])->name('gallery.index');
+    Route::post('gallery', [GalleryController::class, 'store'])->name('gallery.store');
     Route::delete('gallery', [GalleryController::class, 'destroy'])->name('gallery.destroy');
 
     Route::get('sections/{section}/edit', [SectionController::class, 'edit'])->name('sections.edit');

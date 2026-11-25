@@ -27,9 +27,35 @@ class GalleryController extends Controller
             'size' => $image['size'],
             'used_by' => $image['used_by'],
             'deletable' => $image['deletable'] && $image['used_by'] === [],
+            'standalone' => str_starts_with($image['path'], ImageStorage::STANDALONE_FOLDER.'/'),
         ], MediaLibrary::images());
 
         return Inertia::render('Admin/Gallery/Index', ['images' => $images]);
+    }
+
+    /**
+     * Sube imágenes sueltas, que no pertenecen a ninguna sección, evento ni
+     * ajuste: quedan hosteadas en el sitio para usarlas afuera por su enlace
+     * (una publicidad, un posteo) y también aparecen en "Elegir de galería".
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'images' => ['required', 'array', 'min:1', 'max:20'],
+            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
+        ], [
+            'images.*.image' => 'Uno de los archivos no es una imagen.',
+            'images.*.mimes' => 'Las imágenes tienen que ser JPG, PNG, WebP o GIF.',
+            'images.*.max' => 'Cada imagen puede pesar hasta 4 MB.',
+        ]);
+
+        $files = $request->file('images');
+
+        foreach ($files as $file) {
+            ImageStorage::storeStandalone($file);
+        }
+
+        return back()->with('success', count($files) === 1 ? 'Imagen subida.' : count($files).' imágenes subidas.');
     }
 
     /**

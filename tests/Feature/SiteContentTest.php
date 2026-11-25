@@ -506,6 +506,53 @@ class SiteContentTest extends TestCase
         $this->assertCount(1, $picker, 'el selector muestra una sola entrada por imagen');
     }
 
+    public function test_gallery_uploads_standalone_images_with_a_readable_link(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->post('/admin/gallery', [
+            'images' => [
+                UploadedFile::fake()->image('Retiro de Verano 2027.jpg', 800, 600),
+                UploadedFile::fake()->image('flyer.png', 400, 400),
+            ],
+        ])->assertRedirect()->assertSessionHas('success', '2 imágenes subidas.');
+
+        $files = Storage::disk('public')->files('gallery');
+        $this->assertCount(2, $files);
+        $this->assertTrue(collect($files)->contains(fn ($f) => str_starts_with($f, 'gallery/retiro-de-verano-2027-')));
+
+        $images = collect($this->actingAs($admin)->get('/admin/gallery')->viewData('page')['props']['images']);
+        $entry = $images->first(fn ($i) => str_starts_with($i['path'], 'gallery/retiro-de-verano-2027-'));
+
+        $this->assertNotNull($entry);
+        $this->assertTrue($entry['standalone']);
+        $this->assertSame([], $entry['used_by']);
+        $this->assertTrue($entry['deletable'], 'una imagen suelta se puede borrar');
+        $this->assertStringContainsString('/storage/gallery/retiro-de-verano-2027-', $entry['url']);
+
+        // También se puede elegir desde "Elegir de galería" en los formularios.
+        $this->assertTrue(collect($this->actingAs($admin)->get('/admin/media')->json('images'))->contains('path', $entry['path']));
+
+        $this->actingAs($admin)->delete('/admin/gallery', ['path' => $entry['path']])->assertSessionHas('success');
+        Storage::disk('public')->assertMissing($entry['path']);
+    }
+
+    public function test_gallery_upload_rejects_files_that_are_not_images(): void
+    {
+        $this->actingAs($this->admin())->post('/admin/gallery', [
+            'images' => [UploadedFile::fake()->create('virus.pdf', 10, 'application/pdf')],
+        ])->assertSessionHasErrors('images.0');
+
+        $this->post('/admin/gallery', [])->assertSessionHasErrors();
+        $this->assertSame([], Storage::disk('public')->files('gallery'));
+    }
+
+    public function test_gallery_upload_requires_authentication(): void
+    {
+        auth()->logout();
+        $this->post('/admin/gallery', ['images' => [UploadedFile::fake()->image('a.jpg')]])->assertRedirect('/login');
+    }
+
     public function test_gallery_deletes_an_image_that_nobody_uses(): void
     {
         $admin = $this->admin();

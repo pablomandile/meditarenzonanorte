@@ -13,17 +13,38 @@ class ImageStorage
      * Seeded images (seed/...) are never deleted: they may be shared
      * between sections and are restored by the seeder.
      */
-    private const DELETABLE_PREFIXES = ['sections/', 'events/', 'settings/', 'teachers/'];
+    private const DELETABLE_PREFIXES = ['sections/', 'events/', 'settings/', 'teachers/', 'gallery/'];
 
     /**
      * Folders the image gallery lists and this class recognises. A submitted
      * path outside them is rejected: nothing in the panel produces one.
      */
-    public const PICKABLE_PREFIXES = ['sections/', 'events/', 'settings/', 'teachers/', 'seed/'];
+    public const PICKABLE_PREFIXES = ['sections/', 'events/', 'settings/', 'teachers/', 'gallery/', 'seed/'];
+
+    /**
+     * Imágenes subidas directo desde la pantalla Galería, sin un registro que
+     * las use: sirven para hostear en el sitio una imagen que se usa afuera
+     * (una publicidad, un posteo) y que se comparte por su enlace.
+     */
+    public const STANDALONE_FOLDER = 'gallery';
 
     public static function store(UploadedFile $file, string $folder): string
     {
         return $file->store($folder, 'public');
+    }
+
+    /**
+     * Guarda una imagen suelta de la galería con un nombre legible —el enlace
+     * se comparte afuera— más un sufijo corto para que dos archivos con el
+     * mismo nombre no se pisen.
+     */
+    public static function storeStandalone(UploadedFile $file): string
+    {
+        $base = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) ?: 'imagen';
+        $extension = strtolower($file->extension() ?: $file->getClientOriginalExtension());
+        $name = Str::limit($base, 80, '').'-'.Str::lower(Str::random(6)).($extension === '' ? '' : '.'.$extension);
+
+        return $file->storeAs(self::STANDALONE_FOLDER, $name, 'public');
     }
 
     public static function replace(UploadedFile $file, string $folder, ?string $oldPath): string
